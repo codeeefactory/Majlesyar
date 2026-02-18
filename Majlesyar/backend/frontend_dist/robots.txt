@@ -1,0 +1,27 @@
+# Robots.txt for Pak Top
+# https://paktop.runflare.run
+
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /checkout
+Disallow: /order/
+
+# Allow AI crawlers for better discoverability
+User-agent: GPTBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+# Sitemap location
+Sitemap: https://paktop.runflare.run/sitemap.xml

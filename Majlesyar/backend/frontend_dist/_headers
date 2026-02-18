@@ -1,0 +1,21 @@
+# Cloudflare Pages / Netlify / generic static host headers
+# Hashed assets are immutable - cache for 1 year
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# HTML files should not be cached
+/
+  Cache-Control: max-age=0, must-revalidate
+
+/*.html
+  Cache-Control: max-age=0, must-revalidate
+
+/index.html
+  Cache-Control: max-age=0, must-revalidate
+
+# Sitemap and robots should be fresh
+/sitemap.xml
+  Cache-Control: max-age=3600, stale-while-revalidate=86400
+
+/robots.txt
+  Cache-Control: max-age=3600, stale-while-revalidate=86400

@@ -1,0 +1,14 @@
+*
+!Dockerfile
+!.dockerignore
+!pakto-pack-joy-main/
+
+pakto-pack-joy-main/.git
+pakto-pack-joy-main/node_modules
+pakto-pack-joy-main/dist
+pakto-pack-joy-main/backend/.venv
+pakto-pack-joy-main/backend/db.sqlite3
+pakto-pack-joy-main/backend/media
+pakto-pack-joy-main/backend/staticfiles
+pakto-pack-joy-main/**/__pycache__
+pakto-pack-joy-main/**/*.pyc

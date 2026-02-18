@@ -1,0 +1,203 @@
+/* Vazirmatn is bundled from @fontsource for local hosting and better cacheability */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Updated Color Palette - Cyan Primary */
+    --background: 40 33% 98%;
+    --foreground: 220 15% 20%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 15% 20%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 15% 20%;
+
+    /* Cyan Primary - WCAG AA compliant (4.5:1 on white) */
+    --primary: 191 100% 32%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary - WCAG AA compliant foreground */
+    --secondary: 191 80% 92%;
+    --secondary-foreground: 191 100% 15%;
+
+    --muted: 40 20% 94%;
+    /* Muted foreground - WCAG AA compliant (4.5:1 on bg) */
+    --muted-foreground: 220 15% 40%;
+
+    --accent: 191 60% 92%;
+    --accent-foreground: 191 100% 18%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 142 72% 40%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 45 93% 47%;
+    --warning-foreground: 220 15% 15%;
+
+    --border: 40 20% 88%;
+    --input: 40 20% 88%;
+    --ring: 191 100% 40%;
+
+    --radius: 0.75rem;
+
+    /* Custom Design Tokens */
+    --gold-gradient: linear-gradient(135deg, hsl(191, 100%, 45%) 0%, hsl(191, 100%, 32%) 100%);
+    --teal-gradient: linear-gradient(135deg, hsl(191, 100%, 42%) 0%, hsl(191, 100%, 28%) 100%);
+    --cream-gradient: linear-gradient(180deg, hsl(40, 33%, 98%) 0%, hsl(40, 25%, 94%) 100%);
+    
+    --shadow-soft: 0 4px 20px -4px hsl(220 15% 20% / 0.08);
+    --shadow-medium: 0 8px 30px -8px hsl(220 15% 20% / 0.12);
+    --shadow-glow: 0 0 40px hsl(191 100% 40% / 0.2);
+
+    --sidebar-background: 40 20% 96%;
+    --sidebar-foreground: 318 14% 29%;
+    --sidebar-primary: 191 100% 32%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 191 60% 92%;
+    --sidebar-accent-foreground: 191 100% 18%;
+    --sidebar-border: 40 20% 88%;
+    --sidebar-ring: 191 100% 40%;
+  }
+
+  .dark {
+    --background: 30 15% 10%;
+    --foreground: 40 20% 95%;
+
+    --card: 30 15% 14%;
+    --card-foreground: 40 20% 95%;
+
+    --popover: 30 15% 14%;
+    --popover-foreground: 40 20% 95%;
+
+    /* Cyan Primary - WCAG AA on dark background */
+    --primary: 191 100% 58%;
+    --primary-foreground: 30 15% 8%;
+
+    --secondary: 191 80% 25%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 30 15% 20%;
+    /* Muted foreground - WCAG AA on dark bg */
+    --muted-foreground: 40 20% 75%;
+
+    --accent: 191 40% 20%;
+    --accent-foreground: 191 100% 78%;
+
+    --destructive: 0 62% 45%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 142 60% 45%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 45 85% 50%;
+    --warning-foreground: 30 15% 10%;
+
+    --border: 30 15% 22%;
+    --input: 30 15% 22%;
+    --ring: 191 100% 55%;
+
+    --sidebar-background: 30 15% 12%;
+    --sidebar-foreground: 40 20% 90%;
+    --sidebar-primary: 191 100% 55%;
+    --sidebar-primary-foreground: 30 15% 8%;
+    --sidebar-accent: 191 40% 18%;
+    --sidebar-accent-foreground: 191 100% 75%;
+    --sidebar-border: 30 15% 22%;
+    --sidebar-ring: 191 100% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    font-family: 'Vazirmatn', system-ui, sans-serif;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+
+  /* RTL Specific Adjustments */
+  [dir="rtl"] {
+    text-align: right;
+  }
+}
+
+@layer utilities {
+  .gold-gradient {
+    background: var(--gold-gradient);
+  }
+
+  .teal-gradient {
+    background: var(--teal-gradient);
+  }
+
+  .cream-gradient {
+    background: var(--cream-gradient);
+  }
+
+  .shadow-soft {
+    box-shadow: var(--shadow-soft);
+  }
+
+  .shadow-medium {
+    box-shadow: var(--shadow-medium);
+  }
+
+  .shadow-glow {
+    box-shadow: var(--shadow-glow);
+  }
+
+  .text-gradient-gold {
+    background: var(--gold-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Smooth transitions */
+  .transition-smooth {
+    @apply transition-all duration-300 ease-out;
+  }
+
+  /* Card hover effect */
+  .card-hover {
+    @apply transition-smooth hover:shadow-medium hover:-translate-y-1;
+  }
+
+  /* Button press effect */
+  .btn-press {
+    @apply active:scale-[0.98] transition-transform;
+  }
+}
+
+/* Custom Scrollbar - only on non-touch devices */
+@media (pointer: fine) {
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--muted));
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground) / 0.3);
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.5);
+  }
+}

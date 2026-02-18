@@ -1,0 +1,372 @@
+{
+  "categories": [
+    {
+      "name": "اقتصادی",
+      "slug": "economic",
+      "icon": "💰"
+    },
+    {
+      "name": "لوکس",
+      "slug": "luxury",
+      "icon": "✨"
+    },
+    {
+      "name": "همایش",
+      "slug": "conference",
+      "icon": "🎤"
+    },
+    {
+      "name": "ترحیم",
+      "slug": "memorial",
+      "icon": "🕯️"
+    },
+    {
+      "name": "پک خالی",
+      "slug": "empty",
+      "icon": "📦"
+    }
+  ],
+  "products": [
+    {
+      "name": "پک اقتصادی همایش",
+      "description": "پک ساده و اقتصادی مناسب برای همایش‌های بزرگ",
+      "price": 85000,
+      "category_slugs": [
+        "economic",
+        "conference"
+      ],
+      "event_types": [
+        "conference"
+      ],
+      "contents": [
+        "آبمیوه کوچک",
+        "کیک یزدی",
+        "دستمال"
+      ],
+      "image": "/placeholder.svg",
+      "featured": true,
+      "available": true
+    },
+    {
+      "name": "پک لوکس همایش",
+      "description": "پک کامل و لوکس با بهترین محتویات",
+      "price": 165000,
+      "category_slugs": [
+        "luxury",
+        "conference"
+      ],
+      "event_types": [
+        "conference"
+      ],
+      "contents": [
+        "آبمیوه طبیعی",
+        "شیرینی تر",
+        "میوه خشک",
+        "چای کیسه‌ای",
+        "دستمال مرطوب"
+      ],
+      "image": "/placeholder.svg",
+      "featured": true,
+      "available": true
+    },
+    {
+      "name": "پک ترحیم ساده",
+      "description": "پک متناسب با فضای احترام‌آمیز مراسم",
+      "price": 95000,
+      "category_slugs": [
+        "economic",
+        "memorial"
+      ],
+      "event_types": [
+        "memorial"
+      ],
+      "contents": [
+        "خرما",
+        "حلوا",
+        "آب معدنی",
+        "دستمال"
+      ],
+      "image": "/placeholder.svg",
+      "featured": false,
+      "available": true
+    },
+    {
+      "name": "پک ترحیم کامل",
+      "description": "پک کامل شامل تمام ملزومات مراسم ترحیم",
+      "price": 145000,
+      "category_slugs": [
+        "luxury",
+        "memorial"
+      ],
+      "event_types": [
+        "memorial"
+      ],
+      "contents": [
+        "خرما مضافتی",
+        "حلوا",
+        "زولبیا بامیه",
+        "آب معدنی",
+        "چای کیسه‌ای",
+        "دستمال"
+      ],
+      "image": "/placeholder.svg",
+      "featured": true,
+      "available": true
+    },
+    {
+      "name": "پک دفاع پایان‌نامه",
+      "description": "پک ویژه برای جلسات دفاع دانشگاهی",
+      "price": 125000,
+      "category_slugs": [
+        "luxury"
+      ],
+      "event_types": [
+        "defense"
+      ],
+      "contents": [
+        "شیرینی تر",
+        "میوه فصل",
+        "آبمیوه",
+        "قهوه فوری",
+        "دستمال"
+      ],
+      "image": "/placeholder.svg",
+      "featured": true,
+      "available": true
+    },
+    {
+      "name": "پک تولد شاد",
+      "description": "پک رنگارنگ برای جشن‌های تولد",
+      "price": 135000,
+      "category_slugs": [
+        "luxury"
+      ],
+      "event_types": [
+        "party"
+      ],
+      "contents": [
+        "کیک تولد کوچک",
+        "آبنبات",
+        "آبمیوه",
+        "بادکنک",
+        "کلاه"
+      ],
+      "image": "/placeholder.svg",
+      "featured": false,
+      "available": true
+    },
+    {
+      "name": "پک VIP",
+      "description": "لوکس‌ترین پک برای مهمانان ویژه",
+      "price": null,
+      "category_slugs": [
+        "luxury"
+      ],
+      "event_types": [
+        "conference",
+        "defense"
+      ],
+      "contents": [
+        "سوپرایز ویژه",
+        "تماس بگیرید"
+      ],
+      "image": "/placeholder.svg",
+      "featured": true,
+      "available": true
+    },
+    {
+      "name": "پک خالی زیپ‌لاک",
+      "description": "بسته‌بندی خالی زیپ‌لاک برای پک سفارشی",
+      "price": 15000,
+      "category_slugs": [
+        "empty"
+      ],
+      "event_types": [
+        "conference",
+        "memorial",
+        "defense",
+        "party"
+      ],
+      "contents": [
+        "کیسه زیپ‌لاک با لوگو"
+      ],
+      "image": "/placeholder.svg",
+      "featured": false,
+      "available": true
+    },
+    {
+      "name": "پک خالی جعبه‌ای",
+      "description": "جعبه خالی مقوایی برای پک سفارشی",
+      "price": 25000,
+      "category_slugs": [
+        "empty"
+      ],
+      "event_types": [
+        "conference",
+        "memorial",
+        "defense",
+        "party"
+      ],
+      "contents": [
+        "جعبه مقوایی با لوگو"
+      ],
+      "image": "/placeholder.svg",
+      "featured": false,
+      "available": true
+    }
+  ],
+  "builder_items": [
+    {
+      "name": "زیپ‌لاک",
+      "group": "packaging",
+      "price": 15000,
+      "required": true,
+      "image": null
+    },
+    {
+      "name": "جعبه مقوایی",
+      "group": "packaging",
+      "price": 25000,
+      "required": true,
+      "image": null
+    },
+    {
+      "name": "سیب",
+      "group": "fruit",
+      "price": 20000,
+      "required": true,
+      "image": null
+    },
+    {
+      "name": "پرتقال",
+      "group": "fruit",
+      "price": 22000,
+      "required": true,
+      "image": null
+    },
+    {
+      "name": "موز",
+      "group": "fruit",
+      "price": 25000,
+      "required": true,
+      "image": null
+    },
+    {
+      "name": "میوه خشک مخلوط",
+      "group": "fruit",
+      "price": 35000,
+      "required": true,
+      "image": null
+    },
+    {
+      "name": "آب معدنی",
+      "group": "drink",
+      "price": 8000,
+      "required": true,
+      "image": null
+    },
+    {
+      "name": "آبمیوه کوچک",
+      "group": "drink",
+      "price": 15000,
+      "required": true,
+      "image": null
+    },
+    {
+      "name": "آبمیوه طبیعی",
+      "group": "drink",
+      "price": 25000,
+      "required": true,
+      "image": null
+    },
+    {
+      "name": "نوشابه قوطی",
+      "group": "drink",
+      "price": 18000,
+      "required": true,
+      "image": null
+    },
+    {
+      "name": "کیک یزدی",
+      "group": "snack",
+      "price": 12000,
+      "required": true,
+      "image": null
+    },
+    {
+      "name": "شیرینی خشک",
+      "group": "snack",
+      "price": 20000,
+      "required": true,
+      "image": null
+    },
+    {
+      "name": "شیرینی تر",
+      "group": "snack",
+      "price": 30000,
+      "required": true,
+      "image": null
+    },
+    {
+      "name": "کلوچه",
+      "group": "snack",
+      "price": 15000,
+      "required": true,
+      "image": null
+    },
+    {
+      "name": "چاقو پلاستیکی",
+      "group": "addon",
+      "price": 2000,
+      "required": false,
+      "image": null
+    },
+    {
+      "name": "دستمال کاغذی",
+      "group": "addon",
+      "price": 3000,
+      "required": false,
+      "image": null
+    },
+    {
+      "name": "دستمال مرطوب",
+      "group": "addon",
+      "price": 5000,
+      "required": false,
+      "image": null
+    },
+    {
+      "name": "پد الکلی",
+      "group": "addon",
+      "price": 4000,
+      "required": false,
+      "image": null
+    }
+  ],
+  "settings": {
+    "min_order_qty": 40,
+    "lead_time_hours": 48,
+    "allowed_provinces": [
+      "تهران",
+      "البرز"
+    ],
+    "delivery_windows": [
+      "۱۰-۱۲",
+      "۱۲-۱۴",
+      "۱۴-۱۶",
+      "۱۶-۱۸"
+    ],
+    "payment_methods": [
+      {
+        "id": "pay-later",
+        "label": "پرداخت بعد از تایید",
+        "enabled": true
+      },
+      {
+        "id": "online",
+        "label": "درگاه آنلاین (به‌زودی)",
+        "enabled": false
+      }
+    ]
+  }
+}
