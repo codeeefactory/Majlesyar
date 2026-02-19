@@ -89,6 +89,31 @@ interface ApiOrder {
   notes: ApiOrderNote[];
 }
 
+const RAW_API_BASE_URL = import.meta.env.VITE_API_BASE_URL?.trim();
+
+function resolveApiOrigin(): string {
+  if (!RAW_API_BASE_URL) return "";
+  try {
+    return new URL(RAW_API_BASE_URL).origin;
+  } catch {
+    return "";
+  }
+}
+
+const API_ORIGIN = resolveApiOrigin();
+
+function normalizeImageUrl(image: string | null): string {
+  if (!image) return "/placeholder.svg";
+  if (/^https?:\/\//i.test(image)) return image;
+
+  if (image.startsWith("/")) {
+    return API_ORIGIN ? `${API_ORIGIN}${image}` : image;
+  }
+
+  const normalized = `/${image.replace(/^\/+/, "")}`;
+  return API_ORIGIN ? `${API_ORIGIN}${normalized}` : normalized;
+}
+
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -114,7 +139,7 @@ function mapProduct(apiProduct: ApiProduct): Product {
     categoryIds: apiProduct.category_ids || [],
     eventTypes: apiProduct.event_types || [],
     contents: apiProduct.contents || [],
-    image: apiProduct.image || "/placeholder.svg",
+    image: normalizeImageUrl(apiProduct.image),
     featured: apiProduct.featured,
     available: apiProduct.available,
   };

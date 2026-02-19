@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom';
-import type { LucideIcon } from 'lucide-react';
 
 interface EventCardProps {
   id: string;
@@ -8,9 +7,33 @@ interface EventCardProps {
   description: string;
   icon: string;
   color: string;
+  available?: boolean;
 }
 
-export function EventCard({ id, name, slug, description, icon, color }: EventCardProps) {
+export function EventCard({ id, name, slug, description, icon, color, available = true }: EventCardProps) {
+  if (!available) {
+    return (
+      <article>
+        <div
+          className={`group block p-6 rounded-2xl border border-border ${color} relative overflow-hidden opacity-70 cursor-not-allowed`}
+          aria-label={`${name} - به‌زودی`}
+        >
+          <div className="absolute top-3 left-3 bg-warning/20 text-warning-foreground text-xs font-semibold px-2 py-1 rounded-full">
+            به‌زودی
+          </div>
+
+          <div className="relative z-10">
+            <div className="text-4xl mb-4" role="img" aria-label={`آیکون ${name}`}>{icon}</div>
+            <h3 className="text-xl font-bold text-foreground mb-2">
+              {name}
+            </h3>
+            <p className="text-sm text-muted-foreground leading-relaxed">{description}</p>
+          </div>
+        </div>
+      </article>
+    );
+  }
+
   return (
     <article>
       <Link

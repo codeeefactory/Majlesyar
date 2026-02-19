@@ -259,7 +259,7 @@ export default function ShopPage() {
           {/* Products Grid */}
           <div className="flex-1">
             {loading ? (
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-2 md:gap-3">
                 {[1, 2, 3, 4].map((i) => (
                   <div key={i} className="bg-card rounded-xl border border-border overflow-hidden animate-pulse">
                     <div className="aspect-[4/3] bg-muted" />
@@ -289,7 +289,7 @@ export default function ShopPage() {
                 <p className="text-sm text-muted-foreground mb-4">
                   نمایش {paginatedProducts.length} از {filteredProducts.length} محصول
                 </p>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-2 md:gap-3">
                   {paginatedProducts.map((product, index) => (
                     <div
                       key={product.id}

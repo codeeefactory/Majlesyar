@@ -15,8 +15,15 @@ export default function EventPage() {
   const [loading, setLoading] = useState(true);
 
   const event = eventTypes.find((e) => e.slug === slug);
+  const isEventAvailable = event?.available !== false;
 
   useEffect(() => {
+    if (!event || !isEventAvailable) {
+      setProducts([]);
+      setLoading(false);
+      return;
+    }
+
     const loadProducts = async () => {
       const allProducts = await listProducts();
       const filtered = allProducts.filter((p) => 
@@ -26,7 +33,7 @@ export default function EventPage() {
       setLoading(false);
     };
     loadProducts();
-  }, [slug]);
+  }, [event, isEventAvailable, slug]);
 
   if (!event) {
     return (
@@ -41,6 +48,32 @@ export default function EventPage() {
             </Button>
           </Link>
         </div>
+      </AppShell>
+    );
+  }
+
+  if (!isEventAvailable) {
+    return (
+      <AppShell>
+        <SEO
+          title={`${event.name} (به‌زودی)`}
+          description={event.description}
+          path={`/events/${event.slug}`}
+          noindex={true}
+        />
+        <section className={`${event.color} relative overflow-hidden`}>
+          <div className="container py-16 text-center">
+            <div className="text-6xl mb-4">{event.icon}</div>
+            <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-3">{event.name}</h1>
+            <p className="text-muted-foreground text-lg mb-8">این بخش به‌زودی فعال می‌شود.</p>
+            <Link to="/">
+              <Button variant="outline" className="gap-2">
+                <ArrowRight className="w-4 h-4" />
+                بازگشت به خانه
+              </Button>
+            </Link>
+          </div>
+        </section>
       </AppShell>
     );
   }
@@ -98,7 +131,7 @@ export default function EventPage() {
         </h2>
 
         {loading ? (
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-2 md:gap-3">
             {[1, 2, 3].map((i) => (
               <div key={i} className="bg-card rounded-xl border border-border overflow-hidden animate-pulse">
                 <div className="aspect-[4/3] bg-muted" />
@@ -120,7 +153,7 @@ export default function EventPage() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-2 md:gap-3">
             {products.map((product, index) => (
               <div
                 key={product.id}

@@ -4,7 +4,6 @@ import { AppShell } from '@/components/layout';
 import { Button } from '@/components/ui/button';
 import { EventCard } from '@/components/EventCard';
 import { ProductCard } from '@/components/ProductCard';
-import { Testimonials } from '@/components/Testimonials';
 import { eventTypes } from '@/data/siteConstants';
 import { Sparkles, Clock, ArrowLeft, Truck, Shield, Star } from 'lucide-react';
 import { listProducts } from '@/lib/api';
@@ -103,23 +102,7 @@ export default function HomePage() {
               حداقل سفارش ۴۰ عدد با تحویل سریع در تهران و البرز.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-              <Link to="/shop">
-                <Button variant="gold" size="xl" className="w-full sm:w-auto gap-2 min-h-[48px] touch-manipulation hover:scale-[1.02] transition-transform duration-300">
-                  مشاهده محصولات
-                  <ArrowLeft className="w-5 h-5" aria-hidden="true" />
-                </Button>
-              </Link>
-              {/* Hidden for now: ساخت پک اختصاصی button */}
-            </div>
-
-            {/* Attention grabber badge */}
-            <div className="pt-6">
-              <div className="inline-flex items-center gap-2 bg-success/10 text-success px-4 py-2 rounded-full text-sm font-medium border border-success/20">
-                <span className="w-2 h-2 bg-success rounded-full" />
-                ۱۵ نفر در حال مشاهده این صفحه هستند
-              </div>
-            </div>
+            {/* Hidden for now: CTA actions */}
           </div>
         </div>
       </section>
@@ -145,7 +128,7 @@ export default function HomePage() {
           </Link>
         </header>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-2 md:gap-3">
           {productsLoading
             ? [1, 2, 3, 4].map((i) => (
                 <div key={i} className="bg-card rounded-xl border border-border overflow-hidden animate-pulse">
@@ -190,9 +173,6 @@ export default function HomePage() {
         </article>
       </section>
       */}
-
-      {/* Testimonials Section */}
-      <Testimonials />
 
       {/* FAQ Section - Hidden */}
     </AppShell>

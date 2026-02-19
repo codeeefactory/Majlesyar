@@ -7,40 +7,45 @@ export interface EventType {
   description: string;
   icon: string;
   color: string;
+  available?: boolean;
 }
 
 export const eventTypes: EventType[] = [
   {
     id: "conference",
-    name: "همایش",
+    name: "حلوا",
     slug: "conference",
-    description: "پک‌های مناسب برای کنفرانس‌ها و سمینارها",
-    icon: "🎤",
+    description: "پک‌های حلوا برای مراسم ترحیم و یادبود",
+    icon: "🍮",
     color: "bg-secondary",
+    available: true,
   },
   {
     id: "memorial",
-    name: "ترحیم",
+    name: "پک ترحیم",
     slug: "memorial",
     description: "پک‌های متناسب با مراسم ترحیم",
     icon: "🕯️",
     color: "bg-muted",
+    available: true,
   },
   {
     id: "defense",
     name: "دفاع",
     slug: "defense",
-    description: "پک‌های ویژه جلسات دفاع پایان‌نامه",
+    description: "به‌زودی فعال می‌شود",
     icon: "🎓",
     color: "bg-accent",
+    available: false,
   },
   {
     id: "party",
     name: "تولد/مهمانی",
     slug: "party",
-    description: "پک‌های شاد برای جشن‌ها و مهمانی‌ها",
+    description: "به‌زودی فعال می‌شود",
     icon: "🎂",
     color: "bg-primary/20",
+    available: false,
   },
 ];
 
