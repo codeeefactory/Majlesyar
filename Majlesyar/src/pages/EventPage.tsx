@@ -131,8 +131,8 @@ export default function EventPage() {
         </h2>
 
         {loading ? (
-          <div className="grid grid-cols-2 gap-2 md:gap-3">
-            {[1, 2, 3].map((i) => (
+          <div className="grid grid-cols-2 gap-px">
+            {[1, 2, 3, 4].map((i) => (
               <div key={i} className="bg-card rounded-xl border border-border overflow-hidden animate-pulse">
                 <div className="aspect-[4/3] bg-muted" />
                 <div className="p-3 space-y-2">
@@ -153,7 +153,7 @@ export default function EventPage() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-2 md:gap-3">
+          <div className="grid grid-cols-2 gap-px">
             {products.map((product, index) => (
               <div
                 key={product.id}

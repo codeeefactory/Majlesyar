@@ -16,6 +16,7 @@ export default function ProductPage() {
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
+  const [imageFailed, setImageFailed] = useState(false);
   const { addItem, minQuantityRequired } = useCart();
 
   useEffect(() => {
@@ -45,6 +46,8 @@ export default function ProductPage() {
     if (price === null) return 'تماس بگیرید';
     return `${price.toLocaleString('fa-IR')} تومان`;
   };
+
+  const shouldShowImage = product?.image && product.image !== '/placeholder.svg' && !imageFailed;
 
   if (loading) {
     return (
@@ -119,10 +122,23 @@ export default function ProductPage() {
         <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
           {/* Image Gallery */}
           <div className="space-y-4">
-            <div className="aspect-square bg-muted rounded-2xl border border-border relative overflow-hidden">
+            <div className="aspect-[4/3] sm:aspect-square bg-muted rounded-2xl border border-border relative overflow-hidden">
+              {shouldShowImage ? (
+                <img
+                  src={product.image}
+                  alt={product.name}
+                  loading="eager"
+                  fetchPriority="high"
+                  decoding="async"
+                  sizes="(max-width: 640px) 100vw, 50vw"
+                  className="w-full h-full object-cover object-center"
+                  onError={() => setImageFailed(true)}
+                />
+              ) : (
               <div className="absolute inset-0 flex items-center justify-center text-9xl opacity-30">
                 📦
               </div>
+              )}
               {product.featured && (
                 <div className="absolute top-4 right-4 bg-primary text-primary-foreground text-sm font-semibold px-3 py-1.5 rounded-full">
                   پیشنهاد ویژه
@@ -208,3 +224,4 @@ export default function ProductPage() {
     </AppShell>
   );
 }
+

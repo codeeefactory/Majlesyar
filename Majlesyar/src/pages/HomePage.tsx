@@ -128,7 +128,7 @@ export default function HomePage() {
           </Link>
         </header>
 
-        <div className="grid grid-cols-2 gap-2 md:gap-3">
+        <div className="grid grid-cols-2 gap-px">
           {productsLoading
             ? [1, 2, 3, 4].map((i) => (
                 <div key={i} className="bg-card rounded-xl border border-border overflow-hidden animate-pulse">

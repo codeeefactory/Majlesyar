@@ -16,6 +16,7 @@ interface ProductCardProps {
 export function ProductCard({ product }: ProductCardProps) {
   const { addItem } = useCart();
   const [quantity, setQuantity] = useState(1);
+  const [imageFailed, setImageFailed] = useState(false);
 
   const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     e.preventDefault();
@@ -45,6 +46,8 @@ export function ProductCard({ product }: ProductCardProps) {
     return `${price.toLocaleString('fa-IR')} تومان`;
   };
 
+  const shouldShowImage = product.image && product.image !== '/placeholder.svg' && !imageFailed;
+
   return (
     <article>
       <Link 
@@ -53,10 +56,22 @@ export function ProductCard({ product }: ProductCardProps) {
         aria-label={`مشاهده ${product.name}`}
       >
         {/* Image */}
-        <div className="aspect-[4/3] bg-muted relative overflow-hidden">
+        <div className="aspect-[16/11] sm:aspect-[4/3] bg-muted relative overflow-hidden">
+          {shouldShowImage ? (
+            <img
+              src={product.image}
+              alt={product.name}
+              loading="lazy"
+              decoding="async"
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              className="w-full h-full object-cover object-center"
+              onError={() => setImageFailed(true)}
+            />
+          ) : (
           <div className="absolute inset-0 flex items-center justify-center text-4xl opacity-30" aria-hidden="true">
             📦
           </div>
+          )}
           {product.featured && (
             <span className="absolute top-2 right-2 bg-primary text-primary-foreground text-xs font-semibold px-2 py-1 rounded-full">
               ویژه
@@ -140,3 +155,4 @@ export function ProductCard({ product }: ProductCardProps) {
     </article>
   );
 }
+

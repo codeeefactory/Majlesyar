@@ -11,7 +11,7 @@ import { Search, SlidersHorizontal, X, ChevronLeft, Home, Loader2 } from 'lucide
 
 type SortOption = 'featured' | 'price-asc' | 'price-desc';
 
-const ITEMS_PER_PAGE = 6;
+const ITEMS_PER_PAGE = 4;
 
 const breadcrumbs = [
   { name: 'خانه', url: '/' },
@@ -259,7 +259,7 @@ export default function ShopPage() {
           {/* Products Grid */}
           <div className="flex-1">
             {loading ? (
-              <div className="grid grid-cols-2 gap-2 md:gap-3">
+              <div className="grid grid-cols-2 gap-px">
                 {[1, 2, 3, 4].map((i) => (
                   <div key={i} className="bg-card rounded-xl border border-border overflow-hidden animate-pulse">
                     <div className="aspect-[4/3] bg-muted" />
@@ -289,7 +289,7 @@ export default function ShopPage() {
                 <p className="text-sm text-muted-foreground mb-4">
                   نمایش {paginatedProducts.length} از {filteredProducts.length} محصول
                 </p>
-                <div className="grid grid-cols-2 gap-2 md:gap-3">
+                <div className="grid grid-cols-2 gap-px">
                   {paginatedProducts.map((product, index) => (
                     <div
                       key={product.id}
