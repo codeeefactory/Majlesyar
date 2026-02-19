@@ -88,7 +88,21 @@ class Product(models.Model):
         blank=True,
         null=True,
         verbose_name="تصویر محصول",
-        help_text="نکته: تصویر با کیفیت و نسبت مناسب بارگذاری کنید.",
+        help_text="راهنما: تصویر محصول را با کیفیت مناسب بارگذاری کنید. می توانید با گزینه پاک کردن، انتخاب تصویر را حذف کنید.",
+    )
+    image_alt = models.CharField(
+        max_length=255,
+        blank=True,
+        default="",
+        verbose_name="متن جایگزین تصویر (Alt)",
+        help_text="راهنما: یک توضیح کوتاه و دقیق برای تصویر بنویسید تا در دسترس پذیری و سئو استفاده شود.",
+    )
+    image_name = models.CharField(
+        max_length=255,
+        blank=True,
+        default="",
+        verbose_name="نام تصویر",
+        help_text="راهنما: یک نام خوانا برای تصویر وارد کنید (مثال: pak-terhim-luxury). این فیلد برای مدیریت بهتر تصاویر است.",
     )
     featured = models.BooleanField(
         default=False,
@@ -110,6 +124,12 @@ class Product(models.Model):
         verbose_name="آخرین بروزرسانی",
         help_text="نکته: این زمان بعد از هر ویرایش به صورت خودکار بروزرسانی می شود.",
     )
+
+    def save(self, *args, **kwargs):
+        # Keep a readable image name even when manager does not set it manually.
+        if self.image and not self.image_name:
+            self.image_name = str(self.image.name).split("/")[-1]
+        super().save(*args, **kwargs)
 
     class Meta:
         ordering = ["-featured", "name"]

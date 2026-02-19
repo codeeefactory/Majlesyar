@@ -31,6 +31,8 @@ interface ApiProduct {
   event_types: string[];
   contents: string[];
   image: string | null;
+  image_alt?: string;
+  image_name?: string;
   featured: boolean;
   available: boolean;
 }
@@ -140,6 +142,8 @@ function mapProduct(apiProduct: ApiProduct): Product {
     eventTypes: apiProduct.event_types || [],
     contents: apiProduct.contents || [],
     image: normalizeImageUrl(apiProduct.image),
+    imageAlt: apiProduct.image_alt || undefined,
+    imageName: apiProduct.image_name || undefined,
     featured: apiProduct.featured,
     available: apiProduct.available,
   };
@@ -237,6 +241,8 @@ export async function createProduct(_product: Omit<Product, "id">): Promise<Prod
     event_types: _product.eventTypes,
     contents: _product.contents,
     image: _product.image || null,
+    image_alt: _product.imageAlt || "",
+    image_name: _product.imageName || "",
     featured: _product.featured,
     available: _product.available,
   };
@@ -258,6 +264,8 @@ export async function updateProduct(_id: string, _updates: Partial<Product>): Pr
   if (_updates.eventTypes !== undefined) payload.event_types = _updates.eventTypes;
   if (_updates.contents !== undefined) payload.contents = _updates.contents;
   if (_updates.image !== undefined) payload.image = _updates.image;
+  if (_updates.imageAlt !== undefined) payload.image_alt = _updates.imageAlt;
+  if (_updates.imageName !== undefined) payload.image_name = _updates.imageName;
   if (_updates.featured !== undefined) payload.featured = _updates.featured;
   if (_updates.available !== undefined) payload.available = _updates.available;
 

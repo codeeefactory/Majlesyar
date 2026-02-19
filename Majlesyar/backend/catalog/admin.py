@@ -13,7 +13,7 @@ class CategoryAdmin(PersianAdminFormMixin, admin.ModelAdmin):
         (
             "اطلاعات دسته بندی",
             {
-                "description": "راهنما: همه فیلدها را به فارسی/استاندارد وارد کنید. نکته: اسلاگ باید یکتا باشد.",
+                "description": "راهنما: نام را واضح بنویسید و اسلاگ را انگلیسی و یکتا ثبت کنید.",
                 "fields": ("name", "slug", "icon"),
             },
         ),
@@ -24,7 +24,7 @@ class CategoryAdmin(PersianAdminFormMixin, admin.ModelAdmin):
 class ProductAdmin(PersianAdminFormMixin, admin.ModelAdmin):
     list_display = ("name", "price", "available", "featured", "updated_at")
     list_filter = ("available", "featured", "categories")
-    search_fields = ("name", "description", "contents")
+    search_fields = ("name", "description", "contents", "image_name", "image_alt")
     autocomplete_fields = ("categories",)
     list_editable = ("available", "featured")
     readonly_fields = ("created_at", "updated_at")
@@ -32,21 +32,21 @@ class ProductAdmin(PersianAdminFormMixin, admin.ModelAdmin):
         (
             "اطلاعات اصلی",
             {
-                "description": "راهنما: نام و توضیحات محصول را واضح وارد کنید.",
-                "fields": ("name", "description", "image"),
+                "description": "راهنما: نام، توضیحات و اطلاعات تصویر را کامل و واضح وارد کنید.",
+                "fields": ("name", "description", "image", "image_name", "image_alt"),
             },
         ),
         (
             "قیمت و وضعیت",
             {
-                "description": "نکته: قیمت به تومان است. برای توافقی خالی بگذارید.",
+                "description": "راهنما: قیمت را به تومان وارد کنید. اگر قیمت توافقی است، آن را خالی بگذارید.",
                 "fields": ("price", "available", "featured"),
             },
         ),
         (
             "دسته بندی و محتوا",
             {
-                "description": "راهنما: دسته بندی ها، نوع مراسم و اقلام داخل پک را کامل ثبت کنید.",
+                "description": "راهنما: دسته بندی، نوع مراسم و اقلام داخل پک را کامل و دقیق ثبت کنید.",
                 "fields": ("categories", "event_types", "contents"),
             },
         ),
@@ -69,7 +69,7 @@ class BuilderItemAdmin(PersianAdminFormMixin, admin.ModelAdmin):
         (
             "اطلاعات آیتم",
             {
-                "description": "راهنما: این آیتم ها برای ساخت پک سفارشی استفاده می شوند.",
+                "description": "راهنما: اطلاعات این آیتم را کامل وارد کنید تا در ساخت پک سفارشی درست نمایش داده شود.",
                 "fields": ("name", "group", "price", "required", "image"),
             },
         ),

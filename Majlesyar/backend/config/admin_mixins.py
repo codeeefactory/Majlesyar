@@ -11,11 +11,16 @@ class PersianAdminFormMixin:
 
     class Media:
         css = {"all": ("admin/css/persian-admin-overrides.css",)}
+        js = ("admin/js/clear-image-input.js",)
 
     placeholder_map = {
         "name": "نام را وارد کنید",
         "slug": "نمونه: economic-pack",
         "description": "توضیحات را وارد کنید",
+        "event_types": 'مثال: ["conference", "memorial"]',
+        "contents": 'مثال: ["آب معدنی", "میوه", "شیرینی"]',
+        "image_name": "مثال: pak-terhim-luxury",
+        "image_alt": "مثال: پک ترحیم کامل با بطری آب و میوه",
         "price": "مثال: 120000",
         "customer_name": "نام کامل مشتری",
         "customer_phone": "09xxxxxxxxx",

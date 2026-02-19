@@ -14,6 +14,8 @@ export interface Product {
   eventTypes: string[];
   contents: string[];
   image: string;
+  imageAlt?: string;
+  imageName?: string;
   featured: boolean;
   available: boolean;
 }

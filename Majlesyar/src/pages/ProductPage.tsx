@@ -126,7 +126,7 @@ export default function ProductPage() {
               {shouldShowImage ? (
                 <img
                   src={product.image}
-                  alt={product.name}
+                  alt={product.imageAlt || product.name}
                   loading="eager"
                   fetchPriority="high"
                   decoding="async"

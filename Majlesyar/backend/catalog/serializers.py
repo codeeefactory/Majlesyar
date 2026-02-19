@@ -13,6 +13,7 @@ class CategorySerializer(serializers.ModelSerializer):
 class ProductSerializer(serializers.ModelSerializer):
     category_ids = serializers.SerializerMethodField()
     image = serializers.SerializerMethodField()
+    image_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -25,6 +26,8 @@ class ProductSerializer(serializers.ModelSerializer):
             "event_types",
             "contents",
             "image",
+            "image_name",
+            "image_alt",
             "featured",
             "available",
         )
@@ -39,6 +42,13 @@ class ProductSerializer(serializers.ModelSerializer):
         if request:
             return request.build_absolute_uri(obj.image.url)
         return obj.image.url
+
+    def get_image_name(self, obj: Product) -> str:
+        if obj.image_name:
+            return obj.image_name
+        if obj.image:
+            return str(obj.image.name).split("/")[-1]
+        return ""
 
 
 class ProductWriteSerializer(serializers.ModelSerializer):
@@ -73,6 +83,8 @@ class ProductWriteSerializer(serializers.ModelSerializer):
             "contents",
             "image",
             "image_file",
+            "image_name",
+            "image_alt",
             "featured",
             "available",
         )
@@ -97,6 +109,12 @@ class ProductWriteSerializer(serializers.ModelSerializer):
 
     def validate_contents(self, value: list[str]) -> list[str]:
         return [item.strip() for item in value if item.strip()]
+
+    def validate_image_name(self, value: str) -> str:
+        return (value or "").strip()
+
+    def validate_image_alt(self, value: str) -> str:
+        return (value or "").strip()
 
     def validate_image_file(self, value):
         max_size_bytes = 5 * 1024 * 1024
@@ -138,6 +156,7 @@ class ProductWriteSerializer(serializers.ModelSerializer):
         elif image_marker is None:
             instance.image.delete(save=False)
             instance.image = None
+            instance.image_name = ""
 
         instance.save()
 

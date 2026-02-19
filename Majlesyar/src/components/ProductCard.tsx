@@ -60,7 +60,7 @@ export function ProductCard({ product }: ProductCardProps) {
           {shouldShowImage ? (
             <img
               src={product.image}
-              alt={product.name}
+              alt={product.imageAlt || product.name}
               loading="lazy"
               decoding="async"
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"

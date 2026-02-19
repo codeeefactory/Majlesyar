@@ -4,6 +4,13 @@
   direction: rtl;
 }
 
+.unfold .field-box label,
+.unfold .form-row label,
+.unfold .aligned label {
+  color: #0f172a !important;
+  font-weight: 600 !important;
+}
+
 .unfold input[type="text"],
 .unfold input[type="number"],
 .unfold input[type="email"],
@@ -14,10 +21,23 @@
 .unfold select {
   width: 100% !important;
   min-height: 2.75rem !important;
-  color: #f8fafc !important;
-  background: #13274a !important;
-  border: 1px solid #35568a !important;
+  color: #0f172a !important;
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
   border-radius: 0.625rem !important;
+}
+
+.unfold input[type="text"]:focus,
+.unfold input[type="number"]:focus,
+.unfold input[type="email"]:focus,
+.unfold input[type="url"]:focus,
+.unfold input[type="password"]:focus,
+.unfold input[type="search"]:focus,
+.unfold textarea:focus,
+.unfold select:focus {
+  border-color: #0ea5e9 !important;
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.18) !important;
+  outline: none !important;
 }
 
 .unfold textarea {
@@ -27,16 +47,16 @@
 .unfold .help,
 .unfold .helptext,
 .unfold .help ul {
-  color: #9ec5ff !important;
-  font-size: 0.8rem !important;
-  line-height: 1.7 !important;
+  color: #475569 !important;
+  font-size: 0.82rem !important;
+  line-height: 1.8 !important;
 }
 
 .unfold .readonly,
 .unfold .fieldBox .readonly {
-  color: #e5edff !important;
-  background: #13274a !important;
-  border: 1px dashed #4d74ae !important;
+  color: #334155 !important;
+  background: #f8fafc !important;
+  border: 1px dashed #94a3b8 !important;
   border-radius: 0.625rem !important;
   display: block;
   min-height: 2.75rem;
@@ -46,4 +66,24 @@
 .unfold .selector,
 .unfold .selector select {
   min-height: 17rem !important;
+}
+
+.unfold .clear-image-selection-btn {
+  align-items: center;
+  background: #e0f2fe;
+  border: 1px solid #7dd3fc;
+  border-radius: 0.5rem;
+  color: #0c4a6e;
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 0.8rem;
+  font-weight: 600;
+  gap: 0.25rem;
+  margin-top: 0.5rem;
+  padding: 0.4rem 0.7rem;
+}
+
+.unfold .clear-image-selection-btn:hover {
+  background: #bae6fd;
+  border-color: #38bdf8;
 }

@@ -12,21 +12,21 @@ class SiteSettingAdmin(PersianAdminFormMixin, admin.ModelAdmin):
         (
             "قوانین سفارش",
             {
-                "description": "راهنما: حداقل تعداد و زمان آماده سازی سفارش را تنظیم کنید.",
+                "description": "راهنما: حداقل تعداد سفارش و حداقل زمان آماده سازی را مشخص کنید.",
                 "fields": ("min_order_qty", "lead_time_hours"),
             },
         ),
         (
             "تنظیمات ارسال",
             {
-                "description": "نکته: مقادیر را به صورت JSON معتبر وارد کنید.",
+                "description": "راهنما: مقادیر را با فرمت JSON معتبر وارد کنید.",
                 "fields": ("allowed_provinces", "delivery_windows"),
             },
         ),
         (
             "تنظیمات پرداخت",
             {
-                "description": "راهنما: روش های پرداخت را با وضعیت فعال/غیرفعال ثبت کنید.",
+                "description": "راهنما: روش های پرداخت را همراه با وضعیت فعال/غیرفعال ثبت کنید.",
                 "fields": ("payment_methods", "updated_at"),
             },
         ),
