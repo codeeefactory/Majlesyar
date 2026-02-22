@@ -9,6 +9,9 @@ class PersianAdminFormMixin:
     Add consistent Persian hints/notes and ensure field widgets are visible/readable.
     """
 
+    required_label_suffix = " (الزامی)"
+    optional_label_suffix = " (اختیاری)"
+
     class Media:
         css = {"all": ("admin/css/persian-admin-overrides.css",)}
         js = ("admin/js/clear-image-input.js",)
@@ -62,17 +65,40 @@ class PersianAdminFormMixin:
             return f"{label} را وارد کنید"
         return ""
 
+    def _label_with_required_state(self, label: str, required: bool) -> str:
+        clean_label = (label or "").strip()
+        for suffix in (self.required_label_suffix, self.optional_label_suffix):
+            if clean_label.endswith(suffix):
+                clean_label = clean_label[: -len(suffix)].rstrip()
+        return f"{clean_label}{self.required_label_suffix if required else self.optional_label_suffix}"
+
+    def _help_text_with_required_state(self, help_text: str, required: bool) -> str:
+        state_note = "این فیلد الزامی است." if required else "این فیلد اختیاری است."
+        clean_help_text = (help_text or "").strip()
+        if not clean_help_text:
+            return f"{state_note}"
+        if clean_help_text.startswith("این فیلد الزامی است.") or clean_help_text.startswith(
+            "این فیلد اختیاری است."
+        ):
+            return clean_help_text
+        return f"{state_note} {clean_help_text}"
+
     def formfield_for_dbfield(self, db_field, request, **kwargs):
         formfield = super().formfield_for_dbfield(db_field, request, **kwargs)
         if formfield is None:
             return formfield
 
         widget = formfield.widget
+        is_required = bool(formfield.required)
         label = formfield.label or str(db_field.verbose_name)
+        base_label = (label or "").strip()
+        formfield.label = self._label_with_required_state(base_label, is_required)
 
         if hasattr(widget, "attrs"):
             widget.attrs.setdefault("dir", "rtl")
             widget.attrs.setdefault("style", "width: 100%;")
+            widget.attrs["aria-required"] = "true" if is_required else "false"
+            widget.attrs["data-field-required"] = "true" if is_required else "false"
 
             if isinstance(
                 widget,
@@ -84,7 +110,7 @@ class PersianAdminFormMixin:
                     forms.EmailInput,
                 ),
             ):
-                placeholder = self._build_placeholder(db_field, label)
+                placeholder = self._build_placeholder(db_field, base_label)
                 if placeholder:
                     widget.attrs.setdefault("placeholder", placeholder)
 
@@ -93,8 +119,9 @@ class PersianAdminFormMixin:
         if explicit_help_text:
             formfield.help_text = explicit_help_text
         elif not help_text:
-            formfield.help_text = f"نکته: مقدار «{label}» را دقیق وارد کنید."
+            formfield.help_text = f"نکته: مقدار «{base_label}» را دقیق وارد کنید."
         elif "نکته:" not in help_text:
             formfield.help_text = f"{help_text} | نکته: قبل از ذخیره، مقدار این فیلد را بررسی کنید."
+        formfield.help_text = self._help_text_with_required_state(formfield.help_text, is_required)
 
         return formfield

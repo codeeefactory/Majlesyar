@@ -30,6 +30,10 @@ def admin_overrides_stylesheet(_request) -> str:
     return static_url("admin/css/persian-admin-overrides.css")
 
 
+def admin_overrides_script(_request) -> str:
+    return static_url("admin/js/persian-admin-effects.js")
+
+
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev-insecure-secret-key-change-me")
 DEBUG = env_bool("DJANGO_DEBUG", True)
 ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,testserver")
@@ -197,6 +201,9 @@ UNFOLD = {
     "SHOW_VIEW_ON_SITE": False,
     "STYLES": [
         admin_overrides_stylesheet,
+    ],
+    "SCRIPTS": [
+        admin_overrides_script,
     ],
     "COLORS": {
         "base": {
