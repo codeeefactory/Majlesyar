@@ -11,6 +11,8 @@
   --brand-cream-200: #f3ebdd;
   --brand-border: #e3d6c2;
   --brand-shadow: 0 12px 26px rgba(45, 36, 24, 0.08);
+  --admin-safe-top: env(safe-area-inset-top, 0px);
+  --admin-safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 .unfold,
@@ -59,6 +61,10 @@
 .unfold #main > * {
   position: relative;
   z-index: 1;
+}
+
+.unfold #page {
+  min-height: calc(var(--app-vh, 1vh) * 100);
 }
 
 .unfold #main > div[class*="border-b"] {
@@ -316,6 +322,52 @@
   border: 1px solid #e3d6c2 !important;
 }
 
+.unfold .results {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
+.unfold .results table {
+  min-width: 100%;
+}
+
+.unfold .results.has-overflow {
+  position: relative;
+}
+
+.unfold .results.has-overflow::before,
+.unfold .results.has-overflow::after {
+  content: "";
+  pointer-events: none;
+  position: sticky;
+  top: 0;
+  bottom: 0;
+  width: 16px;
+  display: block;
+  z-index: 1;
+}
+
+.unfold .results.has-overflow::before {
+  float: right;
+  right: 0;
+  background: linear-gradient(90deg, rgba(250, 246, 239, 0), rgba(250, 246, 239, 0.96));
+}
+
+.unfold .results.has-overflow::after {
+  float: left;
+  left: 0;
+  background: linear-gradient(270deg, rgba(250, 246, 239, 0), rgba(250, 246, 239, 0.96));
+}
+
+.unfold .results.scroll-start::before {
+  opacity: 0;
+}
+
+.unfold .results.scroll-end::after {
+  opacity: 0;
+}
+
 .unfold #changelist thead th,
 .unfold #result_list thead th {
   background: linear-gradient(180deg, #f8f3e8 0%, #f3ead8 100%) !important;
@@ -376,6 +428,175 @@
   transform: translateY(-1px);
   border-color: #67cae7;
   box-shadow: 0 8px 16px rgba(0, 120, 151, 0.15);
+}
+
+@media (max-width: 1279px) {
+  .unfold #main > div[class*="border-b"] {
+    position: sticky;
+    top: 0;
+    z-index: 52;
+    padding-top: max(0px, var(--admin-safe-top));
+  }
+
+  .unfold #nav-sidebar {
+    width: min(88vw, 22rem) !important;
+    box-shadow: 0 20px 36px rgba(33, 29, 22, 0.24);
+  }
+
+  .unfold #changelist .result-list-wrapper {
+    gap: 0.85rem !important;
+    padding-inline: 0.5rem !important;
+  }
+}
+
+@media (max-width: 1024px) {
+  .unfold #content,
+  .unfold #content-main,
+  .unfold #changelist,
+  .unfold #toolbar {
+    min-width: 0;
+  }
+
+  .unfold #content-main > .flex,
+  .unfold #content-main .flex.flex-col.gap-6 {
+    gap: 0.8rem !important;
+  }
+
+  .unfold #changelist .result-list-wrapper {
+    flex-direction: column !important;
+  }
+
+  .unfold #toolbar form > div {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .unfold fieldset.module,
+  .unfold .module.aligned,
+  .unfold .inline-group,
+  .unfold .selector {
+    border-radius: 0.85rem !important;
+    margin-bottom: 0.6rem;
+  }
+
+  .unfold input[type="text"],
+  .unfold input[type="number"],
+  .unfold input[type="email"],
+  .unfold input[type="url"],
+  .unfold input[type="password"],
+  .unfold input[type="search"],
+  .unfold textarea,
+  .unfold select {
+    min-height: 2.75rem !important;
+    font-size: 0.95rem;
+  }
+
+  .unfold #submit-row {
+    position: sticky !important;
+    bottom: max(0.35rem, var(--admin-safe-bottom));
+    z-index: 56;
+    margin-top: 0.8rem;
+  }
+
+  .unfold #submit-row > div {
+    margin-inline: 0.2rem;
+    border: 1px solid #e3d5c0;
+    border-radius: 0.95rem !important;
+    background: rgba(255, 255, 255, 0.95) !important;
+    box-shadow: 0 12px 24px rgba(29, 38, 40, 0.12);
+    padding-bottom: calc(0.65rem + var(--admin-safe-bottom));
+  }
+
+  .unfold #submit-row button,
+  .unfold #submit-row a {
+    min-height: 2.75rem;
+    font-size: 0.92rem;
+  }
+
+  .unfold #changelist-filter > div:last-child {
+    width: min(90vw, 22rem) !important;
+    margin: 0.5rem !important;
+    border-radius: 0.95rem !important;
+  }
+
+  .unfold #changelist-actions .group {
+    flex-wrap: wrap;
+    row-gap: 0.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .unfold #main::before,
+  .unfold #main::after {
+    opacity: 0.55;
+  }
+
+  .unfold #main > div[class*="border-b"] .h-16 {
+    height: 3.55rem !important;
+    padding-top: 0.35rem !important;
+    padding-bottom: 0.35rem !important;
+  }
+
+  .unfold .field-box label,
+  .unfold .form-row label,
+  .unfold .aligned label {
+    font-size: 0.88rem !important;
+    line-height: 1.55 !important;
+  }
+
+  .unfold .help,
+  .unfold .helptext {
+    font-size: 0.79rem !important;
+    line-height: 1.75 !important;
+    padding: 0.42rem 0.58rem;
+  }
+
+  .unfold textarea {
+    min-height: 7rem !important;
+  }
+
+  .unfold #result_list td,
+  .unfold #result_list th {
+    padding-inline: 0.55rem !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .unfold #main > div[class*="border-b"] {
+    backdrop-filter: blur(8px);
+  }
+
+  .unfold #content-main {
+    font-size: 0.91rem;
+  }
+
+  .unfold #submit-row > div {
+    margin-inline: 0;
+    border-radius: 0.85rem !important;
+  }
+
+  .unfold #submit-row .container {
+    gap: 0.45rem !important;
+  }
+
+  .unfold button[type="submit"],
+  .unfold input[type="submit"],
+  .unfold a[class*="bg-primary-600"] {
+    width: 100%;
+  }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .unfold fieldset.module:hover,
+  .unfold .module.aligned:hover,
+  .unfold .inline-group:hover,
+  .unfold .selector:hover {
+    transform: none;
+  }
+
+  .unfold #nav-sidebar-apps a:hover {
+    transform: none;
+  }
 }
 
 @keyframes ripple-burst {

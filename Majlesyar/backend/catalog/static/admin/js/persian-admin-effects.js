@@ -1,5 +1,64 @@
 (() => {
   const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let resizeTimer = null;
+
+  function setViewportHeightVar() {
+    const vh = window.innerHeight * 0.01;
+    document.documentElement.style.setProperty("--app-vh", `${vh}px`);
+  }
+
+  function applyResponsiveClasses() {
+    const adminRoot = document.querySelector(".unfold");
+    if (!adminRoot) return;
+
+    const width = window.innerWidth;
+    adminRoot.classList.toggle("admin-mobile-app", width <= 768);
+    adminRoot.classList.toggle("admin-tablet-app", width > 768 && width <= 1279);
+  }
+
+  function updateScrollableState(wrapper) {
+    if (!wrapper) return;
+
+    const hasOverflow = wrapper.scrollWidth - wrapper.clientWidth > 6;
+    wrapper.classList.toggle("has-overflow", hasOverflow);
+    if (!hasOverflow) {
+      wrapper.classList.remove("scroll-start", "scroll-end");
+      return;
+    }
+
+    const atStart = wrapper.scrollLeft <= 3;
+    const atEnd = wrapper.scrollLeft + wrapper.clientWidth >= wrapper.scrollWidth - 3;
+    wrapper.classList.toggle("scroll-start", atStart);
+    wrapper.classList.toggle("scroll-end", atEnd);
+  }
+
+  function enhanceScrollableResults() {
+    const wrappers = document.querySelectorAll(".unfold .results");
+    wrappers.forEach((wrapper) => {
+      updateScrollableState(wrapper);
+      if (wrapper.dataset.scrollBound === "1") return;
+
+      wrapper.dataset.scrollBound = "1";
+      wrapper.addEventListener("scroll", () => updateScrollableState(wrapper), { passive: true });
+    });
+  }
+
+  function bindResponsiveWindowEvents() {
+    if (window.__adminResponsiveEventsBound === true) return;
+    window.__adminResponsiveEventsBound = true;
+
+    const onResize = () => {
+      if (resizeTimer) clearTimeout(resizeTimer);
+      resizeTimer = window.setTimeout(() => {
+        setViewportHeightVar();
+        applyResponsiveClasses();
+        enhanceScrollableResults();
+      }, 120);
+    };
+
+    window.addEventListener("resize", onResize, { passive: true });
+    window.addEventListener("orientationchange", onResize, { passive: true });
+  }
 
   function revealCards() {
     const cards = document.querySelectorAll(
@@ -87,6 +146,10 @@
   }
 
   function initAdminEffects() {
+    setViewportHeightVar();
+    applyResponsiveClasses();
+    enhanceScrollableResults();
+    bindResponsiveWindowEvents();
     revealCards();
     enhanceActionButtons();
     markFocusedFields();
