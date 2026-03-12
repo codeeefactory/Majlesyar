@@ -11,23 +11,19 @@ MEMORY_LIMIT="${MEMORY_LIMIT:-2g}"
 MEMORY_SWAP_LIMIT="${MEMORY_SWAP_LIMIT:-2g}"
 DOMAIN="${DOMAIN:-}"
 PUBLIC_URL="${PUBLIC_URL:-}"
-APT_USE_IRAN_MIRROR="${APT_USE_IRAN_MIRROR:-1}"
+APT_USE_IRAN_MIRROR="${APT_USE_IRAN_MIRROR:-0}"   # ← changed from 1 to 0
 IRAN_UBUNTU_MIRROR="${IRAN_UBUNTU_MIRROR:-https://repo.linuxmirrors.ir/ubuntu}"
 IRAN_DEBIAN_MIRROR="${IRAN_DEBIAN_MIRROR:-https://archive.debian.petiak.ir/debian}"
-REPO_URL="${REPO_URL:-https://github.com/codeeefactory/Majlesyar.git}"
-REPO_REF="${REPO_REF:-main}"
-BOOTSTRAP_DIR="${BOOTSTRAP_DIR:-/opt/majlesyar-src}"
-PROJECT_SUBDIR="${PROJECT_SUBDIR:-Majlesyar}"
 
 ADMIN_USERNAME="${ADMIN_USERNAME:-}"
 ADMIN_EMAIL="${ADMIN_EMAIL:-admin@example.com}"
 ADMIN_PASSWORD="${ADMIN_PASSWORD:-}"
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DEPLOY_DIR=""
-ENV_FILE=""
-DB_FILE=""
-MEDIA_DIR=""
+DEPLOY_DIR="${ROOT_DIR}/.deploy"
+ENV_FILE="${DEPLOY_DIR}/.env.production"
+DB_FILE="${DEPLOY_DIR}/db.sqlite3"
+MEDIA_DIR="${DEPLOY_DIR}/media"
 
 log() {
   printf '[startup] %s\n' "$*"
@@ -54,67 +50,7 @@ require_linux() {
   [[ "${os}" == "Linux" ]] || fail "This script must run on Linux (detected: ${os})."
 }
 
-set_runtime_paths() {
-  DEPLOY_DIR="${ROOT_DIR}/.deploy"
-  ENV_FILE="${DEPLOY_DIR}/.env.production"
-  DB_FILE="${DEPLOY_DIR}/db.sqlite3"
-  MEDIA_DIR="${DEPLOY_DIR}/media"
-}
-
-ensure_git() {
-  if command -v git >/dev/null 2>&1; then
-    return
-  fi
-
-  if ! command -v apt-get >/dev/null 2>&1; then
-    fail "git is required but apt-get is unavailable on this system."
-  fi
-
-  log "git not found. Installing git..."
-  run_root apt-get update
-  run_root apt-get install -y git ca-certificates
-}
-
-is_repo_layout() {
-  [[ -f "${ROOT_DIR}/Dockerfile" && -d "${ROOT_DIR}/backend" ]]
-}
-
-bootstrap_repo_if_needed() {
-  is_repo_layout && return
-
-  [[ -n "${REPO_URL}" ]] || fail \
-    "Dockerfile/backend not found in ${ROOT_DIR}. For first-boot startup usage set REPO_URL (and optionally PROJECT_SUBDIR/REPO_REF)."
-
-  ensure_git
-  log "Project files not found in script directory. Bootstrapping from ${REPO_URL} ..."
-
-  run_root mkdir -p "$(dirname "${BOOTSTRAP_DIR}")"
-
-  if [[ -d "${BOOTSTRAP_DIR}/.git" ]]; then
-    run_root git -C "${BOOTSTRAP_DIR}" fetch --all --tags
-    run_root git -C "${BOOTSTRAP_DIR}" checkout "${REPO_REF}"
-    run_root git -C "${BOOTSTRAP_DIR}" pull --ff-only origin "${REPO_REF}"
-  else
-    run_root rm -rf "${BOOTSTRAP_DIR}"
-    run_root git clone --depth 1 --branch "${REPO_REF}" "${REPO_URL}" "${BOOTSTRAP_DIR}"
-  fi
-
-  local candidate_root="${BOOTSTRAP_DIR}"
-  if [[ -n "${PROJECT_SUBDIR}" ]]; then
-    candidate_root="${BOOTSTRAP_DIR}/${PROJECT_SUBDIR}"
-  fi
-
-  [[ -f "${candidate_root}/Dockerfile" ]] || fail \
-    "Dockerfile not found after clone. Checked: ${candidate_root}/Dockerfile"
-  [[ -d "${candidate_root}/backend" ]] || fail \
-    "backend/ not found after clone. Checked: ${candidate_root}/backend"
-
-  ROOT_DIR="${candidate_root}"
-  log "Using project directory: ${ROOT_DIR}"
-}
-
 ensure_repo_layout() {
-  bootstrap_repo_if_needed
   [[ -f "${ROOT_DIR}/Dockerfile" ]] || fail "Dockerfile not found in ${ROOT_DIR}."
   [[ -d "${ROOT_DIR}/backend" ]] || fail "backend/ not found in ${ROOT_DIR}."
 }
@@ -324,9 +260,8 @@ print_result() {
 
 main() {
   require_linux
-  configure_apt_iran_mirrors
   ensure_repo_layout
-  set_runtime_paths
+  configure_apt_iran_mirrors
   ensure_docker
   write_env_file
   build_image
