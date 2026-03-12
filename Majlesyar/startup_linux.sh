@@ -11,9 +11,6 @@ MEMORY_LIMIT="${MEMORY_LIMIT:-2g}"
 MEMORY_SWAP_LIMIT="${MEMORY_SWAP_LIMIT:-2g}"
 DOMAIN="${DOMAIN:-}"
 PUBLIC_URL="${PUBLIC_URL:-}"
-APT_USE_IRAN_MIRROR="${APT_USE_IRAN_MIRROR:-0}"   # ← changed from 1 to 0
-IRAN_UBUNTU_MIRROR="${IRAN_UBUNTU_MIRROR:-https://repo.linuxmirrors.ir/ubuntu}"
-IRAN_DEBIAN_MIRROR="${IRAN_DEBIAN_MIRROR:-https://archive.debian.petiak.ir/debian}"
 
 ADMIN_USERNAME="${ADMIN_USERNAME:-}"
 ADMIN_EMAIL="${ADMIN_EMAIL:-admin@example.com}"
@@ -53,66 +50,6 @@ require_linux() {
 ensure_repo_layout() {
   [[ -f "${ROOT_DIR}/Dockerfile" ]] || fail "Dockerfile not found in ${ROOT_DIR}."
   [[ -d "${ROOT_DIR}/backend" ]] || fail "backend/ not found in ${ROOT_DIR}."
-}
-
-configure_apt_iran_mirrors() {
-  [[ "${APT_USE_IRAN_MIRROR}" == "1" ]] || {
-    log "Skipping Iranian APT mirrors (APT_USE_IRAN_MIRROR=${APT_USE_IRAN_MIRROR})."
-    return
-  }
-
-  if ! command -v apt-get >/dev/null 2>&1; then
-    log "APT not found; skipping mirror configuration."
-    return
-  fi
-
-  if [[ ! -f /etc/os-release ]]; then
-    log "/etc/os-release not found; skipping mirror configuration."
-    return
-  fi
-
-  # shellcheck disable=SC1091
-  . /etc/os-release
-  local distro="${ID:-}"
-  local backup_dir="/etc/apt/backup-startup-$(date +%Y%m%d%H%M%S)"
-  local source_file
-
-  run_root mkdir -p "${backup_dir}"
-
-  case "${distro}" in
-    ubuntu)
-      log "Switching Ubuntu APT repos to Iranian mirror: ${IRAN_UBUNTU_MIRROR}"
-      for source_file in /etc/apt/sources.list /etc/apt/sources.list.d/*.list /etc/apt/sources.list.d/*.sources; do
-        [[ -f "${source_file}" ]] || continue
-        run_root cp "${source_file}" "${backup_dir}/"
-        run_root sed -i -E \
-          -e "s#https?://([a-z]{2}\\.)?archive\\.ubuntu\\.com/ubuntu/?#${IRAN_UBUNTU_MIRROR}/#g" \
-          -e "s#https?://security\\.ubuntu\\.com/ubuntu/?#${IRAN_UBUNTU_MIRROR}/#g" \
-          -e "s#https?://ir\\.archive\\.ubuntu\\.com/ubuntu/?#${IRAN_UBUNTU_MIRROR}/#g" \
-          -e "s#https?://ports\\.ubuntu\\.com/ubuntu-ports/?#${IRAN_UBUNTU_MIRROR}/#g" \
-          "${source_file}"
-      done
-      ;;
-    debian)
-      log "Switching Debian APT repos to Iranian mirror: ${IRAN_DEBIAN_MIRROR}"
-      for source_file in /etc/apt/sources.list /etc/apt/sources.list.d/*.list /etc/apt/sources.list.d/*.sources; do
-        [[ -f "${source_file}" ]] || continue
-        run_root cp "${source_file}" "${backup_dir}/"
-        run_root sed -i -E \
-          -e "s#https?://deb\\.debian\\.org/debian/?#${IRAN_DEBIAN_MIRROR}/#g" \
-          -e "s#https?://ftp\\.debian\\.org/debian/?#${IRAN_DEBIAN_MIRROR}/#g" \
-          -e "s#https?://httpredir\\.debian\\.org/debian/?#${IRAN_DEBIAN_MIRROR}/#g" \
-          "${source_file}"
-      done
-      ;;
-    *)
-      log "Distro '${distro}' not targeted for automatic APT mirror rewrite."
-      return
-      ;;
-  esac
-
-  log "APT mirror backups are stored in ${backup_dir}"
-  run_root apt-get update
 }
 
 ensure_docker() {
@@ -261,7 +198,6 @@ print_result() {
 main() {
   require_linux
   ensure_repo_layout
-  configure_apt_iran_mirrors
   ensure_docker
   write_env_file
   build_image
