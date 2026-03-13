@@ -11,10 +11,7 @@ MEMORY_LIMIT="${MEMORY_LIMIT:-2g}"
 MEMORY_SWAP_LIMIT="${MEMORY_SWAP_LIMIT:-2g}"
 DOMAIN="${DOMAIN:-}"
 PUBLIC_URL="${PUBLIC_URL:-}"
-APT_USE_IRAN_MIRROR="${APT_USE_IRAN_MIRAN_MIRROR:-1}"
-# default mirrors are the standard global Ubuntu/Debian repositories
-IRAN_UBUNTU_MIRROR="${IRAN_UBUNTU_MIRROR:-https://archive.ubuntu.com/ubuntu}"
-IRAN_DEBIAN_MIRROR="${IRAN_DEBIAN_MIRROR:-https://deb.debian.org/debian}"
+APT_USE_IRAN_MIRROR="${APT_USE_IRAN_MIRROR:-0}"
 REPO_URL="${REPO_URL:-https://github.com/codeeefactory/Majlesyar.git}"
 REPO_REF="${REPO_REF:-main}"
 BOOTSTRAP_DIR="${BOOTSTRAP_DIR:-/opt/majlesyar-src}"
@@ -127,56 +124,11 @@ configure_apt_iran_mirrors() {
   }
 
   if ! command -v apt-get >/dev/null 2>&1; then
-    log "APT not found; skipping mirror configuration."
+    log "APT not found; skipping update."
     return
   fi
 
-  if [[ ! -f /etc/os-release ]]; then
-    log "/etc/os-release not found; skipping mirror configuration."
-    return
-  fi
-
-  # shellcheck disable=SC1091
-  . /etc/os-release
-  local distro="${ID:-}"
-  local backup_dir="/etc/apt/backup-startup-$(date +%Y%m%d%H%M%S)"
-  local source_file
-
-  run_root mkdir -p "${backup_dir}"
-
-  case "${distro}" in
-    ubuntu)
-      log "Switching Ubuntu APT repos to Iranian mirror: ${IRAN_UBUNTU_MIRROR}"
-      for source_file in /etc/apt/sources.list /etc/apt/sources.list.d/*.list /etc/apt/sources.list.d/*.sources; do
-        [[ -f "${source_file}" ]] || continue
-        run_root cp "${source_file}" "${backup_dir}/"
-        run_root sed -i -E \
-          -e "s#https?://([a-z]{2}\\.)?archive\\.ubuntu\\.com/ubuntu/?#${IRAN_UBUNTU_MIRROR}/#g" \
-          -e "s#https?://security\\.ubuntu\\.com/ubuntu/?#${IRAN_UBUNTU_MIRROR}/#g" \
-          -e "s#https?://ir\\.archive\\.ubuntu\\.com/ubuntu/?#${IRAN_UBUNTU_MIRROR}/#g" \
-          -e "s#https?://ports\\.ubuntu\\.com/ubuntu-ports/?#${IRAN_UBUNTU_MIRROR}/#g" \
-          "${source_file}"
-      done
-      ;;
-    debian)
-      log "Switching Debian APT repos to Iranian mirror: ${IRAN_DEBIAN_MIRROR}"
-      for source_file in /etc/apt/sources.list /etc/apt/sources.list.d/*.list /etc/apt/sources.list.d/*.sources; do
-        [[ -f "${source_file}" ]] || continue
-        run_root cp "${source_file}" "${backup_dir}/"
-        run_root sed -i -E \
-          -e "s#https?://deb\\.debian\\.org/debian/?#${IRAN_DEBIAN_MIRROR}/#g" \
-          -e "s#https?://ftp\\.debian\\.org/debian/?#${IRAN_DEBIAN_MIRROR}/#g" \
-          -e "s#https?://httpredir\\.debian\\.org/debian/?#${IRAN_DEBIAN_MIRROR}/#g" \
-          "${source_file}"
-      done
-      ;;
-    *)
-      log "Distro '${distro}' not targeted for automatic APT mirror rewrite."
-      return
-      ;;
-  esac
-
-  log "APT mirror backups are stored in ${backup_dir}"
+  log "Updating APT..."
   run_root apt-get update
 }
 
