@@ -36,7 +36,7 @@ def admin_overrides_script(_request) -> str:
 
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev-insecure-secret-key-change-me")
 DEBUG = env_bool("DJANGO_DEBUG", True)
-ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,testserver")
+ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,testserver,https://majlesyar.com")
 
 
 INSTALLED_APPS = [
@@ -170,7 +170,7 @@ SPECTACULAR_SETTINGS = {
 
 CORS_ALLOWED_ORIGINS = env_list(
     "CORS_ALLOWED_ORIGINS",
-    "http://localhost:8080,http://127.0.0.1:8080,http://localhost:5173,http://127.0.0.1:5173",
+    "http://localhost:8080,http://127.0.0.1:8080,http://localhost:5173,http://127.0.0.1:5173,https://majlesyar.com",
 )
 CORS_ALLOW_CREDENTIALS = True
 
@@ -180,6 +180,7 @@ CSRF_TRUSTED_ORIGINS = env_list(
         "http://localhost:8080,http://127.0.0.1:8080,"
         "http://localhost:5173,http://127.0.0.1:5173,"
         "https://packetop.runflare.run,https://*.runflare.run"
+        "https://majlesyar.com"
     ),
 )
 
