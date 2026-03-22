@@ -25,7 +25,7 @@ class HttpError extends Error {
   }
 }
 
-function buildUrl(path: string): string {
+export function buildUrl(path: string): string {
   if (path.startsWith("http://") || path.startsWith("https://")) return path;
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
 

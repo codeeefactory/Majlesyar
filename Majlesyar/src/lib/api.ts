@@ -7,10 +7,14 @@ import type {
   Settings,
 } from "@/types/domain";
 import {
+  buildUrl,
   clearAuthTokens,
+  extractErrorMessage,
   getAuthTokens,
   hasValidAccessToken,
+  HttpError,
   isTokenExpired,
+  parseResponseBody,
   requestJson,
   setAuthTokens,
 } from "@/lib/http";
@@ -235,55 +239,86 @@ export async function getProduct(identifier: string): Promise<Product | null> {
   }
 }
 
-export async function createProduct(_product: Omit<Product, "id">): Promise<Product> {
-  const payload = {
-    name: _product.name,
-    url_slug: _product.urlSlug || "",
-    description: _product.description,
-    price: _product.price,
-    category_ids: _product.categoryIds,
-    event_types: _product.eventTypes,
-    contents: _product.contents,
-    image: _product.image || null,
-    image_alt: _product.imageAlt || "",
-    image_name: _product.imageName || "",
-    featured: _product.featured,
-    available: _product.available,
-  };
+export async function createProduct(product: Omit<Product, "id"> & { imageFile?: File }): Promise<Product> {
+  const formData = new FormData();
+  formData.append("name", product.name);
+  formData.append("url_slug", product.urlSlug || "");
+  formData.append("description", product.description);
+  formData.append("price", product.price?.toString() || "");
+  product.categoryIds.forEach(id => formData.append("category_ids", id));
+  product.eventTypes.forEach(type => formData.append("event_types", type));
+  product.contents.forEach(content => formData.append("contents", content));
+  formData.append("image_alt", product.imageAlt || "");
+  formData.append("image_name", product.imageName || "");
+  formData.append("featured", product.featured.toString());
+  formData.append("available", product.available.toString());
 
-  const created = await requestJson<ApiProduct>("/api/v1/admin/products/", {
+  if (product.imageFile) {
+    formData.append("image_file", product.imageFile);
+  } else if (product.image) {
+    formData.append("image", product.image);
+  }
+
+  const response = await fetch(buildUrl("/api/v1/admin/products/"), {
     method: "POST",
-    auth: true,
-    body: payload,
+    headers: {
+      Authorization: `Bearer ${getAuthTokens()?.access}`,
+    },
+    body: formData,
   });
+
+  if (!response.ok) {
+    const error = await parseResponseBody(response);
+    throw new HttpError(
+      extractErrorMessage(error, `Request failed with status ${response.status}`),
+      response.status,
+      error,
+    );
+  }
+
+  const created = await response.json();
   return mapProduct(created);
 }
 
-export async function updateProduct(_id: string, _updates: Partial<Product>): Promise<Product | null> {
-  const payload: Record<string, unknown> = {};
-  if (_updates.name !== undefined) payload.name = _updates.name;
-  if (_updates.urlSlug !== undefined) payload.url_slug = _updates.urlSlug;
-  if (_updates.description !== undefined) payload.description = _updates.description;
-  if (_updates.price !== undefined) payload.price = _updates.price;
-  if (_updates.categoryIds !== undefined) payload.category_ids = _updates.categoryIds;
-  if (_updates.eventTypes !== undefined) payload.event_types = _updates.eventTypes;
-  if (_updates.contents !== undefined) payload.contents = _updates.contents;
-  if (_updates.image !== undefined) payload.image = _updates.image;
-  if (_updates.imageAlt !== undefined) payload.image_alt = _updates.imageAlt;
-  if (_updates.imageName !== undefined) payload.image_name = _updates.imageName;
-  if (_updates.featured !== undefined) payload.featured = _updates.featured;
-  if (_updates.available !== undefined) payload.available = _updates.available;
+export async function updateProduct(id: string, updates: Partial<Product> & { imageFile?: File }): Promise<Product | null> {
+  const formData = new FormData();
+  if (updates.name !== undefined) formData.append("name", updates.name);
+  if (updates.urlSlug !== undefined) formData.append("url_slug", updates.urlSlug);
+  if (updates.description !== undefined) formData.append("description", updates.description);
+  if (updates.price !== undefined) formData.append("price", updates.price?.toString() || "");
+  if (updates.categoryIds !== undefined) updates.categoryIds.forEach(id => formData.append("category_ids", id));
+  if (updates.eventTypes !== undefined) updates.eventTypes.forEach(type => formData.append("event_types", type));
+  if (updates.contents !== undefined) updates.contents.forEach(content => formData.append("contents", content));
+  if (updates.image !== undefined) formData.append("image", updates.image || "");
+  if (updates.imageAlt !== undefined) formData.append("image_alt", updates.imageAlt || "");
+  if (updates.imageName !== undefined) formData.append("image_name", updates.imageName || "");
+  if (updates.featured !== undefined) formData.append("featured", updates.featured.toString());
+  if (updates.available !== undefined) formData.append("available", updates.available.toString());
 
-  try {
-    const updated = await requestJson<ApiProduct>(`/api/v1/admin/products/${_id}/`, {
-      method: "PATCH",
-      auth: true,
-      body: payload,
-    });
-    return mapProduct(updated);
-  } catch {
-    return null;
+  if (updates.imageFile) {
+    formData.append("image_file", updates.imageFile);
   }
+
+  const response = await fetch(buildUrl(`/api/v1/admin/products/${id}/`), {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${getAuthTokens()?.access}`,
+    },
+    body: formData,
+  });
+
+  if (!response.ok) {
+    if (response.status === 404) return null;
+    const error = await parseResponseBody(response);
+    throw new HttpError(
+      extractErrorMessage(error, `Request failed with status ${response.status}`),
+      response.status,
+      error,
+    );
+  }
+
+  const updated = await response.json();
+  return mapProduct(updated);
 }
 
 export async function deleteProduct(_id: string): Promise<boolean> {
