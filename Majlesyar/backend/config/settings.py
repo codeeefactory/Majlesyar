@@ -139,7 +139,7 @@ STATICFILES_DIRS = [FRONTEND_DIST_DIR] if FRONTEND_DIST_DIR.exists() else []
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 WHITENOISE_IMMUTABLE_FILE_TEST = is_vite_immutable_file
 MEDIA_URL = os.getenv("DJANGO_MEDIA_URL", "/media/")
-MEDIA_ROOT = Path(os.getenv("DJANGO_MEDIA_ROOT", str(BASE_DIR / "media")))
+MEDIA_ROOT = "/var/lib/majlesyar/media"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
