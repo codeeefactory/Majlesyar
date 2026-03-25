@@ -1,102 +1,34 @@
 import { AppShell } from '@/components/layout/AppShell';
 import { SEO } from '@/components/SEO';
-import { Package, Users, Award, Truck, Heart, Star } from 'lucide-react';
+
+const ABOUT_PARAGRAPHS = [
+  'مجلس‌یار با هدف ارائه خدمات کامل و باکیفیت برای انواع مراسم و مجالس راه‌اندازی شده است. ما در مجلس‌یار تلاش می‌کنیم تا تمام نیازهای پذیرایی و بخشی از خدمات مراسم را در یک مجموعه حرفه‌ای، با کیفیت بالا و قیمت مناسب در اختیار مشتریان قرار دهیم. باور ما این است که برگزاری یک مراسم خوب نیازمند خدماتی منظم، باکیفیت و قابل اعتماد است.',
+  'حوزه فعالیت مجلس‌یار بسیار گسترده است. ما انواع غذاها را برای مجالس در تعداد بالا آماده می‌کنیم؛ از غذاهای سنتی و اصیل ایرانی گرفته تا انواع فست‌فود و فینگرفود. علاوه بر غذا، خدمات متنوع دیگری نیز ارائه می‌دهیم تا مشتریان بتوانند بخش زیادی از نیازهای مراسم خود را از یک مجموعه تهیه کنند. از جمله این خدمات می‌توان به گل‌آرایی مراسم، آماده‌سازی پک‌های مناسب برای مراسم ترحیم و تولد، تهیه میوه‌های اسلایس‌شده و انواع دسر اشاره کرد.',
+  'یکی از ویژگی‌های مهم مجلس‌یار، امکان شخصی‌سازی کامل خدمات است. ما این امکان را فراهم کرده‌ایم که هر مشتری بتواند بر اساس سلیقه، نیاز و نوع مراسم خود سفارش اختصاصی ثبت کند. هدف ما این است که دقیقاً همان چیزی را آماده کنیم که مشتری در ذهن دارد؛ از نوع غذا و نحوه بسته‌بندی گرفته تا جزئیات پذیرایی و پک‌ها.',
+  'ایده راه‌اندازی مجلس‌یار از تجربه سال‌ها فعالیت در حوزه تهیه غذا و کترینگ شکل گرفته است. پیش از این با نام «تهیه غذای ضیا» در منطقه امیرآباد تهران فعالیت داشتیم و تجربه همکاری با تالارها و مجموعه‌های مختلف از جمله تالار ملودی را در کارنامه خود داریم. همچنین در دوره فعالیت کترینگ، افتخار همکاری با شرکت‌هایی مانند درمان‌یاب‌دارو، فناوا و همچنین مساجد، مدارس و بسیاری از مجالس و مراسمات مختلف را داشته‌ایم. این تجربه ارزشمند باعث شده است که با نیازها و استانداردهای پذیرایی در مقیاس بزرگ به خوبی آشنا باشیم.',
+  'هرچند مجلس‌یار به عنوان یک برند جدید به‌تازگی راه‌اندازی شده است، اما پشتوانه آن سال‌ها تجربه در حوزه تهیه غذا و خدمات مجالس است. در حال حاضر تمرکز ما بر ارائه پک‌های مراسم و حلوا است، اما برنامه ما این است که به‌زودی دامنه خدمات و محصولات را دوباره گسترش دهیم و حتی گسترده‌تر از گذشته فعالیت کنیم.',
+  'هدف ما در مجلس‌یار ارائه بهترین کیفیت با مناسب‌ترین قیمت و در سریع‌ترین زمان ممکن است. ما تلاش می‌کنیم خدماتی ارائه دهیم که از نظر کیفیت، سرعت آماده‌سازی و قیمت رقابت‌پذیر و قابل اعتماد باشد. همچنین تمامی فعالیت‌های ما با رعایت اصول بهداشتی انجام می‌شود و مجموعه دارای مجوز رسمی و کارت بهداشت است.',
+  'مجلس‌یار تلاش می‌کند تجربه‌ای متفاوت از خدمات پذیرایی و برگزاری مراسم را برای مشتریان فراهم کند؛ تجربه‌ای که در آن تنوع، کیفیت، قیمت مناسب و احترام به سلیقه مشتری در اولویت قرار دارد.',
+];
 
 export default function AboutPage() {
   return (
     <AppShell>
-      <SEO 
+      <SEO
         title="درباره ما"
-        description="آشنایی با مجلس یار، ارائه‌دهنده پک‌های پذیرایی و نذری برای انواع مراسمات با بیش از ۵۰۰ سفارش موفق."
+        description="مجلس‌یار با هدف ارائه خدمات کامل و باکیفیت برای انواع مراسم و مجالس راه‌اندازی شده است."
         path="/about"
       />
-      
-      <div className="container py-8 md:py-12">
-        {/* Hero Section */}
-        <section className="text-center mb-12">
-          <div className="w-20 h-20 rounded-2xl gold-gradient flex items-center justify-center mx-auto mb-6 shadow-medium">
-            <Package className="w-10 h-10 text-primary-foreground" aria-hidden="true" />
-          </div>
-          <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-            درباره مجلس یار
-          </h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            ما در مجلس یار با هدف ارائه بهترین پک‌های پذیرایی و نذری برای مراسمات مختلف فعالیت می‌کنیم.
-            تجربه و تخصص ما در این زمینه، تضمینی برای رضایت شماست.
-          </p>
-        </section>
 
-        {/* Stats */}
-        <section className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
-          {[
-            { number: '+۵۰۰', label: 'سفارش موفق', icon: Award },
-            { number: '+۱۰۰۰', label: 'مشتری راضی', icon: Users },
-            { number: '۴۸', label: 'ساعت تحویل', icon: Truck },
-            { number: '۱۰۰٪', label: 'رضایت مشتری', icon: Heart },
-          ].map((stat, index) => (
-            <div 
-              key={index}
-              className="bg-card rounded-xl border border-border p-6 text-center"
-            >
-              <stat.icon className="w-8 h-8 text-primary mx-auto mb-3" aria-hidden="true" />
-              <p className="text-2xl md:text-3xl font-bold text-foreground">{stat.number}</p>
-              <p className="text-sm text-muted-foreground mt-1">{stat.label}</p>
-            </div>
+      <div className="container py-8 md:py-12 max-w-3xl">
+        <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-8 text-center">
+          درباره مجلس‌یار
+        </h1>
+        <div className="space-y-6 text-muted-foreground leading-relaxed text-justify">
+          {ABOUT_PARAGRAPHS.map((p, i) => (
+            <p key={i}>{p}</p>
           ))}
-        </section>
-
-        {/* Our Story */}
-        <section className="bg-card rounded-2xl border border-border p-8 mb-12">
-          <h2 className="text-2xl font-bold text-foreground mb-6 flex items-center gap-3">
-            <Star className="w-6 h-6 text-primary" aria-hidden="true" />
-            داستان ما
-          </h2>
-          <div className="space-y-4 text-muted-foreground leading-relaxed">
-            <p>
-              مجلس یار در سال ۱۴۰۰ با هدف ارائه پک‌های پذیرایی باکیفیت و استاندارد برای انواع مراسمات تأسیس شد.
-              ما از ابتدا بر این باور بودیم که هر مراسم، چه همایش علمی باشد چه مراسم ترحیم، شایسته بهترین پذیرایی است.
-            </p>
-            <p>
-              با تمرکز بر کیفیت مواد اولیه، بسته‌بندی حرفه‌ای و تحویل به‌موقع، توانستیم اعتماد بیش از ۱۰۰۰ مشتری را جلب کنیم.
-              امروز افتخار می‌کنیم که به یکی از معتبرترین ارائه‌دهندگان پک‌های پذیرایی در تهران و البرز تبدیل شده‌ایم.
-            </p>
-          </div>
-        </section>
-
-        {/* Values */}
-        <section>
-          <h2 className="text-2xl font-bold text-foreground mb-6 text-center">ارزش‌های ما</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              {
-                title: 'کیفیت تضمینی',
-                description: 'استفاده از مواد اولیه تازه و باکیفیت در تمامی پک‌ها',
-                icon: Award,
-              },
-              {
-                title: 'تحویل به‌موقع',
-                description: 'تعهد به تحویل در زمان مقرر با حداکثر ۴۸ ساعت',
-                icon: Truck,
-              },
-              {
-                title: 'رضایت مشتری',
-                description: 'اولویت ما جلب رضایت کامل شما از خدمات ماست',
-                icon: Heart,
-              },
-            ].map((value, index) => (
-              <div 
-                key={index}
-                className="bg-card rounded-xl border border-border p-6 text-center"
-              >
-                <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                  <value.icon className="w-7 h-7 text-primary" aria-hidden="true" />
-                </div>
-                <h3 className="text-lg font-semibold text-foreground mb-2">{value.title}</h3>
-                <p className="text-sm text-muted-foreground">{value.description}</p>
-              </div>
-            ))}
-          </div>
-        </section>
+        </div>
       </div>
     </AppShell>
   );

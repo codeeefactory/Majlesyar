@@ -1,7 +1,7 @@
 import { Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-const CONTACT_PHONE = '09123456789';
+const CONTACT_PHONE = '09915505141';
 
 export function FloatingContactButton() {
   return (

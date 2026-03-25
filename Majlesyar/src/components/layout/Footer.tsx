@@ -4,7 +4,7 @@ import { Phone, MapPin, Instagram, Store, Home, Calendar, Send } from 'lucide-re
 import eitaaLogo from '@/assets/social/eitaa.webp';
 import baleLogo from '@/assets/social/bale.webp';
 
-const CONTACT_PHONE = '09123456789';
+const CONTACT_PHONE = '09915505141';
 const WHATSAPP_URL = `https://wa.me/98${CONTACT_PHONE.slice(1)}`;
 const TELEGRAM_URL = 'https://t.me/majlesyar';
 const EITAA_URL = 'https://eitaa.com/majlesyar';

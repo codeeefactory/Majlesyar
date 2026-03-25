@@ -4,8 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Phone, MapPin, Clock, Instagram, MessageCircle, Mail } from 'lucide-react';
 
-const CONTACT_PHONE = '09123456789';
-const CONTACT_ADDRESS = 'تهران، خیابان ولیعصر، پلاک ۱۲۳';
+const CONTACT_PHONE = '09915505141';
+const CONTACT_ADDRESS = 'تهران، امیرآباد، خیابان کارگر شمالی، خیابان فرشی مقدم(شانزدهم)، پلاک ۹۱، واحد۶.';
 const INSTAGRAM_URL = 'https://instagram.com/majlesyar';
 const WORKING_HOURS = 'شنبه تا پنجشنبه ۹ صبح تا ۹ شب';
 
