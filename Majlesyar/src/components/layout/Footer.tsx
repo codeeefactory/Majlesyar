@@ -3,9 +3,9 @@ import { Link } from 'react-router-dom';
 import { Phone, MapPin, Instagram, Store, Home, Calendar, Send } from 'lucide-react';
 import eitaaLogo from '@/assets/social/eitaa.webp';
 import baleLogo from '@/assets/social/bale.webp';
+import { CONTACT_PHONE, CONTACT_PHONE_DISPLAY, CONTACT_PHONE_WHATSAPP } from '@/data/siteConstants';
 
-const CONTACT_PHONE = '989915505141';
-const WHATSAPP_URL = `https://wa.me/98${CONTACT_PHONE.slice(1)}`;
+const WHATSAPP_URL = `https://wa.me/${CONTACT_PHONE_WHATSAPP}`;
 const TELEGRAM_URL = 'https://t.me/majlesyar';
 const EITAA_URL = 'https://eitaa.com/majlesyar';
 const BALE_URL = 'https://ble.ir/majlesyar';
@@ -162,11 +162,11 @@ export function Footer() {
             <h3 className="font-semibold text-foreground">تماس با ما</h3>
             <div className="space-y-3">
               <a 
-                href="tel:09915505141" 
+                href={`tel:${CONTACT_PHONE}`} 
                 className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors text-sm"
               >
                 <Phone className="w-4 h-4" aria-hidden="true" />
-                ۰۲۱-۱۲۳۴۵۶۷۸
+                {CONTACT_PHONE_DISPLAY}
               </a>
               <div className="flex items-start gap-2 text-muted-foreground text-sm">
                 <MapPin className="w-4 h-4 mt-0.5 shrink-0" aria-hidden="true" />

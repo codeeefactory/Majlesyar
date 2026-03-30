@@ -10,6 +10,7 @@ import { notifySuccess } from '@/lib/notify';
 import { useCart } from '@/contexts/CartContext';
 import type { Product } from '@/types/domain';
 import { ShoppingCart, ArrowRight, Check, Phone, Package } from 'lucide-react';
+import { CONTACT_PHONE } from '@/data/siteConstants';
 
 const LazyProductFeedbackSection = lazy(() =>
   import('@/components/ProductFeedbackSection').then((m) => ({ default: m.ProductFeedbackSection })),
@@ -244,7 +245,7 @@ export default function ProductPage() {
                   message="برای اطلاع از قیمت و سفارش این محصول با ما تماس بگیرید"
                 />
                 <Button variant="teal" size="xl" className="w-full gap-2" asChild>
-                  <a href="tel:02112345678">
+                  <a href={`tel:${CONTACT_PHONE}`}>
                     <Phone className="w-5 h-5" />
                     تماس با ما
                   </a>

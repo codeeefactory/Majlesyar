@@ -1,5 +1,9 @@
 import type { Settings } from "@/types/domain";
 
+export const CONTACT_PHONE = "+98991505141";
+export const CONTACT_PHONE_DISPLAY = CONTACT_PHONE;
+export const CONTACT_PHONE_WHATSAPP = CONTACT_PHONE.replace("+", "");
+
 export interface EventType {
   id: string;
   name: string;

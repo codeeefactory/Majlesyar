@@ -2,6 +2,7 @@ from rest_framework import serializers
 from PIL import Image, UnidentifiedImageError
 from django.utils.text import slugify
 
+from .image_utils import derive_image_label, image_extension_validator
 from .models import BuilderItem, Category, Product, Tag
 
 
@@ -22,6 +23,7 @@ class ProductSerializer(serializers.ModelSerializer):
     tag_ids = serializers.SerializerMethodField()
     image = serializers.SerializerMethodField()
     image_name = serializers.SerializerMethodField()
+    image_alt = serializers.SerializerMethodField()
     uri = serializers.SerializerMethodField()
 
     class Meta:
@@ -62,7 +64,14 @@ class ProductSerializer(serializers.ModelSerializer):
         if obj.image_name:
             return obj.image_name
         if obj.image:
-            return str(obj.image.name).split("/")[-1]
+            return derive_image_label(obj.image.name)
+        return ""
+
+    def get_image_alt(self, obj: Product) -> str:
+        if obj.image_alt:
+            return obj.image_alt
+        if obj.image:
+            return derive_image_label(obj.image.name)
         return ""
 
     def get_uri(self, obj: Product) -> str:
@@ -166,6 +175,8 @@ class ProductWriteSerializer(serializers.ModelSerializer):
         if value.size > max_size_bytes:
             raise serializers.ValidationError("حجم تصویر باید حداکثر ۵ مگابایت باشد.")
 
+        image_extension_validator(value)
+
         try:
             image = Image.open(value)
             image.verify()
@@ -183,6 +194,10 @@ class ProductWriteSerializer(serializers.ModelSerializer):
         image_file = validated_data.pop("image_file", serializers.empty)
         if image_file is not serializers.empty:
             validated_data["image"] = image_file
+            if not validated_data.get("image_name"):
+                validated_data["image_name"] = derive_image_label(image_file.name)
+            if not validated_data.get("image_alt"):
+                validated_data["image_alt"] = derive_image_label(image_file.name)
 
         product = Product.objects.create(**validated_data)
         if category_ids is not None:
@@ -202,10 +217,15 @@ class ProductWriteSerializer(serializers.ModelSerializer):
 
         if image_file is not serializers.empty:
             instance.image = image_file
+            if not validated_data.get("image_name"):
+                instance.image_name = derive_image_label(image_file.name)
+            if not validated_data.get("image_alt"):
+                instance.image_alt = derive_image_label(image_file.name)
         elif image_marker is None:
             instance.image.delete(save=False)
             instance.image = None
             instance.image_name = ""
+            instance.image_alt = ""
 
         instance.save()
 

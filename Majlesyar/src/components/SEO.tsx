@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { CONTACT_PHONE } from "@/data/siteConstants";
 
 interface BreadcrumbItem {
   name: string;
@@ -169,7 +170,7 @@ export function SEO({
       description: DEFAULT_DESCRIPTION,
       contactPoint: {
         "@type": "ContactPoint",
-        telephone: "+982112345678",
+        telephone: CONTACT_PHONE,
         contactType: "customer service",
         availableLanguage: "Persian",
       },
@@ -190,7 +191,7 @@ export function SEO({
       alternateName: "Majlesyar",
       description: DEFAULT_DESCRIPTION,
       url: baseUrl,
-      telephone: "+982112345678",
+      telephone: CONTACT_PHONE,
       priceRange: "$$",
       image: `${baseUrl}/favicon.ico`,
       address: {

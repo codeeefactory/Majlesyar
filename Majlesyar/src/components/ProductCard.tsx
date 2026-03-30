@@ -6,8 +6,7 @@ import type { Product } from '@/types/domain';
 import { useCart } from '@/contexts/CartContext';
 import { Input } from '@/components/ui/input';
 import { notifyInfo, notifySuccess } from '@/lib/notify';
-
-const CONTACT_PHONE = 989915505141;
+import { CONTACT_PHONE } from '@/data/siteConstants';
 
 interface ProductCardProps {
   product: Product;
@@ -156,4 +155,3 @@ export function ProductCard({ product }: ProductCardProps) {
     </article>
   );
 }
-

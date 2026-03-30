@@ -1,7 +1,6 @@
 import { Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-
-const CONTACT_PHONE = 989915505141;
+import { CONTACT_PHONE } from '@/data/siteConstants';
 
 export function FloatingContactButton() {
   return (

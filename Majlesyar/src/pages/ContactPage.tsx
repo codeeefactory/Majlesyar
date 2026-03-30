@@ -2,9 +2,9 @@ import { AppShell } from '@/components/layout';
 import { SEO } from '@/components/SEO';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Phone, MapPin, Clock, Instagram, MessageCircle, Mail } from 'lucide-react';
+import { Phone, MapPin, Clock, Instagram, MessageCircle } from 'lucide-react';
+import { CONTACT_PHONE, CONTACT_PHONE_DISPLAY, CONTACT_PHONE_WHATSAPP } from '@/data/siteConstants';
 
-const CONTACT_PHONE = '989915505141';
 const CONTACT_ADDRESS = 'تهران، امیرآباد، خیابان کارگر شمالی، خیابان فرشی مقدم(شانزدهم)، پلاک ۹۱، واحد۶.';
 const INSTAGRAM_URL = 'https://instagram.com/majlesyar';
 const WORKING_HOURS = 'شنبه تا پنجشنبه ۹ صبح تا ۹ شب';
@@ -15,7 +15,7 @@ export default function ContactPage() {
       icon: Phone,
       title: 'تماس تلفنی',
       description: 'سریع‌ترین راه برای سفارش',
-      value: CONTACT_PHONE,
+      value: CONTACT_PHONE_DISPLAY,
       action: () => window.location.href = `tel:${CONTACT_PHONE}`,
       buttonText: 'تماس بگیرید',
       highlight: true,
@@ -24,8 +24,8 @@ export default function ContactPage() {
       icon: MessageCircle,
       title: 'واتساپ',
       description: 'پیام‌رسان محبوب',
-      value: CONTACT_PHONE,
-      action: () => window.open(`https://wa.me/98${CONTACT_PHONE.slice(1)}`, '_blank'),
+      value: CONTACT_PHONE_DISPLAY,
+      action: () => window.open(`https://wa.me/${CONTACT_PHONE_WHATSAPP}`, '_blank'),
       buttonText: 'پیام در واتساپ',
     },
     {
@@ -87,7 +87,7 @@ export default function ContactPage() {
               onClick={() => window.location.href = `tel:${CONTACT_PHONE}`}
             >
               <Phone className="w-5 h-5" />
-              {CONTACT_PHONE}
+              {CONTACT_PHONE_DISPLAY}
             </Button>
           </CardContent>
         </Card>

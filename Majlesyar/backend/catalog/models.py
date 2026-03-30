@@ -4,6 +4,8 @@ from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils.text import slugify
 
+from .image_utils import derive_image_label, image_extension_validator
+
 
 class Category(models.Model):
     id = models.UUIDField(
@@ -131,8 +133,9 @@ class Product(models.Model):
         upload_to="products/",
         blank=True,
         null=True,
+        validators=[image_extension_validator],
         verbose_name="تصویر محصول",
-        help_text="راهنما: تصویر محصول را با کیفیت مناسب بارگذاری کنید. می توانید با گزینه پاک کردن، انتخاب تصویر را حذف کنید.",
+        help_text="راهنما: تصویر محصول را با کیفیت مناسب و فرمت‌های jpg، jpeg، png یا webp بارگذاری کنید. می توانید با گزینه پاک کردن، انتخاب تصویر را حذف کنید.",
     )
     image_alt = models.CharField(
         max_length=255,
@@ -170,6 +173,12 @@ class Product(models.Model):
     )
 
     def save(self, *args, **kwargs):
+        previous_default_label = ""
+        if self.pk:
+            previous = Product.objects.filter(pk=self.pk).only("image", "image_alt", "image_name").first()
+            if previous and previous.image:
+                previous_default_label = derive_image_label(previous.image.name)
+
         # Normalize/generate URI slug so each product has a stable /product/{slug} path.
         base_slug = slugify((self.url_slug or "").strip()) if self.url_slug else ""
         if not base_slug:
@@ -184,9 +193,13 @@ class Product(models.Model):
             suffix += 1
         self.url_slug = candidate
 
-        # Keep a readable image name even when manager does not set it manually.
-        if self.image and not self.image_name:
-            self.image_name = str(self.image.name).split("/")[-1]
+        if self.image:
+            derived_label = derive_image_label(self.image.name)
+            if derived_label and (not self.image_name or self.image_name == previous_default_label):
+                self.image_name = derived_label
+            if derived_label and (not self.image_alt or self.image_alt == previous_default_label):
+                self.image_alt = derived_label
+
         super().save(*args, **kwargs)
 
     class Meta:
@@ -238,8 +251,9 @@ class BuilderItem(models.Model):
         upload_to="builder-items/",
         blank=True,
         null=True,
+        validators=[image_extension_validator],
         verbose_name="تصویر",
-        help_text="نکته: بارگذاری تصویر برای نمایش بهتر این آیتم.",
+        help_text="نکته: بارگذاری تصویر با فرمت‌های jpg، jpeg، png یا webp برای نمایش بهتر این آیتم.",
     )
 
     class Meta:
