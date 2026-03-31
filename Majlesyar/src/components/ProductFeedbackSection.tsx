@@ -29,7 +29,7 @@ const feedbackItems: FeedbackItem[] = [
     role: 'مدیر اجرایی',
     comment: 'پیگیری سفارش دقیق انجام شد و تیم پشتیبانی پاسخگو بود. برای برنامه های بعدی هم قطعا سفارش می دهم.',
     rating: 5,
-    eventType: 'همایش',
+    eventType: 'فینگر فود',
   },
   {
     id: 3,

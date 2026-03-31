@@ -39,7 +39,7 @@ export function EventCard({ id, name, slug, description, icon, color, available 
       <Link
         to={`/events/${slug}`}
         className={`group block p-6 rounded-2xl border border-border ${color} card-hover relative overflow-hidden focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2`}
-        aria-label={`مشاهده پک‌های ${name}`}
+        aria-label={`مشاهده محصولات ${name}`}
       >
         {/* Background decoration - hidden by default to prevent LCP issues */}
         <div 
@@ -59,7 +59,7 @@ export function EventCard({ id, name, slug, description, icon, color, available 
 
         {/* Hover arrow */}
         <div className="absolute bottom-4 left-4 opacity-0 group-hover:opacity-100 transition-opacity">
-          <span className="text-primary text-sm font-semibold">مشاهده پک‌ها ←</span>
+          <span className="text-primary text-sm font-semibold">مشاهده محصولات ←</span>
         </div>
       </Link>
     </article>

@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 
+from django.core.files import File
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
@@ -31,6 +32,7 @@ class Command(BaseCommand):
 
         with file_path.open("r", encoding="utf-8") as file:
             payload = json.load(file)
+        seed_root = file_path.parent
 
         categories_by_slug: dict[str, Category] = {}
         for item in payload.get("categories", []):
@@ -57,6 +59,7 @@ class Command(BaseCommand):
             category_slugs = item.get("category_slugs", [])
             event_type_slugs = item.get("event_types", [])
             tag_slugs = item.get("tag_slugs", [])
+            image_source = item.get("image_source")
             product, _ = Product.objects.update_or_create(
                 name=item["name"],
                 defaults={
@@ -65,6 +68,8 @@ class Command(BaseCommand):
                     "price": item.get("price"),
                     "event_types": item.get("event_types", []),
                     "contents": item.get("contents", []),
+                    "image_alt": item.get("image_alt", ""),
+                    "image_name": item.get("image_name", ""),
                     "featured": item.get("featured", False),
                     "available": item.get("available", True),
                 },
@@ -76,6 +81,29 @@ class Command(BaseCommand):
             product.categories.set(product_categories)
             product_tags = [tags_by_slug[slug] for slug in tag_slugs if slug in tags_by_slug]
             product.tags.set(product_tags)
+
+            if image_source:
+                image_path = (seed_root / image_source).resolve()
+                try:
+                    image_path.relative_to(seed_root.resolve())
+                except ValueError:
+                    self.stderr.write(
+                        self.style.WARNING(
+                            f"Skipping image outside seed directory for product '{product.name}': {image_source}"
+                        )
+                    )
+                else:
+                    if image_path.exists():
+                        current_image_name = Path(product.image.name).name if product.image else None
+                        if current_image_name != image_path.name:
+                            with image_path.open("rb") as image_file:
+                                product.image.save(image_path.name, File(image_file), save=True)
+                    else:
+                        self.stderr.write(
+                            self.style.WARNING(
+                                f"Image not found for product '{product.name}': {image_source}"
+                            )
+                        )
 
         for item in payload.get("builder_items", []):
             BuilderItem.objects.update_or_create(

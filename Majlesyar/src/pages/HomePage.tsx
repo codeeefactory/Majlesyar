@@ -98,7 +98,7 @@ export default function HomePage() {
             </h1>
             
             <p className="text-lg md:text-xl text-muted-foreground max-w-lg mx-auto leading-relaxed">
-              پک‌های آماده و سفارشی برای همایش، ترحیم، جشن تولد و دفاع پایان‌نامه.
+              خدمات آماده و سفارشی برای فینگر فود، ترحیم، گل و دفاع پایان‌نامه.
               حداقل سفارش ۴۰ عدد با تحویل سریع در تهران و البرز.
             </p>
 

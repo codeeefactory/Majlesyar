@@ -147,10 +147,10 @@ export default function ShopPage() {
     <AppShell>
       <SEO
         title="فروشگاه پک‌های پذیرایی"
-        description="خرید انواع پک پذیرایی برای مراسم، همایش و جشن. پک‌های لوکس، اقتصادی و سفارشی با بهترین کیفیت."
+        description="خرید و سفارش انواع پک پذیرایی، فینگر فود، گل مراسم و محصولات مناسب ترحیم با بهترین کیفیت."
         path="/shop"
         breadcrumbs={breadcrumbs}
-        keywords={['پک پذیرایی', 'خرید پک', 'پک همایش', 'پک مراسم', 'پک لوکس']}
+        keywords={['پک پذیرایی', 'فینگر فود', 'گل مراسم', 'خرید پک', 'محصولات مراسم']}
       />
       <div className="container py-8">
         {/* Breadcrumb Navigation */}

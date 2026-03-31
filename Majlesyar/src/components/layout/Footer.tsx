@@ -107,7 +107,7 @@ export function Footer() {
             <h3 className="font-semibold text-foreground">مجلس یار</h3>
             <p className="text-muted-foreground text-sm leading-relaxed">
               ارائه‌دهنده پک‌های پذیرایی و پک نذری برای انواع مراسمات.
-              همایش، ترحیم، جشن تولد و دفاع پایان‌نامه.
+              فینگر فود، ترحیم، گل و دفاع پایان‌نامه.
             </p>
             <Link 
               to="/about" 
@@ -146,6 +146,18 @@ export function Footer() {
           <nav className="space-y-4" aria-label="انواع مراسمات">
             <h3 className="font-semibold text-foreground">انواع مراسمات</h3>
             <ul className="flex flex-col gap-2">
+              <li>
+                <Link to="/events/conference" className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors text-sm">
+                  <Calendar className="w-4 h-4" aria-hidden="true" />
+                  فینگر فود
+                </Link>
+              </li>
+              <li>
+                <Link to="/events/party" className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors text-sm">
+                  <Calendar className="w-4 h-4" aria-hidden="true" />
+                  گل
+                </Link>
+              </li>
             
               <li>
                 <Link to="/events/memorial" className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors text-sm">

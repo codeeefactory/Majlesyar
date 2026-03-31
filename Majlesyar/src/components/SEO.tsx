@@ -31,20 +31,21 @@ interface SEOProps {
 
 const SITE_NAME = "مجلس یار";
 const DEFAULT_DESCRIPTION =
-  "سفارش آنلاین پک‌های پذیرایی و پک نذری برای همایش، ترحیم، جشن تولد و دفاع پایان‌نامه. ارسال سریع در تهران و البرز با تضمین کیفیت و تازگی";
+  "سفارش آنلاین پک پذیرایی، گل مراسم، فینگر فود و خدمات ترحیم با ارسال سریع در تهران و البرز و تضمین کیفیت.";
 const DEFAULT_KEYWORDS = [
   "پک پذیرایی",
   "پک نذری",
   "کترینگ مراسم",
-  "همایش",
+  "فینگر فود",
   "ترحیم",
-  "جشن تولد",
+  "گل مراسم",
   "دفاع پایان‌نامه",
   "مجلس یار",
   "پذیرایی مراسمات",
   "سفارش آنلاین پذیرایی",
   "کترینگ تهران",
-  "پذیرایی همایش",
+  "فینگر فود تهران",
+  "سفارش گل",
   "پک میوه",
   "پک اسنک",
 ];
@@ -220,9 +221,9 @@ export function SEO({
         "@type": "OfferCatalog",
         name: "پک‌های پذیرایی",
         itemListElement: [
-          { "@type": "Offer", itemOffered: { "@type": "Service", name: "پک پذیرایی همایش" } },
+          { "@type": "Offer", itemOffered: { "@type": "Service", name: "فینگر فود مراسم" } },
           { "@type": "Offer", itemOffered: { "@type": "Service", name: "پک نذری و ترحیم" } },
-          { "@type": "Offer", itemOffered: { "@type": "Service", name: "پک جشن تولد" } },
+          { "@type": "Offer", itemOffered: { "@type": "Service", name: "گل و گل‌آرایی مراسم" } },
           { "@type": "Offer", itemOffered: { "@type": "Service", name: "پک دفاع پایان‌نامه" } },
         ],
       },

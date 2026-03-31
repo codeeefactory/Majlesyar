@@ -76,25 +76,25 @@ export interface Order {
 export const categories: Category[] = [
   { id: 'cat-1', name: 'اقتصادی', slug: 'economic', icon: '💰' },
   { id: 'cat-2', name: 'لوکس', slug: 'luxury', icon: '✨' },
-  { id: 'cat-3', name: 'همایش', slug: 'conference', icon: '🎤' },
+  { id: 'cat-3', name: 'فینگر فود', slug: 'conference', icon: '🍢' },
   { id: 'cat-4', name: 'ترحیم', slug: 'memorial', icon: '🕯️' },
   { id: 'cat-5', name: 'پک خالی', slug: 'empty', icon: '📦' },
 ];
 
 // Event Types
 export const eventTypes = [
-  { id: 'conference', name: 'همایش', slug: 'conference', description: 'پک‌های مناسب برای کنفرانس‌ها و سمینارها', icon: '🎤', color: 'bg-secondary' },
+  { id: 'conference', name: 'فینگر فود', slug: 'conference', description: 'محصولات فینگر فود مناسب برای مراسم، همایش و پذیرایی شرکتی', icon: '🍢', color: 'bg-secondary' },
   { id: 'memorial', name: 'ترحیم', slug: 'memorial', description: 'پک‌های متناسب با مراسم ترحیم', icon: '🕯️', color: 'bg-muted' },
   { id: 'defense', name: 'دفاع', slug: 'defense', description: 'پک‌های ویژه جلسات دفاع پایان‌نامه', icon: '🎓', color: 'bg-accent' },
-  { id: 'party', name: 'تولد/مهمانی', slug: 'party', description: 'پک‌های شاد برای جشن‌ها و مهمانی‌ها', icon: '🎂', color: 'bg-primary/20' },
+  { id: 'party', name: 'گل', slug: 'party', description: 'محصولات گل و گل‌آرایی مناسب برای مراسم و مناسبت‌های ویژه', icon: '💐', color: 'bg-primary/20' },
 ];
 
 // Initial Products
 export const products: Product[] = [
   {
     id: 'prod-1',
-    name: 'پک اقتصادی همایش',
-    description: 'پک ساده و اقتصادی مناسب برای همایش‌های بزرگ',
+    name: 'فینگر فود اقتصادی',
+    description: 'فینگر فود اقتصادی مناسب برای پذیرایی مراسم و دورهمی‌های رسمی',
     price: 85000,
     categoryIds: ['cat-1', 'cat-3'],
     eventTypes: ['conference'],
@@ -105,8 +105,8 @@ export const products: Product[] = [
   },
   {
     id: 'prod-2',
-    name: 'پک لوکس همایش',
-    description: 'پک کامل و لوکس با بهترین محتویات',
+    name: 'فینگر فود ویژه',
+    description: 'فینگر فود کامل و ویژه با چیدمان مناسب پذیرایی حرفه‌ای',
     price: 165000,
     categoryIds: ['cat-2', 'cat-3'],
     eventTypes: ['conference'],
@@ -153,12 +153,12 @@ export const products: Product[] = [
   },
   {
     id: 'prod-6',
-    name: 'پک تولد شاد',
-    description: 'پک رنگارنگ برای جشن‌های تولد',
+    name: 'گل ویژه',
+    description: 'محصول گل و گل‌آرایی مناسب مناسبت‌ها و مراسم ویژه',
     price: 135000,
     categoryIds: ['cat-2'],
     eventTypes: ['party'],
-    contents: ['کیک تولد کوچک', 'آبنبات', 'آبمیوه', 'بادکنک', 'کلاه'],
+    contents: ['دسته گل', 'گل‌آرایی', 'طراحی سفارشی', 'بسته‌بندی مناسب'],
     image: '/placeholder.svg',
     featured: false,
     available: true,

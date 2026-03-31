@@ -11,9 +11,9 @@
       "icon": "✨"
     },
     {
-      "name": "حلوا",
+      "name": "فینگر فود",
       "slug": "conference",
-      "icon": "🍮"
+      "icon": "🍢"
     },
     {
       "name": "پک ترحیم",
@@ -26,9 +26,9 @@
       "icon": "🎓"
     },
     {
-      "name": "تولد/مهمانی",
+      "name": "گل",
       "slug": "party",
-      "icon": "🎂"
+      "icon": "💐"
     },
     {
       "name": "پک خالی",
@@ -54,7 +54,7 @@
       "slug": "student"
     },
     {
-      "name": "تولد",
+      "name": "گل",
       "slug": "birthday"
     },
     {
@@ -68,66 +68,108 @@
   ],
   "products": [
     {
-      "name": "پک اقتصادی همایش",
-      "url_slug": "pak-eghtesadi-hamayesh",
-      "description": "پک ساده و اقتصادی مناسب برای همایش‌های بزرگ",
-      "price": 85000,
-      "category_slugs": [
-        "economic",
-        "conference"
-      ],
-      "event_types": [
-        "conference"
-      ],
-      "tag_slugs": [
-        "ready-pack",
-        "popular",
-        "ceremony"
-      ],
-      "contents": [
-        "آبمیوه کوچک",
-        "کیک یزدی",
-        "دستمال"
-      ],
-      "image": "/placeholder.svg",
-      "featured": true,
-      "available": true
-    },
-    {
-      "name": "پک لوکس همایش",
-      "url_slug": "pak-lux-hamayesh",
-      "description": "پک کامل و لوکس با بهترین محتویات",
-      "price": 165000,
+      "name": "دسته گل 1",
+      "url_slug": "flower-bouquet-1",
+      "description": "دسته گل مناسب سفارش مراسم و هدیه با چیدمان آماده.",
+      "price": null,
       "category_slugs": [
         "luxury",
-        "conference"
+        "party"
       ],
       "event_types": [
-        "conference"
+        "party"
       ],
       "tag_slugs": [
-        "ready-pack",
-        "vip",
-        "popular"
+        "ceremony",
+        "vip"
       ],
       "contents": [
-        "آبمیوه طبیعی",
-        "شیرینی تر",
-        "میوه خشک",
-        "چای کیسه‌ای",
-        "دستمال مرطوب"
+        "گل آرایی آماده",
+        "سفارش طبق تصویر"
       ],
-      "image": "/placeholder.svg",
+      "image_source": "images/دسته گل 1.jpg",
       "featured": true,
       "available": true
     },
     {
-      "name": "پک ترحیم ساده",
-      "url_slug": "pak-tarhim-sade",
-      "description": "پک متناسب با فضای احترام‌آمیز مراسم",
-      "price": 95000,
+      "name": "دسته گل 2",
+      "url_slug": "flower-bouquet-2",
+      "description": "دسته گل مناسب سفارش مراسم و هدیه با چیدمان آماده.",
+      "price": null,
       "category_slugs": [
-        "economic",
+        "luxury",
+        "party"
+      ],
+      "event_types": [
+        "party"
+      ],
+      "tag_slugs": [
+        "vip",
+        "ceremony"
+      ],
+      "contents": [
+        "گل آرایی آماده",
+        "سفارش طبق تصویر"
+      ],
+      "image_source": "images/دسته گل 2.jpg",
+      "featured": true,
+      "available": true
+    },
+    {
+      "name": "دسته گل 3",
+      "url_slug": "flower-bouquet-3",
+      "description": "دسته گل مناسب سفارش مراسم و هدیه با چیدمان آماده.",
+      "price": null,
+      "category_slugs": [
+        "luxury",
+        "party"
+      ],
+      "event_types": [
+        "party"
+      ],
+      "tag_slugs": [
+        "vip",
+        "ceremony"
+      ],
+      "contents": [
+        "گل آرایی آماده",
+        "سفارش طبق تصویر"
+      ],
+      "image_source": "images/دسته گل 3.jpg",
+      "featured": true,
+      "available": true
+    },
+    {
+      "name": "دسته گل 4",
+      "url_slug": "flower-bouquet-4",
+      "description": "دسته گل مناسب سفارش مراسم و هدیه با چیدمان آماده.",
+      "price": null,
+      "category_slugs": [
+        "luxury",
+        "party"
+      ],
+      "event_types": [
+        "party"
+      ],
+      "tag_slugs": [
+        "ceremony",
+        "vip"
+      ],
+      "contents": [
+        "گل آرایی آماده",
+        "سفارش طبق تصویر"
+      ],
+      "image_source": "images/دسته گل 4.jpg",
+      "featured": true,
+      "available": true
+    },
+    {
+      "name": "سینی حلوا اجیلی 1",
+      "url_slug": "halva-tray-1",
+      "description": "سینی حلوا آماده مناسب پذیرایی مراسم با چیدمان کامل.",
+      "price": null,
+      "category_slugs": [
+        "conference",
         "memorial"
       ],
       "event_types": [
@@ -138,20 +180,66 @@
         "ceremony"
       ],
       "contents": [
-        "خرما",
-        "حلوا",
-        "آب معدنی",
-        "دستمال"
+        "سینی حلوا",
+        "تزئین آماده"
       ],
-      "image": "/placeholder.svg",
+      "image_source": "images/سینی حلوا اجیلی 1.jpg",
       "featured": false,
       "available": true
     },
     {
-      "name": "پک ترحیم کامل",
-      "url_slug": "pak-tarhim-kamel",
-      "description": "پک کامل شامل تمام ملزومات مراسم ترحیم",
-      "price": 145000,
+      "name": "پک ترحیم 1",
+      "url_slug": "memorial-pack-1",
+      "description": "پک پذیرایی آماده برای مراسم ترحیم با اقلام داخل تصویر.",
+      "price": null,
+      "category_slugs": [
+        "economic",
+        "memorial"
+      ],
+      "event_types": [
+        "memorial"
+      ],
+      "tag_slugs": [
+        "ready-pack",
+        "ceremony"
+      ],
+      "contents": [
+        "پک آماده",
+        "اقلام مطابق تصویر"
+      ],
+      "image_source": "images/پک ترحیم 1.jpg",
+      "featured": false,
+      "available": true
+    },
+    {
+      "name": "پک ترحیم 2",
+      "url_slug": "memorial-pack-2",
+      "description": "پک پذیرایی آماده برای مراسم ترحیم با اقلام داخل تصویر.",
+      "price": null,
+      "category_slugs": [
+        "economic",
+        "memorial"
+      ],
+      "event_types": [
+        "memorial"
+      ],
+      "tag_slugs": [
+        "ready-pack",
+        "ceremony"
+      ],
+      "contents": [
+        "پک آماده",
+        "اقلام مطابق تصویر"
+      ],
+      "image_source": "images/پک ترحیم 2.jpg",
+      "featured": false,
+      "available": true
+    },
+    {
+      "name": "پک ترحیم 3",
+      "url_slug": "memorial-pack-3",
+      "description": "پک پذیرایی آماده برای مراسم ترحیم با اقلام داخل تصویر.",
+      "price": null,
       "category_slugs": [
         "luxury",
         "memorial"
@@ -165,139 +253,60 @@
         "popular"
       ],
       "contents": [
-        "خرما مضافتی",
-        "حلوا",
-        "زولبیا بامیه",
-        "آب معدنی",
-        "چای کیسه‌ای",
-        "دستمال"
+        "پک آماده",
+        "اقلام مطابق تصویر"
       ],
-      "image": "/placeholder.svg",
-      "featured": true,
-      "available": true
-    },
-    {
-      "name": "پک دفاع پایان‌نامه",
-      "url_slug": "pak-defa-payanname",
-      "description": "پک ویژه برای جلسات دفاع دانشگاهی",
-      "price": 125000,
-      "category_slugs": [
-        "luxury"
-      ],
-      "event_types": [
-        "defense"
-      ],
-      "tag_slugs": [
-        "ready-pack",
-        "student"
-      ],
-      "contents": [
-        "شیرینی تر",
-        "میوه فصل",
-        "آبمیوه",
-        "قهوه فوری",
-        "دستمال"
-      ],
-      "image": "/placeholder.svg",
-      "featured": true,
-      "available": true
-    },
-    {
-      "name": "پک تولد شاد",
-      "url_slug": "pak-tavalod-shad",
-      "description": "پک رنگارنگ برای جشن‌های تولد",
-      "price": 135000,
-      "category_slugs": [
-        "luxury"
-      ],
-      "event_types": [
-        "party"
-      ],
-      "tag_slugs": [
-        "ready-pack",
-        "birthday"
-      ],
-      "contents": [
-        "کیک تولد کوچک",
-        "آبنبات",
-        "آبمیوه",
-        "بادکنک",
-        "کلاه"
-      ],
-      "image": "/placeholder.svg",
+      "image_source": "images/پک ترحیم 3.jpg",
       "featured": false,
       "available": true
     },
     {
-      "name": "پک VIP",
-      "url_slug": "pak-vip",
-      "description": "لوکس‌ترین پک برای مهمانان ویژه",
+      "name": "پک ترحیم 4",
+      "url_slug": "memorial-pack-4",
+      "description": "پک پذیرایی آماده برای مراسم ترحیم با اقلام داخل تصویر.",
       "price": null,
       "category_slugs": [
-        "luxury"
+        "luxury",
+        "memorial"
       ],
       "event_types": [
-        "conference",
-        "defense"
+        "memorial"
       ],
       "tag_slugs": [
         "ready-pack",
-        "vip",
+        "ceremony",
         "popular"
       ],
       "contents": [
-        "سوپرایز ویژه",
-        "تماس بگیرید"
+        "پک آماده",
+        "اقلام مطابق تصویر"
       ],
-      "image": "/placeholder.svg",
-      "featured": true,
-      "available": true
-    },
-    {
-      "name": "پک خالی زیپ‌لاک",
-      "url_slug": "pak-khali-ziplock",
-      "description": "بسته‌بندی خالی زیپ‌لاک برای پک سفارشی",
-      "price": 15000,
-      "category_slugs": [
-        "empty"
-      ],
-      "event_types": [
-        "conference",
-        "memorial",
-        "defense",
-        "party"
-      ],
-      "tag_slugs": [
-        "empty-pack"
-      ],
-      "contents": [
-        "کیسه زیپ‌لاک با لوگو"
-      ],
-      "image": "/placeholder.svg",
+      "image_source": "images/پک ترحیم 4.jpg",
       "featured": false,
       "available": true
     },
     {
-      "name": "پک خالی جعبه‌ای",
-      "url_slug": "pak-khali-jabbei",
-      "description": "جعبه خالی مقوایی برای پک سفارشی",
-      "price": 25000,
+      "name": "پک ترحیم 5",
+      "url_slug": "memorial-pack-5",
+      "description": "پک پذیرایی آماده برای مراسم ترحیم با اقلام داخل تصویر.",
+      "price": null,
       "category_slugs": [
-        "empty"
+        "luxury",
+        "memorial"
       ],
       "event_types": [
-        "conference",
-        "memorial",
-        "defense",
-        "party"
+        "memorial"
       ],
       "tag_slugs": [
-        "empty-pack"
+        "ready-pack",
+        "ceremony",
+        "popular"
       ],
       "contents": [
-        "جعبه مقوایی با لوگو"
+        "پک آماده",
+        "اقلام مطابق تصویر"
       ],
-      "image": "/placeholder.svg",
+      "image_source": "images/پک ترحیم 5.jpg",
       "featured": false,
       "available": true
     }

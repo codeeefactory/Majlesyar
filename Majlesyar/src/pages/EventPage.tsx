@@ -81,13 +81,15 @@ export default function EventPage() {
   return (
     <AppShell>
       <SEO
-        title={`پک‌های ${event.name}`}
-        description={event.description}
+        title={event.seoTitle || event.name}
+        description={event.seoDescription || event.description}
         path={`/events/${event.slug}`}
         breadcrumbs={[
           { name: 'خانه', url: '/' },
           { name: event.name, url: `/events/${event.slug}` },
         ]}
+        keywords={event.seoKeywords}
+        faq={event.faqs}
       />
       {/* Hero */}
       <section className={`${event.color} relative overflow-hidden`}>
@@ -104,7 +106,7 @@ export default function EventPage() {
           <div className="flex items-center gap-4 mb-4">
             <span className="text-5xl">{event.icon}</span>
             <h1 className="text-3xl md:text-4xl font-bold text-foreground">
-              پک‌های {event.name}
+              {event.seoTitle || event.name}
             </h1>
           </div>
           
@@ -127,7 +129,7 @@ export default function EventPage() {
       {/* Products */}
       <section className="container py-12">
         <h2 className="text-2xl font-bold text-foreground mb-6">
-          پک‌های مناسب برای {event.name}
+          محصولات مناسب برای {event.name}
         </h2>
 
         {loading ? (
