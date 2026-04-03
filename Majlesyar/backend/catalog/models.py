@@ -1,10 +1,12 @@
 import uuid
+import os
 
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils.text import slugify
 
 from .image_utils import derive_image_label, image_extension_validator
+from .image_tagging import detect_pack_items
 
 
 def _normalize_text(value: str | None) -> str:
@@ -222,10 +224,12 @@ class Product(models.Model):
 
     def save(self, *args, **kwargs):
         previous_default_label = ""
+        previous_image_name = ""
         if self.pk:
             previous = Product.objects.filter(pk=self.pk).only("image", "image_alt", "image_name").first()
             if previous and previous.image:
                 previous_default_label = derive_image_label(previous.image.name)
+                previous_image_name = previous.image.name
 
         if not isinstance(self.event_types, list):
             self.event_types = []
@@ -258,6 +262,19 @@ class Product(models.Model):
                 self.image_alt = derived_label
 
         super().save(*args, **kwargs)
+
+        auto_detect_enabled = os.getenv("PACK_IMAGE_DETECTION", "1").lower() in ("1", "true", "yes")
+        if auto_detect_enabled and self.image and not (self.contents or []):
+            image_changed = self.image.name != previous_image_name
+            if image_changed and hasattr(self.image, "path"):
+                detected = detect_pack_items(self.image.path)
+                if detected:
+                    update_fields = {"contents": detected}
+                    if not self.event_types:
+                        inferred = infer_event_types(self.name or "", self.description or "", detected)
+                        if inferred:
+                            update_fields["event_types"] = inferred
+                    Product.objects.filter(pk=self.pk).update(**update_fields)
 
     class Meta:
         ordering = ["-featured", "name"]
