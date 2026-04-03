@@ -30,6 +30,15 @@ def _default_robots(sitemap_url: str) -> str:
     )
 
 
+def _strip_unknown_robots_directives(content: str) -> str:
+    lines = [
+        line
+        for line in content.splitlines()
+        if not line.lstrip().lower().startswith("content-signal:")
+    ]
+    return "\n".join(lines) + ("\n" if content.endswith("\n") else "")
+
+
 @require_safe
 def robots_txt(request) -> HttpResponse:
     sitemap_url = request.build_absolute_uri("/sitemap.xml")
@@ -47,6 +56,8 @@ def robots_txt(request) -> HttpResponse:
             for line in content.splitlines()
         ]
         content = "\n".join(lines) + ("\n" if not content.endswith("\n") else "")
+
+    content = _strip_unknown_robots_directives(content)
 
     return HttpResponse(content, content_type="text/plain; charset=utf-8")
 

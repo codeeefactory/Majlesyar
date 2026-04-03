@@ -7,7 +7,7 @@ Disallow: /admin/
 Disallow: /checkout
 Disallow: /order/
 
-# Allow AI crawlers for better discoverability
+# Allow specific AI crawlers
 User-agent: GPTBot
 Allow: /
 

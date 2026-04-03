@@ -10,6 +10,7 @@ DOMAIN="majlesyar.com"
 REPO_URL="https://github.com/codeeefactory/Majlesyar.git"
 REPO_REF="master"
 WORKDIR="/opt/majlesyar"
+DATA_DIR="/opt/majlesyar_data"
 
 apt-get update -y && apt-get install -y git curl ca-certificates
 
@@ -18,13 +19,13 @@ if ! command -v docker >/dev/null 2>&1; then
   systemctl enable --now docker
 fi
 
+mkdir -p "$DATA_DIR/media"
+touch "$DATA_DIR/db.sqlite3"
+
 rm -rf "$WORKDIR"
 git clone --depth 1 --branch "$REPO_REF" "$REPO_URL" "$WORKDIR"
 
-mkdir -p "$WORKDIR/.deploy/media"
-touch "$WORKDIR/.deploy/db.sqlite3"
-
-cat > "$WORKDIR/.deploy/.env.production" <<ENV
+cat > "$DATA_DIR/.env.production" <<ENV
 PORT=8000
 DJANGO_DEBUG=0
 DJANGO_SECRET_KEY=$(openssl rand -hex 48)
@@ -43,10 +44,10 @@ docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
 docker run -d \
   --name "$CONTAINER_NAME" \
   --restart unless-stopped \
-  --env-file .deploy/.env.production \
+  --env-file "$DATA_DIR/.env.production" \
   -p 127.0.0.1:8000:8000 \
-  -v "$(pwd)/.deploy/db.sqlite3:/app/db.sqlite3" \
-  -v "$(pwd)/.deploy/media:/app/media" \
+  -v "$DATA_DIR/db.sqlite3:/app/db.sqlite3" \
+  -v "$DATA_DIR/media:/app/media" \
   "$IMAGE_NAME"
 
 sleep 5
