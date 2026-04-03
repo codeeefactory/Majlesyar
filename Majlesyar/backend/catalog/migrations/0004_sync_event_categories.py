@@ -6,7 +6,7 @@ from django.db import migrations
 EVENT_CATEGORIES = (
     ("conference", "حلوا", "🍮"),
     ("memorial", "پک ترحیم", "🕯️"),
-    ("defense", "دفاع", "🎓"),
+    ("defense", "???? ? ????", "??"),
     ("party", "تولد/مهمانی", "🎂"),
 )
 

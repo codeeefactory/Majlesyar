@@ -188,7 +188,7 @@ class ProductWriteSerializer(serializers.ModelSerializer):
         return value
 
     def create(self, validated_data: dict) -> Product:
-        category_ids = validated_data.pop("category_ids", [])
+        category_ids = validated_data.pop("category_ids", serializers.empty)
         tag_ids = validated_data.pop("tag_ids", [])
         validated_data.pop("image", None)
         image_file = validated_data.pop("image_file", serializers.empty)
@@ -200,8 +200,12 @@ class ProductWriteSerializer(serializers.ModelSerializer):
                 validated_data["image_alt"] = derive_image_label(image_file.name)
 
         product = Product.objects.create(**validated_data)
-        if category_ids is not None:
+        if category_ids is not serializers.empty:
             product.categories.set(Category.objects.filter(id__in=category_ids))
+        else:
+            event_slugs = [slug for slug in (product.event_types or []) if isinstance(slug, str)]
+            if event_slugs:
+                product.categories.set(Category.objects.filter(slug__in=event_slugs))
         if tag_ids is not None:
             product.tags.set(Tag.objects.filter(id__in=tag_ids))
         return product
@@ -231,6 +235,10 @@ class ProductWriteSerializer(serializers.ModelSerializer):
 
         if category_ids is not serializers.empty:
             instance.categories.set(Category.objects.filter(id__in=category_ids))
+        elif not instance.categories.exists():
+            event_slugs = [slug for slug in (instance.event_types or []) if isinstance(slug, str)]
+            if event_slugs:
+                instance.categories.set(Category.objects.filter(slug__in=event_slugs))
         if tag_ids is not serializers.empty:
             instance.tags.set(Tag.objects.filter(id__in=tag_ids))
 

@@ -7,6 +7,54 @@ from django.utils.text import slugify
 from .image_utils import derive_image_label, image_extension_validator
 
 
+def _normalize_text(value: str | None) -> str:
+    if not value:
+        return ""
+    text = str(value)
+    replacements = {
+        "ي": "ی",
+        "ك": "ک",
+        "ۀ": "ه",
+        "ة": "ه",
+        "ؤ": "و",
+        "إ": "ا",
+        "أ": "ا",
+        "آ": "ا",
+    }
+    for src, dst in replacements.items():
+        text = text.replace(src, dst)
+    return text.lower()
+
+
+def infer_event_types(name: str, description: str = "", contents: list[str] | None = None) -> list[str]:
+    haystack = " ".join(
+        value
+        for value in [
+            _normalize_text(name),
+            _normalize_text(description),
+            _normalize_text(" ".join(contents or [])),
+        ]
+        if value
+    )
+    if not haystack:
+        return []
+
+    keyword_map = [
+        ("conference", ["فینگر", "فینگرفود", "finger", "fingerfood", "canape", "اسنک", "snack"]),
+        ("memorial", ["ترحیم", "نذری", "ختم", "یادبود", "مجلس"]),
+        ("defense", ["حلوا", "خرما", "دفاع", "پایان نامه", "پایان‌نامه"]),
+        ("party", ["گل", "دسته گل", "گل آرایی", "گل‌آرایی", "bouquet", "flower"]),
+    ]
+
+    detected: list[str] = []
+    for slug, keywords in keyword_map:
+        for keyword in keywords:
+            if _normalize_text(keyword) in haystack:
+                detected.append(slug)
+                break
+    return detected
+
+
 class Category(models.Model):
     id = models.UUIDField(
         primary_key=True,
@@ -178,6 +226,15 @@ class Product(models.Model):
             previous = Product.objects.filter(pk=self.pk).only("image", "image_alt", "image_name").first()
             if previous and previous.image:
                 previous_default_label = derive_image_label(previous.image.name)
+
+        if not isinstance(self.event_types, list):
+            self.event_types = []
+        cleaned_event_types = [str(item).strip() for item in self.event_types if str(item).strip()]
+        if not cleaned_event_types:
+            inferred = infer_event_types(self.name or "", self.description or "", self.contents or [])
+            if inferred:
+                cleaned_event_types = inferred
+        self.event_types = cleaned_event_types
 
         # Normalize/generate URI slug so each product has a stable /product/{slug} path.
         base_slug = slugify((self.url_slug or "").strip()) if self.url_slug else ""

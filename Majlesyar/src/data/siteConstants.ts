@@ -61,7 +61,7 @@ export const eventTypes: EventType[] = [
   },
   {
     id: "defense",
-    name: "دفاع",
+    name: "???? ? ????",
     slug: "defense",
     description: "به‌زودی فعال می‌شود",
     icon: "🎓",

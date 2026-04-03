@@ -85,7 +85,7 @@ export const categories: Category[] = [
 export const eventTypes = [
   { id: 'conference', name: 'فینگر فود', slug: 'conference', description: 'محصولات فینگر فود مناسب برای مراسم، همایش و پذیرایی شرکتی', icon: '🍢', color: 'bg-secondary' },
   { id: 'memorial', name: 'ترحیم', slug: 'memorial', description: 'پک‌های متناسب با مراسم ترحیم', icon: '🕯️', color: 'bg-muted' },
-  { id: 'defense', name: 'دفاع', slug: 'defense', description: 'پک‌های ویژه جلسات دفاع پایان‌نامه', icon: '🎓', color: 'bg-accent' },
+  { id: 'defense', name: '???? ? ????', slug: 'defense', description: 'پک‌های ویژه جلسات دفاع پایان‌نامه', icon: '🎓', color: 'bg-accent' },
   { id: 'party', name: 'گل', slug: 'party', description: 'محصولات گل و گل‌آرایی مناسب برای مراسم و مناسبت‌های ویژه', icon: '💐', color: 'bg-primary/20' },
 ];
 
