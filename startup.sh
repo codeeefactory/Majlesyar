@@ -120,6 +120,7 @@ docker run -d \
 
 sleep 5
 docker logs --tail 50 "$CONTAINER_NAME"
+docker logs --tail 50 "$CONTAINER_NAME"
 
 docker exec \
   -e DJANGO_SUPERUSER_USERNAME="$ADMIN_USERNAME" \
