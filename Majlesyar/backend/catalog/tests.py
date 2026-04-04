@@ -1,6 +1,7 @@
 ﻿import shutil
 import tempfile
 from io import BytesIO
+from unittest.mock import patch
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
@@ -44,6 +45,7 @@ class AdminProductApiTests(APITestCase):
 
     def _make_uploaded_image(self, name: str, image_format: str) -> SimpleUploadedFile:
         content_type_map = {
+            "JPEG": "image/jpeg",
             "PNG": "image/png",
             "WEBP": "image/webp",
         }
@@ -269,3 +271,136 @@ class AdminProductApiTests(APITestCase):
         created = Product.objects.get(id=response.data["id"])
         self.assertIn(auto_category.id, created.categories.values_list("id", flat=True))
         self.assertEqual(created.event_types, ["halva-khorma"])
+
+    def test_existing_event_category_backfills_event_types(self):
+        auto_category, _ = Category.objects.get_or_create(
+            slug="halva-khorma",
+            defaults={"name": "حلوا و خرما", "icon": "🍯"},
+        )
+        product = Product.objects.create(
+            name="محصول حلوا",
+            description="مناسب مراسم",
+            price=100000,
+            event_types=[],
+            contents=["حلوا"],
+        )
+        product.categories.set([auto_category])
+
+        product.save()
+        product.refresh_from_db()
+
+        self.assertEqual(product.event_types, ["halva-khorma"])
+
+    @patch(
+        "catalog.models.analyze_product_image",
+        return_value={
+            "success": True,
+            "detections": [
+                {"label": "خرما", "label_key": "date", "confidence": 0.94},
+                {"label": "حلوا", "label_key": "halva", "confidence": 0.81},
+            ],
+            "top_label": "خرما",
+            "top_label_key": "date",
+            "uncertain": False,
+            "error": None,
+            "threshold": 0.72,
+            "model_version": "test-model",
+        },
+    )
+    def test_photo_processing_mode_detects_contents(self, mocked_analyze):
+        self._staff_auth()
+        payload = {
+            "name": "پک تشخیص تصویر",
+            "description": "بدون محتوا",
+            "price": "99000",
+            "input_mode": "photo_processing",
+            "event_types": [],
+            "contents": [],
+            "featured": "false",
+            "available": "true",
+            "image_file": self._make_uploaded_image("halva-khorma.webp", "WEBP"),
+        }
+
+        response = self.client.post(reverse("admin-product-list-create"), payload, format="multipart")
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        created = Product.objects.get(id=response.data["id"])
+        self.assertEqual(created.contents, ["خرما", "حلوا"])
+        self.assertEqual(created.photo_analysis["top_label"], "خرما")
+        mocked_analyze.assert_called_once()
+
+    @patch("catalog.models.analyze_product_image")
+    def test_normal_mode_does_not_detect_contents_from_image(self, mocked_analyze):
+        self._staff_auth()
+        payload = {
+            "name": "پک عادی",
+            "description": "بدون محتوا",
+            "price": "99000",
+            "input_mode": "normal",
+            "event_types": [],
+            "contents": [],
+            "featured": "false",
+            "available": "true",
+            "image_file": self._make_uploaded_image("halva-khorma.webp", "WEBP"),
+        }
+
+        response = self.client.post(reverse("admin-product-list-create"), payload, format="multipart")
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        created = Product.objects.get(id=response.data["id"])
+        self.assertEqual(created.contents, [])
+        self.assertEqual(created.photo_analysis, {})
+        mocked_analyze.assert_not_called()
+
+    def test_rejects_corrupt_uploaded_image(self):
+        self._staff_auth()
+        bad_file = SimpleUploadedFile("broken.jpg", b"not-an-image", content_type="image/jpeg")
+        payload = {
+            "name": "تصویر خراب",
+            "description": "توضیحات",
+            "price": "50000",
+            "event_types": [],
+            "contents": [],
+            "image_file": bad_file,
+        }
+
+        response = self.client.post(reverse("admin-product-list-create"), payload, format="multipart")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("image_file", response.data)
+
+    @patch(
+        "catalog.models.analyze_product_image",
+        return_value={
+            "success": False,
+            "detections": [],
+            "top_label": None,
+            "top_label_key": None,
+            "uncertain": True,
+            "error": "model_unavailable",
+            "threshold": 0.72,
+            "model_version": None,
+        },
+    )
+    def test_photo_processing_handles_missing_model_gracefully(self, mocked_analyze):
+        self._staff_auth()
+        payload = {
+            "name": "پک بدون مدل",
+            "description": "بدون محتوا",
+            "price": "99000",
+            "input_mode": "photo_processing",
+            "event_types": [],
+            "contents": [],
+            "featured": "false",
+            "available": "true",
+            "image_file": self._make_uploaded_image("missing-model.jpg", "JPEG"),
+        }
+
+        response = self.client.post(reverse("admin-product-list-create"), payload, format="multipart")
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        created = Product.objects.get(id=response.data["id"])
+        self.assertEqual(created.contents, [])
+        self.assertTrue(created.photo_analysis["uncertain"])
+        self.assertEqual(created.photo_analysis["error"], "model_unavailable")
+        mocked_analyze.assert_called_once()

@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     "django_filters",
     "drf_spectacular",
     "catalog",
+    "vision",
     "site_settings",
     "orders",
 ]
@@ -65,6 +66,7 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.middleware.gzip.GZipMiddleware",
+    "config.middleware.StripCrawlerDirectivesMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -250,3 +252,11 @@ UNFOLD = {
         },
     },
 }
+
+VISION_ENABLED = env_bool("VISION_ENABLED", True)
+VISION_MODEL_PATH = os.getenv("VISION_MODEL_PATH", str(BASE_DIR / "models" / "product_classifier.pt"))
+VISION_CONFIDENCE_THRESHOLD = float(os.getenv("VISION_CONFIDENCE_THRESHOLD", "0.72"))
+VISION_TOP_K = int(os.getenv("VISION_TOP_K", "3"))
+VISION_DEVICE = os.getenv("VISION_DEVICE", "auto")
+VISION_MAX_PIXELS = int(os.getenv("VISION_MAX_PIXELS", "16000000"))
+VISION_MAX_DIMENSION = int(os.getenv("VISION_MAX_DIMENSION", "1600"))

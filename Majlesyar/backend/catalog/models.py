@@ -1,12 +1,11 @@
 import uuid
-import os
 
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils.text import slugify
 
 from .image_utils import derive_image_label, image_extension_validator
-from .image_tagging import detect_pack_items
+from vision.service import analyze_product_image, save_prediction_result
 
 
 def _normalize_text(value: str | None) -> str:
@@ -34,6 +33,8 @@ EVENT_CATEGORY_DEFINITIONS = (
     ("halva-khorma", "حلوا و خرما", "🍯"),
     ("party", "گل", "💐"),
 )
+PRODUCT_INPUT_MODE_NORMAL = "normal"
+PRODUCT_INPUT_MODE_PHOTO_PROCESSING = "photo_processing"
 
 
 def infer_event_types(name: str, description: str = "", contents: list[str] | None = None) -> list[str]:
@@ -99,6 +100,14 @@ def sync_product_categories(product: "Product", *, force: bool = False) -> None:
     ensure_event_categories()
 
     normalized_event_types = normalize_event_types(product.event_types)
+    category_event_slugs = [
+        slug
+        for slug in product.categories.filter(slug__in=AUTO_EVENT_CATEGORY_SLUGS).values_list("slug", flat=True)
+    ]
+
+    if not normalized_event_types and category_event_slugs:
+        normalized_event_types = list(dict.fromkeys(category_event_slugs))
+
     if normalized_event_types != (product.event_types or []):
         product.event_types = normalized_event_types
         Product.objects.filter(pk=product.pk).update(event_types=normalized_event_types)
@@ -209,6 +218,10 @@ class Tag(models.Model):
 
 
 class Product(models.Model):
+    class InputMode(models.TextChoices):
+        NORMAL = PRODUCT_INPUT_MODE_NORMAL, "عادی"
+        PHOTO_PROCESSING = PRODUCT_INPUT_MODE_PHOTO_PROCESSING, "با پردازش عکس"
+
     id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,
@@ -288,6 +301,12 @@ class Product(models.Model):
         verbose_name="نام تصویر",
         help_text="راهنما: یک نام خوانا برای تصویر وارد کنید (مثال: pak-terhim-luxury). این فیلد برای مدیریت بهتر تصاویر است.",
     )
+    photo_analysis = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name="نتیجه تحلیل تصویر",
+        help_text="خروجی ساختارمند تشخیص محلی تصویر محصول.",
+    )
     featured = models.BooleanField(
         default=False,
         verbose_name="ویژه",
@@ -312,6 +331,7 @@ class Product(models.Model):
     def save(self, *args, **kwargs):
         previous_default_label = ""
         previous_image_name = ""
+        previous = None
         if self.pk:
             previous = Product.objects.filter(pk=self.pk).only("image", "image_alt", "image_name").first()
             if previous and previous.image:
@@ -351,18 +371,19 @@ class Product(models.Model):
         super().save(*args, **kwargs)
         sync_product_categories(self)
 
-        auto_detect_enabled = os.getenv("PACK_IMAGE_DETECTION", "1").lower() in ("1", "true", "yes")
-        if auto_detect_enabled and self.image and not (self.contents or []):
+        input_mode = getattr(self, "_input_mode", PRODUCT_INPUT_MODE_NORMAL)
+        if input_mode == PRODUCT_INPUT_MODE_PHOTO_PROCESSING and self.image:
             image_changed = self.image.name != previous_image_name
             if image_changed and hasattr(self.image, "path"):
-                detected = detect_pack_items(self.image.path)
-                if detected:
-                    update_fields = {"contents": detected}
-                    if not self.event_types:
-                        inferred = infer_event_types(self.name or "", self.description or "", detected)
-                        if inferred:
-                            update_fields["event_types"] = inferred
-                    Product.objects.filter(pk=self.pk).update(**update_fields)
+                analysis = analyze_product_image(self.image.path)
+                save_prediction_result(self, analysis)
+                update_fields = {"photo_analysis": self.photo_analysis}
+                if self.contents:
+                    update_fields["contents"] = self.contents
+                if self.event_types:
+                    update_fields["event_types"] = self.event_types
+                Product.objects.filter(pk=self.pk).update(**update_fields)
+                sync_product_categories(self)
 
     class Meta:
         ordering = ["-featured", "name"]

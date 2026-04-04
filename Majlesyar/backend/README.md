@@ -46,6 +46,107 @@ Server: `http://localhost:8000`
   - Max size: 5MB
 - Files are served under `/media/...` (toggle with `SERVE_MEDIA=1|0`).
 
+## Local Product Recognition
+
+The backend now supports internal-only product photo analysis for these labels:
+
+- `halva` => `حلوا`
+- `date` => `خرما`
+- `orange` => `پرتقال`
+- `tangerine` => `نارنگی`
+- `banana` => `موز`
+- `cake` => `کیک`
+- `juice` => `آبمیوه`
+
+Photo analysis runs only when the admin product payload uses `input_mode=photo_processing`.
+Inference is fully local. No external API or hosted vision service is used.
+
+### Runtime configuration
+
+Set these environment variables if you want to customize inference:
+
+```powershell
+$env:VISION_ENABLED="1"
+$env:VISION_MODEL_PATH="C:\path\to\product_classifier.pt"
+$env:VISION_CONFIDENCE_THRESHOLD="0.72"
+$env:VISION_TOP_K="3"
+$env:VISION_DEVICE="auto"
+```
+
+Structured analysis is stored on `Product.photo_analysis` and returned by product serializers. Example:
+
+```json
+{
+  "success": true,
+  "detections": [
+    {"label": "خرما", "label_key": "date", "confidence": 0.94},
+    {"label": "حلوا", "label_key": "halva", "confidence": 0.81}
+  ],
+  "top_label": "خرما",
+  "top_label_key": "date",
+  "uncertain": false,
+  "error": null,
+  "threshold": 0.72,
+  "model_version": "product_classifier"
+}
+```
+
+If the model is missing, corrupt, disabled, or confidence is too low, the API keeps working and returns an uncertain analysis instead of forcing a wrong label.
+
+### Dataset layout
+
+Classifier training expects this folder layout:
+
+```text
+data/products/
+  train/
+    halva/
+    date/
+    orange/
+    tangerine/
+    banana/
+    cake/
+    juice/
+  val/
+    halva/
+    date/
+    orange/
+    tangerine/
+    banana/
+    cake/
+    juice/
+```
+
+For future object detection, keep the same class keys and add a separate detection dataset, for example:
+
+```text
+data/products_detection/
+  images/
+    train/
+    val/
+  labels/
+    train/
+    val/
+```
+
+The current architecture is classifier-first with tile-based multi-region inference so it can be upgraded to a detector later without changing the Django integration layer.
+
+### Train locally
+
+Run the management command from `backend/`:
+
+```powershell
+..\backend\.venv\Scripts\python manage.py train_product_classifier `
+  --data-root data/products `
+  --output models/product_classifier.pt `
+  --epochs 8 `
+  --batch-size 16 `
+  --learning-rate 0.001 `
+  --image-size 224
+```
+
+After training, point `VISION_MODEL_PATH` to the generated `.pt` file.
+
 ## Admin CSRF on Production
 
 If admin login returns `403 CSRF verification failed` on hosted domains, set:

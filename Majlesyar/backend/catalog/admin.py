@@ -1,7 +1,30 @@
+from django import forms
 from django.contrib import admin
 
 from config.admin_mixins import PersianAdminFormMixin
 from .models import BuilderItem, Category, Product, Tag
+
+
+class ProductAdminForm(forms.ModelForm):
+    input_mode = forms.ChoiceField(
+        label="حالت افزودن محصول",
+        choices=Product.InputMode.choices,
+        required=False,
+        initial=Product.InputMode.NORMAL,
+        help_text="حالت عادی فقط اطلاعات واردشده را ذخیره می‌کند. حالت پردازش عکس، عناصر داخل تصویر را تشخیص می‌دهد.",
+    )
+
+    class Meta:
+        model = Product
+        fields = "__all__"
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        instance._input_mode = self.cleaned_data.get("input_mode") or Product.InputMode.NORMAL
+        if commit:
+            instance.save()
+            self.save_m2m()
+        return instance
 
 
 @admin.register(Category)
@@ -38,6 +61,7 @@ class TagAdmin(PersianAdminFormMixin, admin.ModelAdmin):
 
 @admin.register(Product)
 class ProductAdmin(PersianAdminFormMixin, admin.ModelAdmin):
+    form = ProductAdminForm
     EVENT_CATEGORY_SLUGS = ("conference", "memorial", "halva-khorma", "party")
     list_display = ("name", "url_slug", "price", "available", "featured", "updated_at")
     list_filter = ("available", "featured", "categories", "tags")
@@ -51,7 +75,7 @@ class ProductAdmin(PersianAdminFormMixin, admin.ModelAdmin):
             "اطلاعات اصلی",
             {
                 "description": "راهنما: نام، توضیحات و اطلاعات تصویر را کامل و واضح وارد کنید.",
-                "fields": ("name", "url_slug", "description", "image", "image_name", "image_alt"),
+                "fields": ("input_mode", "name", "url_slug", "description", "image", "image_name", "image_alt"),
             },
         ),
         (

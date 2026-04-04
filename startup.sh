@@ -21,7 +21,7 @@ ADMIN_USERNAME="admin"
 ADMIN_PASSWORD="admin"
 ADMIN_EMAIL="admin@majlesyar.com"
 
-apt-get update -y && apt-get install -y git curl ca-certificates cron sqlite3 rsync
+apt-get update -y && apt-get install -y git curl ca-certificates cron sqlite3 rsync nginx
 
 if ! command -v docker >/dev/null 2>&1; then
   curl -fsSL https://get.docker.com | sh
@@ -120,7 +120,13 @@ docker run -d \
 
 sleep 5
 docker logs --tail 50 "$CONTAINER_NAME"
-docker logs --tail 50 "$CONTAINER_NAME"
+
+curl --fail --silent --show-error --retry 12 --retry-delay 2 http://127.0.0.1:8000 >/dev/null
+
+if command -v systemctl >/dev/null 2>&1; then
+  systemctl enable --now nginx
+  systemctl restart nginx
+fi
 
 docker exec \
   -e DJANGO_SUPERUSER_USERNAME="$ADMIN_USERNAME" \

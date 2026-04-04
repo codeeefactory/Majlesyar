@@ -3,7 +3,15 @@ from PIL import Image, UnidentifiedImageError
 from django.utils.text import slugify
 
 from .image_utils import derive_image_label, image_extension_validator
-from .models import BuilderItem, Category, Product, Tag, sync_product_categories
+from .models import (
+    BuilderItem,
+    Category,
+    Product,
+    Tag,
+    PRODUCT_INPUT_MODE_NORMAL,
+    PRODUCT_INPUT_MODE_PHOTO_PROCESSING,
+    sync_product_categories,
+)
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -45,6 +53,7 @@ class ProductSerializer(serializers.ModelSerializer):
     image_name = serializers.SerializerMethodField()
     image_alt = serializers.SerializerMethodField()
     uri = serializers.SerializerMethodField()
+    photo_analysis = serializers.JSONField(read_only=True)
 
     class Meta:
         model = Product
@@ -62,6 +71,7 @@ class ProductSerializer(serializers.ModelSerializer):
             "image",
             "image_name",
             "image_alt",
+            "photo_analysis",
             "featured",
             "available",
         )
@@ -99,6 +109,12 @@ class ProductSerializer(serializers.ModelSerializer):
 
 
 class ProductWriteSerializer(serializers.ModelSerializer):
+    input_mode = serializers.ChoiceField(
+        choices=[PRODUCT_INPUT_MODE_NORMAL, PRODUCT_INPUT_MODE_PHOTO_PROCESSING],
+        required=False,
+        default=PRODUCT_INPUT_MODE_NORMAL,
+        write_only=True,
+    )
     category_ids = serializers.ListField(
         child=serializers.UUIDField(format="hex_verbose"),
         required=False,
@@ -131,6 +147,7 @@ class ProductWriteSerializer(serializers.ModelSerializer):
             "url_slug",
             "description",
             "price",
+            "input_mode",
             "category_ids",
             "tag_ids",
             "event_types",
@@ -208,6 +225,7 @@ class ProductWriteSerializer(serializers.ModelSerializer):
         return value
 
     def create(self, validated_data: dict) -> Product:
+        input_mode = validated_data.pop("input_mode", PRODUCT_INPUT_MODE_NORMAL)
         category_ids = validated_data.pop("category_ids", serializers.empty)
         tag_ids = validated_data.pop("tag_ids", [])
         validated_data.pop("image", None)
@@ -219,7 +237,9 @@ class ProductWriteSerializer(serializers.ModelSerializer):
             if not validated_data.get("image_alt"):
                 validated_data["image_alt"] = derive_image_label(image_file.name)
 
-        product = Product.objects.create(**validated_data)
+        product = Product(**validated_data)
+        product._input_mode = input_mode
+        product.save()
         if category_ids is not serializers.empty:
             product.categories.set(Category.objects.filter(id__in=category_ids))
         else:
@@ -232,6 +252,7 @@ class ProductWriteSerializer(serializers.ModelSerializer):
         return product
 
     def update(self, instance: Product, validated_data: dict) -> Product:
+        input_mode = validated_data.pop("input_mode", PRODUCT_INPUT_MODE_NORMAL)
         category_ids = validated_data.pop("category_ids", serializers.empty)
         tag_ids = validated_data.pop("tag_ids", serializers.empty)
         image_marker = validated_data.pop("image", serializers.empty)
@@ -252,6 +273,7 @@ class ProductWriteSerializer(serializers.ModelSerializer):
             instance.image_name = ""
             instance.image_alt = ""
 
+        instance._input_mode = input_mode
         instance.save()
 
         if category_ids is not serializers.empty:
