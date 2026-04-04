@@ -16,7 +16,7 @@ RETENTION_DAYS="7"
 CRON_SCHEDULE="0 2 * * *"
 LEGACY_MEDIA_DIR="/opt/majlesyar/.deploy/media"
 LEGACY_DB_PATH="/opt/majlesyar/.deploy/db.sqlite3"
-APP_START_CMD='python manage.py migrate --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:${PORT:-8000} --worker-class gthread --workers ${WEB_CONCURRENCY:-2} --threads ${GUNICORN_THREADS:-2} --timeout ${GUNICORN_TIMEOUT:-120} --max-requests 1200 --max-requests-jitter 100'
+APP_START_CMD='python manage.py migrate --noinput && python manage.py sync_product_categories && gunicorn config.wsgi:application --bind 0.0.0.0:${PORT:-8000} --worker-class gthread --workers ${WEB_CONCURRENCY:-2} --threads ${GUNICORN_THREADS:-2} --timeout ${GUNICORN_TIMEOUT:-120} --max-requests 1200 --max-requests-jitter 100'
 
 apt-get update -y && apt-get install -y git curl ca-certificates cron sqlite3 rsync
 
@@ -32,9 +32,10 @@ mkdir -p "$BACKUP_DIR"
 
 update_repo() {
   if [[ -d "$WORKDIR/.git" ]]; then
+    git -C "$WORKDIR" remote set-url origin "$REPO_URL"
     git -C "$WORKDIR" fetch --depth 1 origin "$REPO_REF"
     git -C "$WORKDIR" checkout "$REPO_REF"
-    git -C "$WORKDIR" pull --ff-only origin "$REPO_REF"
+    git -C "$WORKDIR" reset --hard "origin/$REPO_REF"
     return
   fi
 

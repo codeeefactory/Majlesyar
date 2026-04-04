@@ -246,3 +246,25 @@ class AdminProductApiTests(APITestCase):
         created = Product.objects.get(id=response.data["id"])
         self.assertEqual(created.image_alt, "متن جایگزین دلخواه")
         self.assertEqual(created.image_name, "custom alt")
+
+    def test_product_event_categories_are_auto_added_when_missing(self):
+        self._staff_auth()
+        auto_category, _ = Category.objects.get_or_create(
+            slug="memorial",
+            defaults={"name": "Memorial", "icon": "M"},
+        )
+        payload = {
+            "name": "پک ترحیم تست",
+            "description": "حلوا و خرما برای مراسم",
+            "price": 100000,
+            "event_types": ["memorial"],
+            "contents": ["حلوا", "خرما"],
+            "featured": False,
+            "available": True,
+        }
+
+        response = self.client.post(reverse("admin-product-list-create"), payload, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        created = Product.objects.get(id=response.data["id"])
+        self.assertIn(auto_category.id, created.categories.values_list("id", flat=True))

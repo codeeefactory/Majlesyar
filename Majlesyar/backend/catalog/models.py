@@ -57,6 +57,32 @@ def infer_event_types(name: str, description: str = "", contents: list[str] | No
     return detected
 
 
+AUTO_EVENT_CATEGORY_SLUGS = ("conference", "memorial", "defense", "party")
+
+
+def sync_product_categories(product: "Product", *, force: bool = False) -> None:
+    if product.categories.exists() and not force:
+        return
+
+    event_slugs = [slug for slug in (product.event_types or []) if isinstance(slug, str) and slug in AUTO_EVENT_CATEGORY_SLUGS]
+    if not event_slugs:
+        event_slugs = infer_event_types(product.name or "", product.description or "", product.contents or [])
+        event_slugs = [slug for slug in event_slugs if slug in AUTO_EVENT_CATEGORY_SLUGS]
+    if not event_slugs:
+        return
+
+    category_ids = list(
+        Category.objects.filter(slug__in=event_slugs).values_list("id", flat=True)
+    )
+    if not category_ids:
+        return
+
+    existing_ids = set(product.categories.values_list("id", flat=True))
+    missing_ids = [category_id for category_id in category_ids if category_id not in existing_ids]
+    if missing_ids:
+        product.categories.add(*missing_ids)
+
+
 class Category(models.Model):
     id = models.UUIDField(
         primary_key=True,
@@ -278,6 +304,7 @@ class Product(models.Model):
                 self.image_alt = derived_label
 
         super().save(*args, **kwargs)
+        sync_product_categories(self)
 
         auto_detect_enabled = os.getenv("PACK_IMAGE_DETECTION", "1").lower() in ("1", "true", "yes")
         if auto_detect_enabled and self.image and not (self.contents or []):

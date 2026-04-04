@@ -37,10 +37,10 @@ export default function HomePage() {
   return (
     <AppShell>
       <SEO
-        title="حلوا، ترحیم و گل مراسم"
-        description="سفارش آنلاین حلوا، پک ترحیم و گل مراسم با آماده‌سازی سریع برای ختم، یادبود و مناسبت‌های ویژه در تهران و البرز."
+        title="حلوا، خرما، ترحیم و گل مراسم"
+        description="سفارش آنلاین حلوا، خرما، پک ترحیم و گل مراسم با آماده‌سازی سریع برای ختم، یادبود و مناسبت‌های ویژه در تهران و البرز."
         path="/"
-        keywords={['حلوا', 'پک ترحیم', 'گل مراسم', 'گل ترحیم', 'سفارش حلوا', 'پذیرایی ترحیم']}
+        keywords={['حلوا', 'خرما', 'حلوا و خرما', 'پک ترحیم', 'گل مراسم', 'گل ترحیم', 'سفارش حلوا', 'سفارش خرما', 'پذیرایی ترحیم']}
       />
       {/* Combined Hero & Event Types Section */}
       <section className="relative overflow-hidden" aria-labelledby="hero-title">
@@ -105,7 +105,7 @@ export default function HomePage() {
             </h1>
             
             <p className="text-lg md:text-xl text-muted-foreground max-w-lg mx-auto leading-relaxed">
-              خدمات آماده و سفارشی برای فینگر فود، ترحیم، گل و دفاع پایان‌نامه.
+              خدمات آماده و سفارشی برای فینگر فود، ترحیم، گل و حلوا و خرما.
               حداقل سفارش ۴۰ عدد با تحویل سریع در تهران و البرز.
             </p>
 

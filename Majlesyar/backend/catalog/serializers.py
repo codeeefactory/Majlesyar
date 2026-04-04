@@ -3,7 +3,7 @@ from PIL import Image, UnidentifiedImageError
 from django.utils.text import slugify
 
 from .image_utils import derive_image_label, image_extension_validator
-from .models import BuilderItem, Category, Product, Tag
+from .models import BuilderItem, Category, Product, Tag, sync_product_categories
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -228,6 +228,7 @@ class ProductWriteSerializer(serializers.ModelSerializer):
                 product.categories.set(Category.objects.filter(slug__in=event_slugs))
         if tag_ids is not None:
             product.tags.set(Tag.objects.filter(id__in=tag_ids))
+        sync_product_categories(product)
         return product
 
     def update(self, instance: Product, validated_data: dict) -> Product:
@@ -261,6 +262,7 @@ class ProductWriteSerializer(serializers.ModelSerializer):
                 instance.categories.set(Category.objects.filter(slug__in=event_slugs))
         if tag_ids is not serializers.empty:
             instance.tags.set(Tag.objects.filter(id__in=tag_ids))
+        sync_product_categories(instance)
 
         return instance
 
