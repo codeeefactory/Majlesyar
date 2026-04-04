@@ -250,14 +250,14 @@ class AdminProductApiTests(APITestCase):
     def test_product_event_categories_are_auto_added_when_missing(self):
         self._staff_auth()
         auto_category, _ = Category.objects.get_or_create(
-            slug="memorial",
-            defaults={"name": "Memorial", "icon": "M"},
+            slug="halva-khorma",
+            defaults={"name": "حلوا و خرما", "icon": "🍯"},
         )
         payload = {
-            "name": "پک ترحیم تست",
+            "name": "پک حلوا و خرما",
             "description": "حلوا و خرما برای مراسم",
             "price": 100000,
-            "event_types": ["memorial"],
+            "event_types": ["halva-khorma"],
             "contents": ["حلوا", "خرما"],
             "featured": False,
             "available": True,
@@ -268,3 +268,4 @@ class AdminProductApiTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         created = Product.objects.get(id=response.data["id"])
         self.assertIn(auto_category.id, created.categories.values_list("id", flat=True))
+        self.assertEqual(created.event_types, ["halva-khorma"])

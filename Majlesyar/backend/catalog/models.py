@@ -28,6 +28,14 @@ def _normalize_text(value: str | None) -> str:
     return text.lower()
 
 
+EVENT_CATEGORY_DEFINITIONS = (
+    ("conference", "فینگر فود", "🍢"),
+    ("memorial", "ترحیم", "🕯️"),
+    ("halva-khorma", "حلوا و خرما", "🍯"),
+    ("party", "گل", "💐"),
+)
+
+
 def infer_event_types(name: str, description: str = "", contents: list[str] | None = None) -> list[str]:
     haystack = " ".join(
         value
@@ -44,7 +52,7 @@ def infer_event_types(name: str, description: str = "", contents: list[str] | No
     keyword_map = [
         ("conference", ["فینگر", "فینگرفود", "finger", "fingerfood", "canape", "اسنک", "snack"]),
         ("memorial", ["ترحیم", "نذری", "ختم", "یادبود", "مجلس"]),
-        ("defense", ["حلوا", "خرما", "دفاع", "پایان نامه", "پایان‌نامه"]),
+        ("halva-khorma", ["حلوا", "خرما", "حلوا و خرما"]),
         ("party", ["گل", "دسته گل", "گل آرایی", "گل‌آرایی", "bouquet", "flower"]),
     ]
 
@@ -57,17 +65,54 @@ def infer_event_types(name: str, description: str = "", contents: list[str] | No
     return detected
 
 
-AUTO_EVENT_CATEGORY_SLUGS = ("conference", "memorial", "defense", "party")
+AUTO_EVENT_CATEGORY_SLUGS = tuple(slug for slug, _name, _icon in EVENT_CATEGORY_DEFINITIONS)
+
+
+def normalize_event_types(event_types: list[str] | None) -> list[str]:
+    cleaned = []
+    for item in event_types or []:
+        slug = str(item).strip()
+        if not slug:
+            continue
+        if slug == "defense":
+            slug = "halva-khorma"
+        cleaned.append(slug)
+    return list(dict.fromkeys(cleaned))
+
+
+def ensure_event_categories() -> None:
+    for slug, name, icon in EVENT_CATEGORY_DEFINITIONS:
+        Category.objects.update_or_create(
+            slug=slug,
+            defaults={"name": name, "icon": icon},
+        )
+
+    legacy_category = Category.objects.filter(slug="defense").first()
+    target_category = Category.objects.filter(slug="halva-khorma").first()
+    if legacy_category and target_category and legacy_category.pk != target_category.pk:
+        for product in legacy_category.products.exclude(categories=target_category):
+            product.categories.add(target_category)
+        legacy_category.delete()
 
 
 def sync_product_categories(product: "Product", *, force: bool = False) -> None:
+    ensure_event_categories()
+
+    normalized_event_types = normalize_event_types(product.event_types)
+    if normalized_event_types != (product.event_types or []):
+        product.event_types = normalized_event_types
+        Product.objects.filter(pk=product.pk).update(event_types=normalized_event_types)
+
     if product.categories.exists() and not force:
         return
 
-    event_slugs = [slug for slug in (product.event_types or []) if isinstance(slug, str) and slug in AUTO_EVENT_CATEGORY_SLUGS]
+    event_slugs = [slug for slug in normalized_event_types if slug in AUTO_EVENT_CATEGORY_SLUGS]
     if not event_slugs:
         event_slugs = infer_event_types(product.name or "", product.description or "", product.contents or [])
         event_slugs = [slug for slug in event_slugs if slug in AUTO_EVENT_CATEGORY_SLUGS]
+        if event_slugs:
+            product.event_types = event_slugs
+            Product.objects.filter(pk=product.pk).update(event_types=event_slugs)
     if not event_slugs:
         return
 

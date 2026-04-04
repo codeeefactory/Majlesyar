@@ -38,7 +38,7 @@ class TagAdmin(PersianAdminFormMixin, admin.ModelAdmin):
 
 @admin.register(Product)
 class ProductAdmin(PersianAdminFormMixin, admin.ModelAdmin):
-    EVENT_CATEGORY_SLUGS = ("conference", "memorial", "defense", "party")
+    EVENT_CATEGORY_SLUGS = ("conference", "memorial", "halva-khorma", "party")
     list_display = ("name", "url_slug", "price", "available", "featured", "updated_at")
     list_filter = ("available", "featured", "categories", "tags")
     search_fields = ("name", "url_slug", "description", "contents", "image_name", "image_alt", "tags__name")

@@ -17,6 +17,9 @@ CRON_SCHEDULE="0 2 * * *"
 LEGACY_MEDIA_DIR="/opt/majlesyar/.deploy/media"
 LEGACY_DB_PATH="/opt/majlesyar/.deploy/db.sqlite3"
 APP_START_CMD='python manage.py migrate --noinput && python manage.py sync_product_categories && gunicorn config.wsgi:application --bind 0.0.0.0:${PORT:-8000} --worker-class gthread --workers ${WEB_CONCURRENCY:-2} --threads ${GUNICORN_THREADS:-2} --timeout ${GUNICORN_TIMEOUT:-120} --max-requests 1200 --max-requests-jitter 100'
+ADMIN_USERNAME="admin"
+ADMIN_PASSWORD="admin"
+ADMIN_EMAIL="admin@majlesyar.com"
 
 apt-get update -y && apt-get install -y git curl ca-certificates cron sqlite3 rsync
 
@@ -117,6 +120,38 @@ docker run -d \
 
 sleep 5
 docker logs --tail 50 "$CONTAINER_NAME"
+
+docker exec \
+  -e DJANGO_SUPERUSER_USERNAME="$ADMIN_USERNAME" \
+  -e DJANGO_SUPERUSER_PASSWORD="$ADMIN_PASSWORD" \
+  -e DJANGO_SUPERUSER_EMAIL="$ADMIN_EMAIL" \
+  "$CONTAINER_NAME" \
+  python manage.py shell -c "exec(\"\"\"from django.contrib.auth import get_user_model
+User = get_user_model()
+username = '${ADMIN_USERNAME}'
+email = '${ADMIN_EMAIL}'
+password = '${ADMIN_PASSWORD}'
+user, created = User.objects.get_or_create(
+    username=username,
+    defaults={'email': email, 'is_staff': True, 'is_superuser': True},
+)
+changed = False
+if user.email != email:
+    user.email = email
+    changed = True
+if not user.is_staff:
+    user.is_staff = True
+    changed = True
+if not user.is_superuser:
+    user.is_superuser = True
+    changed = True
+if created or not user.check_password(password):
+    user.set_password(password)
+    changed = True
+if changed:
+    user.save()
+print('superuser ready')
+\"\"\")"
 
 cat > /usr/local/bin/majlesyar-backup.sh <<SH
 #!/usr/bin/env bash
