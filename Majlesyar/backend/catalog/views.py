@@ -10,6 +10,7 @@ from .models import BuilderItem, Category, Product, Tag
 from .serializers import (
     BuilderItemSerializer,
     CategorySerializer,
+    CategoryWriteSerializer,
     ProductSerializer,
     ProductWriteSerializer,
     TagSerializer,
@@ -176,3 +177,26 @@ class AdminProductDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
         product = serializer.save()
         response_serializer = ProductSerializer(product, context={"request": request})
         return Response(response_serializer.data)
+
+
+class AdminCategoryListCreateAPIView(generics.ListCreateAPIView):
+    permission_classes = [IsStaffUser]
+    parser_classes = [JSONParser, MultiPartParser, FormParser]
+    queryset = Category.objects.all()
+
+    def get_serializer_class(self):
+        if self.request.method == "POST":
+            return CategoryWriteSerializer
+        return CategorySerializer
+
+
+class AdminCategoryDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsStaffUser]
+    parser_classes = [JSONParser, MultiPartParser, FormParser]
+    queryset = Category.objects.all()
+    lookup_field = "id"
+
+    def get_serializer_class(self):
+        if self.request.method in ("PATCH", "PUT"):
+            return CategoryWriteSerializer
+        return CategorySerializer

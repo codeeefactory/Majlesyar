@@ -7,9 +7,29 @@ from .models import BuilderItem, Category, Product, Tag
 
 
 class CategorySerializer(serializers.ModelSerializer):
+    logo = serializers.SerializerMethodField()
+
     class Meta:
         model = Category
-        fields = ("id", "name", "slug", "icon")
+        fields = ("id", "name", "slug", "icon", "color", "logo")
+
+    def get_logo(self, obj: Category) -> str | None:
+        if not obj.logo:
+            return None
+        request = self.context.get("request")
+        if request:
+            return request.build_absolute_uri(obj.logo.url)
+        return obj.logo.url
+
+
+class CategoryWriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ("id", "name", "slug", "icon", "color", "logo")
+        read_only_fields = ("id",)
+
+    def validate_slug(self, value: str) -> str:
+        return slugify((value or "").strip())
 
 
 class TagSerializer(serializers.ModelSerializer):

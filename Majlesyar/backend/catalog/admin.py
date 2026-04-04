@@ -6,7 +6,7 @@ from .models import BuilderItem, Category, Product, Tag
 
 @admin.register(Category)
 class CategoryAdmin(PersianAdminFormMixin, admin.ModelAdmin):
-    list_display = ("name", "slug", "icon")
+    list_display = ("name", "slug", "icon", "color")
     search_fields = ("name", "slug")
     prepopulated_fields = {"slug": ("name",)}
     fieldsets = (
@@ -14,7 +14,7 @@ class CategoryAdmin(PersianAdminFormMixin, admin.ModelAdmin):
             "اطلاعات دسته بندی",
             {
                 "description": "راهنما: نام را واضح بنویسید و اسلاگ را انگلیسی و یکتا ثبت کنید.",
-                "fields": ("name", "slug", "icon"),
+                "fields": ("name", "slug", "icon", "color", "logo"),
             },
         ),
     )
