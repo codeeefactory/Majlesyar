@@ -16,6 +16,7 @@ RETENTION_DAYS="7"
 CRON_SCHEDULE="0 2 * * *"
 LEGACY_MEDIA_DIR="/opt/majlesyar/.deploy/media"
 LEGACY_DB_PATH="/opt/majlesyar/.deploy/db.sqlite3"
+APP_START_CMD='python manage.py migrate --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:${PORT:-8000} --worker-class gthread --workers ${WEB_CONCURRENCY:-2} --threads ${GUNICORN_THREADS:-2} --timeout ${GUNICORN_TIMEOUT:-120} --max-requests 1200 --max-requests-jitter 100'
 
 apt-get update -y && apt-get install -y git curl ca-certificates cron sqlite3 rsync
 
@@ -28,6 +29,42 @@ systemctl enable --now cron
 
 mkdir -p "$DATA_DIR/media"
 mkdir -p "$BACKUP_DIR"
+
+update_repo() {
+  if [[ -d "$WORKDIR/.git" ]]; then
+    git -C "$WORKDIR" fetch --depth 1 origin "$REPO_REF"
+    git -C "$WORKDIR" checkout "$REPO_REF"
+    git -C "$WORKDIR" pull --ff-only origin "$REPO_REF"
+    return
+  fi
+
+  if [[ -d "$WORKDIR" ]]; then
+    ts="$(date +%F_%H%M%S)"
+    LEGACY_ARCHIVE_ROOT="/opt/majlesyar_legacy"
+    mkdir -p "$LEGACY_ARCHIVE_ROOT"
+    mv "$WORKDIR" "$LEGACY_ARCHIVE_ROOT/majlesyar_$ts"
+  fi
+
+  git clone --depth 1 --branch "$REPO_REF" "$REPO_URL" "$WORKDIR"
+}
+
+create_predeploy_backup() {
+  ts="$(date +%F_%H%M%S)"
+  work_dir="$(mktemp -d)"
+  trap 'rm -rf "$work_dir"' RETURN
+
+  if [[ -f "$DATA_DIR/db.sqlite3" ]]; then
+    sqlite3 "$DATA_DIR/db.sqlite3" ".backup '$work_dir/db.sqlite3'"
+  fi
+  if [[ -d "$DATA_DIR/media" ]]; then
+    rsync -a "$DATA_DIR/media"/ "$work_dir/media"/
+  fi
+  if [[ -f "$DATA_DIR/.env.production" ]]; then
+    cp "$DATA_DIR/.env.production" "$work_dir/.env.production"
+  fi
+
+  tar -czf "$BACKUP_DIR/predeploy_$ts.tar.gz" -C "$work_dir" .
+}
 
 # Migrate legacy media (stored inside WORKDIR) into persistent data dir before archive
 if [[ -d "$LEGACY_MEDIA_DIR" ]]; then
@@ -44,14 +81,7 @@ fi
 # Ensure db exists even if no legacy db was found
 touch "$DATA_DIR/db.sqlite3"
 
-# Archive existing deploy instead of wiping (keep legacy paths)
-if [[ -d "$WORKDIR" ]]; then
-  ts="$(date +%F_%H%M%S)"
-  LEGACY_ARCHIVE_ROOT="/opt/majlesyar_legacy"
-  mkdir -p "$LEGACY_ARCHIVE_ROOT"
-  mv "$WORKDIR" "$LEGACY_ARCHIVE_ROOT/majlesyar_$ts"
-fi
-git clone --depth 1 --branch "$REPO_REF" "$REPO_URL" "$WORKDIR"
+update_repo
 
 # Keep existing env to preserve secrets; create only if missing
 if [[ ! -f "$DATA_DIR/.env.production" ]]; then
@@ -68,6 +98,8 @@ fi
 
 cd "$WORKDIR"
 
+create_predeploy_backup
+
 docker build -t "$IMAGE_NAME" .
 
 docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
@@ -79,7 +111,8 @@ docker run -d \
   -p 127.0.0.1:8000:8000 \
   -v "$DATA_DIR/db.sqlite3:/app/db.sqlite3" \
   -v "$DATA_DIR/media:/app/media" \
-  "$IMAGE_NAME"
+  "$IMAGE_NAME" \
+  sh -c "$APP_START_CMD"
 
 sleep 5
 docker logs --tail 50 "$CONTAINER_NAME"
