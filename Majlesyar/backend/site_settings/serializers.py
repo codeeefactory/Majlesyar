@@ -12,4 +12,13 @@ class SiteSettingSerializer(serializers.ModelSerializer):
             "allowed_provinces",
             "delivery_windows",
             "payment_methods",
+            "contact_phone",
+            "contact_address",
+            "working_hours",
+            "instagram_url",
+            "telegram_url",
+            "whatsapp_url",
+            "bale_url",
+            "maps_url",
+            "maps_embed_url",
         )

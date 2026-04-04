@@ -6,27 +6,40 @@ from .models import SiteSetting
 
 @admin.register(SiteSetting)
 class SiteSettingAdmin(PersianAdminFormMixin, admin.ModelAdmin):
-    list_display = ("min_order_qty", "lead_time_hours", "updated_at")
+    list_display = ("contact_phone", "min_order_qty", "lead_time_hours", "updated_at")
     readonly_fields = ("updated_at",)
     fieldsets = (
         (
+            "اطلاعات تماس و شبکه‌های اجتماعی",
+            {
+                "fields": (
+                    "contact_phone",
+                    "contact_address",
+                    "working_hours",
+                    "instagram_url",
+                    "telegram_url",
+                    "whatsapp_url",
+                    "bale_url",
+                    "maps_url",
+                    "maps_embed_url",
+                ),
+            },
+        ),
+        (
             "قوانین سفارش",
             {
-                "description": "راهنما: حداقل تعداد سفارش و حداقل زمان آماده سازی را مشخص کنید.",
                 "fields": ("min_order_qty", "lead_time_hours"),
             },
         ),
         (
             "تنظیمات ارسال",
             {
-                "description": "راهنما: مقادیر را با فرمت JSON معتبر وارد کنید.",
                 "fields": ("allowed_provinces", "delivery_windows"),
             },
         ),
         (
             "تنظیمات پرداخت",
             {
-                "description": "راهنما: روش های پرداخت را همراه با وضعیت فعال/غیرفعال ثبت کنید.",
                 "fields": ("payment_methods", "updated_at"),
             },
         ),

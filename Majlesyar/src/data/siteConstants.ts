@@ -1,6 +1,6 @@
 import type { Settings } from "@/types/domain";
 
-export const CONTACT_PHONE = "+98991505141";
+export const CONTACT_PHONE = "+989915505141";
 export const CONTACT_PHONE_DISPLAY = CONTACT_PHONE;
 export const CONTACT_PHONE_WHATSAPP = CONTACT_PHONE.replace("+", "");
 
@@ -54,14 +54,42 @@ export const eventTypes: EventType[] = [
     id: "memorial",
     name: "ترحیم",
     slug: "memorial",
-    description: "پک‌های متناسب با مراسم ترحیم",
+    description: "سفارش پک ترحیم، حلوا و اقلام پذیرایی مراسم با بسته‌بندی محترمانه و تحویل سریع در تهران و البرز.",
+    seoTitle: "سفارش حلوا و پک ترحیم مراسم",
+    seoDescription:
+      "خرید و سفارش حلوا، سینی حلوا و پک ترحیم برای مراسم ختم و یادبود. پک‌های پذیرایی ترحیم با چیدمان محترمانه، آماده‌سازی سریع و امکان سفارش عمده در تهران و البرز.",
+    seoKeywords: [
+      "حلوا",
+      "سینی حلوا",
+      "حلوا ترحیم",
+      "پک ترحیم",
+      "پذیرایی ترحیم",
+      "پک ختم",
+      "سفارش حلوا مراسم",
+      "سفارش پک ترحیم",
+      "خرما و حلوا",
+    ],
+    faqs: [
+      {
+        question: "آیا امکان سفارش حلوا برای مراسم ترحیم وجود دارد؟",
+        answer: "بله، سفارش حلوا و سینی حلوا برای مراسم ترحیم و یادبود انجام می‌شود و بسته به نوع مراسم امکان هماهنگی تعداد و نحوه ارائه وجود دارد.",
+      },
+      {
+        question: "پک ترحیم شامل چه اقلامی است؟",
+        answer: "بسته به محصول انتخابی، پک ترحیم می‌تواند شامل حلوا، خرما، نوشیدنی، دستمال و سایر اقلام پذیرایی مراسم باشد.",
+      },
+      {
+        question: "سفارش عمده پک ترحیم و حلوا چطور ثبت می‌شود؟",
+        answer: "برای سفارش عمده حلوا و پک ترحیم کافی است تعداد، زمان مراسم و محل تحویل را مشخص کنید تا هماهنگی نهایی انجام شود.",
+      },
+    ],
     icon: "🕯️",
     color: "bg-muted",
     available: true,
   },
   {
     id: "defense",
-    name: "???? ? ????",
+    name: "دفاع پایان نامه",
     slug: "defense",
     description: "به‌زودی فعال می‌شود",
     icon: "🎓",
@@ -73,16 +101,18 @@ export const eventTypes: EventType[] = [
     name: "گل",
     slug: "party",
     description: "سفارش گل و گل‌آرایی برای مراسم، ترحیم، هدیه و مناسبت‌های ویژه با طراحی آماده و اختصاصی.",
-    seoTitle: "گل و گل‌آرایی مراسم",
+    seoTitle: "سفارش گل و گل‌آرایی ترحیم و مراسم",
     seoDescription:
-      "سفارش گل مراسم، دسته گل و گل‌آرایی برای ترحیم، هدیه و مناسبت‌های ویژه. طراحی متنوع، ثبت سفارش سریع و هماهنگی بر اساس سلیقه شما.",
+      "سفارش گل مراسم، گل ترحیم، دسته گل و گل‌آرایی برای یادبود، هدیه و مناسبت‌های ویژه. طراحی متنوع، ثبت سفارش سریع و هماهنگی بر اساس سلیقه شما.",
     seoKeywords: [
       "گل مراسم",
+      "گل ترحیم",
+      "سفارش گل ترحیم",
       "گل آرایی",
       "گل‌آرایی",
       "دسته گل",
+      "دسته گل ترحیم",
       "سفارش گل",
-      "گل ترحیم",
       "گل مناسب مراسم",
     ],
     faqs: [
@@ -93,6 +123,10 @@ export const eventTypes: EventType[] = [
       {
         question: "گل‌های این بخش برای چه مناسبت‌هایی مناسب هستند؟",
         answer: "این محصولات برای ترحیم، هدیه، مجالس رسمی و سایر مناسبت‌های خاص قابل سفارش هستند.",
+      },
+      {
+        question: "آیا امکان سفارش گل برای مراسم ترحیم وجود دارد؟",
+        answer: "بله، سفارش گل ترحیم و دسته گل مناسب مراسم یادبود با هماهنگی نوع چیدمان و سبک موردنظر انجام می‌شود.",
       },
     ],
     icon: "💐",
@@ -110,6 +144,16 @@ export const defaultSettings: Settings = {
     { id: "pay-later", label: "پرداخت بعد از تایید", enabled: true },
     { id: "online", label: "درگاه آنلاین (به‌زودی)", enabled: false },
   ],
+  contactPhone: CONTACT_PHONE,
+  contactAddress: "تهران، امیرآباد، خیابان کارگر شمالی، خیابان فرشی مقدم(شانزدهم)، پلاک ۹۱، واحد۶.",
+  workingHours: "شنبه تا پنجشنبه ۹ صبح تا ۹ شب",
+  instagramUrl: "https://instagram.com/majlesyar",
+  telegramUrl: "https://t.me/majlesyar",
+  whatsappUrl: `https://wa.me/${CONTACT_PHONE_WHATSAPP}`,
+  baleUrl: "https://ble.ir/majlesyar",
+  mapsUrl: "https://maps.google.com/?q=Tehran,Valiasr",
+  mapsEmbedUrl:
+    "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3239.9627430068!2d51.4066!3d35.7219!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMzXCsDQzJzE4LjgiTiA1McKwMjQnMjMuOCJF!5e0!3m2!1sen!2s!4v1699999999999!5m2!1sen!2s",
 };
 
 export const allProvinces = [

@@ -1,5 +1,6 @@
 import { useEffect } from "react";
-import { CONTACT_PHONE } from "@/data/siteConstants";
+import { useSettings } from "@/contexts/SettingsContext";
+import { getSameAsLinks } from "@/lib/contact";
 
 interface BreadcrumbItem {
   name: string;
@@ -128,11 +129,19 @@ export function SEO({
   noindex = false,
   keywords = DEFAULT_KEYWORDS,
 }: SEOProps) {
+  const { settings } = useSettings();
+
   useEffect(() => {
     const baseUrl = getBaseUrl();
     const fullTitle = title ? `${title} | ${SITE_NAME}` : `${SITE_NAME} | پک‌های پذیرایی ویژه مراسمات`;
     const canonicalUrl = `${baseUrl}${path}`;
     const keywordsValue = keywords.join(", ");
+    const sameAs = getSameAsLinks([
+      settings.instagramUrl,
+      settings.telegramUrl,
+      settings.whatsappUrl,
+      settings.baleUrl,
+    ]);
 
     if (typeof document !== "undefined") {
       document.documentElement.lang = "fa";
@@ -171,17 +180,17 @@ export function SEO({
       description: DEFAULT_DESCRIPTION,
       contactPoint: {
         "@type": "ContactPoint",
-        telephone: CONTACT_PHONE,
+        telephone: settings.contactPhone,
         contactType: "customer service",
         availableLanguage: "Persian",
       },
       address: {
         "@type": "PostalAddress",
-        addressLocality: "تهران",
+        streetAddress: settings.contactAddress,
         addressCountry: "IR",
       },
       areaServed: ["تهران", "البرز"],
-      sameAs: ["https://instagram.com/majlesyar", "https://t.me/majlesyar"],
+      sameAs,
     };
 
     const localBusinessSchema = {
@@ -192,13 +201,12 @@ export function SEO({
       alternateName: "Majlesyar",
       description: DEFAULT_DESCRIPTION,
       url: baseUrl,
-      telephone: CONTACT_PHONE,
+      telephone: settings.contactPhone,
       priceRange: "$$",
       image: `${baseUrl}/favicon.ico`,
       address: {
         "@type": "PostalAddress",
-        streetAddress: "خیابان ولیعصر",
-        addressLocality: "تهران",
+        streetAddress: settings.contactAddress,
         addressCountry: "IR",
       },
       geo: {
@@ -206,15 +214,9 @@ export function SEO({
         latitude: "35.7219",
         longitude: "51.4066",
       },
-      openingHoursSpecification: {
-        "@type": "OpeningHoursSpecification",
-        dayOfWeek: ["Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday"],
-        opens: "09:00",
-        closes: "21:00",
-      },
+      openingHours: settings.workingHours,
       areaServed: [
         { "@type": "City", name: "تهران" },
-        { "@type": "City", name: "کرج" },
         { "@type": "State", name: "البرز" },
       ],
       hasOfferCatalog: {
@@ -311,7 +313,24 @@ export function SEO({
         removeMeta("name", "robots");
       }
     };
-  }, [title, description, path, ogImage, product, breadcrumbs, faq, noindex, keywords]);
+  }, [
+    title,
+    description,
+    path,
+    ogImage,
+    product,
+    breadcrumbs,
+    faq,
+    noindex,
+    keywords,
+    settings.contactPhone,
+    settings.contactAddress,
+    settings.workingHours,
+    settings.instagramUrl,
+    settings.telegramUrl,
+    settings.whatsappUrl,
+    settings.baleUrl,
+  ]);
 
   return null;
 }

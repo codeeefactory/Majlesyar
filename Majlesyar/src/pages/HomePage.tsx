@@ -4,6 +4,7 @@ import { AppShell } from '@/components/layout';
 import { Button } from '@/components/ui/button';
 import { EventCard } from '@/components/EventCard';
 import { ProductCard } from '@/components/ProductCard';
+import { SEO } from '@/components/SEO';
 import { eventTypes } from '@/data/siteConstants';
 import { Sparkles, Clock, ArrowLeft, Truck, Shield, Star, Wrench } from 'lucide-react';
 import { listProducts } from '@/lib/api';
@@ -34,7 +35,13 @@ export default function HomePage() {
   }, []);
 
   return (
-    <AppShell>      
+    <AppShell>
+      <SEO
+        title="حلوا، ترحیم و گل مراسم"
+        description="سفارش آنلاین حلوا، پک ترحیم و گل مراسم با آماده‌سازی سریع برای ختم، یادبود و مناسبت‌های ویژه در تهران و البرز."
+        path="/"
+        keywords={['حلوا', 'پک ترحیم', 'گل مراسم', 'گل ترحیم', 'سفارش حلوا', 'پذیرایی ترحیم']}
+      />
       {/* Combined Hero & Event Types Section */}
       <section className="relative overflow-hidden" aria-labelledby="hero-title">
         <div className="absolute inset-0 cream-gradient" />

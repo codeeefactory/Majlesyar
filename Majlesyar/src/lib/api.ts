@@ -58,6 +58,15 @@ interface ApiSettings {
   allowed_provinces: string[];
   delivery_windows: string[];
   payment_methods: { id: string; label: string; enabled: boolean }[];
+  contact_phone: string;
+  contact_address: string;
+  working_hours: string;
+  instagram_url: string;
+  telegram_url: string;
+  whatsapp_url: string;
+  bale_url: string;
+  maps_url: string;
+  maps_embed_url: string;
 }
 
 interface ApiOrderItem {
@@ -174,6 +183,15 @@ function mapSettings(apiSettings: ApiSettings): Settings {
     allowedProvinces: apiSettings.allowed_provinces || [],
     deliveryWindows: apiSettings.delivery_windows || [],
     paymentMethods: apiSettings.payment_methods || [],
+    contactPhone: apiSettings.contact_phone || "",
+    contactAddress: apiSettings.contact_address || "",
+    workingHours: apiSettings.working_hours || "",
+    instagramUrl: apiSettings.instagram_url || "",
+    telegramUrl: apiSettings.telegram_url || "",
+    whatsappUrl: apiSettings.whatsapp_url || "",
+    baleUrl: apiSettings.bale_url || "",
+    mapsUrl: apiSettings.maps_url || "",
+    mapsEmbedUrl: apiSettings.maps_embed_url || "",
   };
 }
 

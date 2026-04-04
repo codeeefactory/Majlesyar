@@ -1,55 +1,40 @@
-from django.db import models
 from django.core.validators import MinValueValidator
+from django.db import models
 
 
 class SiteSetting(models.Model):
     """
-    مدل تک رکوردی برای تنظیمات سراسری فروشگاه.
-    همیشه با کلید اصلی 1 ذخیره می شود.
+    Single-record model for global storefront settings.
+    Always stored with primary key 1.
     """
 
-    id = models.PositiveSmallIntegerField(
-        primary_key=True,
-        default=1,
-        editable=False,
-        verbose_name="شناسه",
-        help_text="نکته: تنظیمات سایت فقط یک رکورد دارد و شناسه آن همواره 1 است.",
-    )
-    min_order_qty = models.PositiveIntegerField(
-        default=40,
-        validators=[MinValueValidator(1)],
-        verbose_name="حداقل تعداد سفارش",
-        help_text="نکته: مشتری باید حداقل این تعداد را برای ثبت سفارش وارد کند.",
-    )
-    lead_time_hours = models.PositiveIntegerField(
-        default=48,
-        validators=[MinValueValidator(0)],
-        verbose_name="حداقل زمان آماده سازی (ساعت)",
-        help_text="نکته: فاصله زمانی لازم از ثبت سفارش تا زمان تحویل.",
-    )
-    allowed_provinces = models.JSONField(
-        default=list,
+    id = models.PositiveSmallIntegerField(primary_key=True, default=1, editable=False)
+    min_order_qty = models.PositiveIntegerField(default=40, validators=[MinValueValidator(1)])
+    lead_time_hours = models.PositiveIntegerField(default=48, validators=[MinValueValidator(0)])
+    allowed_provinces = models.JSONField(default=list, blank=True)
+    delivery_windows = models.JSONField(default=list, blank=True)
+    payment_methods = models.JSONField(default=list, blank=True)
+    contact_phone = models.CharField(max_length=32, default="+989915505141", blank=True)
+    contact_address = models.TextField(
+        default="تهران، امیرآباد، خیابان کارگر شمالی، خیابان فرشی مقدم(شانزدهم)، پلاک ۹۱، واحد۶.",
         blank=True,
-        verbose_name="استان های مجاز",
-        help_text="نکته: استان های قابل ارسال را به صورت لیست JSON وارد کنید.",
     )
-    delivery_windows = models.JSONField(
-        default=list,
+    working_hours = models.CharField(
+        max_length=255,
+        default="شنبه تا پنجشنبه ۹ صبح تا ۹ شب",
         blank=True,
-        verbose_name="بازه های تحویل",
-        help_text="نکته: بازه های زمانی تحویل را به صورت لیست JSON وارد کنید.",
     )
-    payment_methods = models.JSONField(
-        default=list,
+    instagram_url = models.URLField(max_length=500, default="https://instagram.com/majlesyar", blank=True)
+    telegram_url = models.URLField(max_length=500, default="https://t.me/majlesyar", blank=True)
+    whatsapp_url = models.URLField(max_length=500, default="https://wa.me/989915505141", blank=True)
+    bale_url = models.URLField(max_length=500, default="https://ble.ir/majlesyar", blank=True)
+    maps_url = models.URLField(max_length=500, default="https://maps.google.com/?q=Tehran,Valiasr", blank=True)
+    maps_embed_url = models.URLField(
+        max_length=1000,
+        default="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3239.9627430068!2d51.4066!3d35.7219!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMzXCsDQzJzE4LjgiTiA1McKwMjQnMjMuOCJF!5e0!3m2!1sen!2s!4v1699999999999!5m2!1sen!2s",
         blank=True,
-        verbose_name="روش های پرداخت",
-        help_text="نکته: روش های پرداخت فعال/غیرفعال را به صورت JSON تنظیم کنید.",
     )
-    updated_at = models.DateTimeField(
-        auto_now=True,
-        verbose_name="آخرین بروزرسانی",
-        help_text="نکته: زمان آخرین بروزرسانی این تنظیمات.",
-    )
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         verbose_name = "تنظیمات سایت"

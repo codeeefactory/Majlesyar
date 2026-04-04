@@ -36,6 +36,15 @@ export interface Settings {
   allowedProvinces: string[];
   deliveryWindows: string[];
   paymentMethods: { id: string; label: string; enabled: boolean }[];
+  contactPhone: string;
+  contactAddress: string;
+  workingHours: string;
+  instagramUrl: string;
+  telegramUrl: string;
+  whatsappUrl: string;
+  baleUrl: string;
+  mapsUrl: string;
+  mapsEmbedUrl: string;
 }
 
 export interface OrderItem {

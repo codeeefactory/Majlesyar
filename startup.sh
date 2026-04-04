@@ -29,14 +29,16 @@ systemctl enable --now cron
 mkdir -p "$DATA_DIR/media"
 mkdir -p "$BACKUP_DIR"
 
-# Migrate legacy media (stored inside WORKDIR) into persistent data dir before wipe
+# Migrate legacy media (stored inside WORKDIR) into persistent data dir before archive
 if [[ -d "$LEGACY_MEDIA_DIR" ]]; then
   rsync -a "$LEGACY_MEDIA_DIR"/ "$DATA_DIR/media"/
 fi
 
-# Migrate legacy db (stored inside WORKDIR) into persistent data dir before wipe
+# Migrate legacy db only if current db is missing or empty
 if [[ -f "$LEGACY_DB_PATH" ]]; then
-  sqlite3 "$LEGACY_DB_PATH" ".backup '$DATA_DIR/db.sqlite3'"
+  if [[ ! -s "$DATA_DIR/db.sqlite3" ]]; then
+    sqlite3 "$LEGACY_DB_PATH" ".backup '$DATA_DIR/db.sqlite3'"
+  fi
 fi
 
 # Ensure db exists even if no legacy db was found
@@ -51,7 +53,9 @@ if [[ -d "$WORKDIR" ]]; then
 fi
 git clone --depth 1 --branch "$REPO_REF" "$REPO_URL" "$WORKDIR"
 
-cat > "$DATA_DIR/.env.production" <<ENV
+# Keep existing env to preserve secrets; create only if missing
+if [[ ! -f "$DATA_DIR/.env.production" ]]; then
+  cat > "$DATA_DIR/.env.production" <<ENV
 PORT=8000
 DJANGO_DEBUG=0
 DJANGO_SECRET_KEY=$(openssl rand -hex 48)
@@ -60,6 +64,7 @@ DJANGO_MEDIA_ROOT=/app/media
 CORS_ALLOWED_ORIGINS=https://$DOMAIN,https://www.$DOMAIN
 CSRF_TRUSTED_ORIGINS=https://$DOMAIN,https://www.$DOMAIN
 ENV
+fi
 
 cd "$WORKDIR"
 

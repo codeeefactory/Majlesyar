@@ -1,15 +1,17 @@
 import { Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { CONTACT_PHONE } from '@/data/siteConstants';
+import { useSettings } from '@/contexts/SettingsContext';
 
 export function FloatingContactButton() {
+  const { settings } = useSettings();
+
   return (
     <div className="fixed bottom-4 left-4 z-50">
       <Button
         variant="gold"
         size="lg"
         className="rounded-full w-14 h-14 p-0 shadow-lg hover:shadow-xl transition-all duration-200 active:scale-95"
-        onClick={() => window.location.href = `tel:${CONTACT_PHONE}`}
+        onClick={() => window.location.href = `tel:${settings.contactPhone}`}
         aria-label="تماس برای سفارش"
       >
         <Phone className="w-6 h-6" />

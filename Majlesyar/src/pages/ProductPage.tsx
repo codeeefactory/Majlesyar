@@ -8,9 +8,9 @@ import { SEO } from '@/components/SEO';
 import { getProduct } from '@/lib/api';
 import { notifySuccess } from '@/lib/notify';
 import { useCart } from '@/contexts/CartContext';
+import { useSettings } from '@/contexts/SettingsContext';
 import type { Product } from '@/types/domain';
 import { ShoppingCart, ArrowRight, Check, Phone, Package } from 'lucide-react';
-import { CONTACT_PHONE } from '@/data/siteConstants';
 
 const LazyProductFeedbackSection = lazy(() =>
   import('@/components/ProductFeedbackSection').then((m) => ({ default: m.ProductFeedbackSection })),
@@ -18,6 +18,7 @@ const LazyProductFeedbackSection = lazy(() =>
 
 export default function ProductPage() {
   const { slug } = useParams<{ slug: string }>();
+  const { settings } = useSettings();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
@@ -63,19 +64,16 @@ export default function ProductPage() {
         <div className="container py-8">
           <div className="animate-pulse space-y-8">
             <div className="h-5 w-56 bg-muted rounded" />
-
             <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
               <div className="space-y-4">
                 <div className="aspect-[4/3] sm:aspect-square bg-muted rounded-2xl border border-border" />
               </div>
-
               <div className="space-y-6 min-h-[32rem]">
                 <div className="space-y-3">
                   <div className="h-9 bg-muted rounded w-3/4" />
                   <div className="h-4 bg-muted rounded w-full" />
                   <div className="h-4 bg-muted rounded w-5/6" />
                 </div>
-
                 <div className="bg-card rounded-xl border border-border p-4 space-y-3">
                   <div className="h-5 bg-muted rounded w-40" />
                   <div className="h-4 bg-muted rounded w-11/12" />
@@ -83,12 +81,10 @@ export default function ProductPage() {
                   <div className="h-4 bg-muted rounded w-9/12" />
                   <div className="h-4 bg-muted rounded w-10/12" />
                 </div>
-
                 <div className="py-4 border-t border-b border-border space-y-3">
                   <div className="h-4 bg-muted rounded w-24" />
                   <div className="h-9 bg-muted rounded w-48" />
                 </div>
-
                 <div className="space-y-4">
                   <div className="h-10 bg-muted rounded w-44" />
                   <div className="h-4 bg-muted rounded w-32" />
@@ -96,7 +92,6 @@ export default function ProductPage() {
                 </div>
               </div>
             </div>
-
             <div className="rounded-2xl border border-border bg-muted/30 min-h-[20rem]" />
           </div>
         </div>
@@ -122,8 +117,6 @@ export default function ProductPage() {
   }
 
   const productPath = `/product/${encodeURIComponent(product.urlSlug || product.id)}`;
-
-  // Breadcrumbs for SEO
   const breadcrumbs = [
     { name: 'خانه', url: '/' },
     { name: 'فروشگاه', url: '/shop' },
@@ -146,7 +139,6 @@ export default function ProductPage() {
         keywords={['پک پذیرایی', product.name, ...product.contents.slice(0, 3)]}
       />
       <div className="container py-8">
-        {/* Breadcrumb */}
         <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-8">
           <Link to="/" className="hover:text-foreground transition-colors">خانه</Link>
           <span>/</span>
@@ -156,7 +148,6 @@ export default function ProductPage() {
         </nav>
 
         <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
-          {/* Image Gallery */}
           <div className="space-y-4">
             <div className="aspect-[4/3] sm:aspect-square bg-muted rounded-2xl border border-border relative overflow-hidden">
               {shouldShowImage ? (
@@ -183,16 +174,12 @@ export default function ProductPage() {
             </div>
           </div>
 
-          {/* Product Info */}
           <div className="space-y-6 min-h-[32rem]">
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
-                {product.name}
-              </h1>
+              <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">{product.name}</h1>
               <p className="text-muted-foreground">{product.description}</p>
             </div>
 
-            {/* Contents */}
             <div className="bg-card rounded-xl border border-border p-4">
               <h2 className="font-semibold text-foreground mb-3">محتویات پک:</h2>
               <ul className="space-y-2">
@@ -205,7 +192,6 @@ export default function ProductPage() {
               </ul>
             </div>
 
-            {/* Price */}
             <div className="py-4 border-t border-b border-border">
               <p className="text-sm text-muted-foreground mb-1">قیمت هر پک:</p>
               <p className={`text-3xl font-bold ${product.price ? 'text-primary' : 'text-secondary'}`}>
@@ -213,7 +199,6 @@ export default function ProductPage() {
               </p>
             </div>
 
-            {/* Add to Cart */}
             {product.price !== null && product.available ? (
               <div className="space-y-4">
                 <div className="flex items-center gap-4">
@@ -227,25 +212,16 @@ export default function ProductPage() {
                   </p>
                 )}
 
-                <Button
-                  variant="gold"
-                  size="xl"
-                  className="w-full gap-2"
-                  onClick={handleAddToCart}
-                >
+                <Button variant="gold" size="xl" className="w-full gap-2" onClick={handleAddToCart}>
                   <ShoppingCart className="w-5 h-5" />
                   افزودن به سبد خرید
                 </Button>
-
               </div>
             ) : product.price === null ? (
               <div className="space-y-4">
-                <RuleAlert
-                  type="info"
-                  message="برای اطلاع از قیمت و سفارش این محصول با ما تماس بگیرید"
-                />
+                <RuleAlert type="info" message="برای اطلاع از قیمت و سفارش این محصول با ما تماس بگیرید" />
                 <Button variant="teal" size="xl" className="w-full gap-2" asChild>
-                  <a href={`tel:${CONTACT_PHONE}`}>
+                  <a href={`tel:${settings.contactPhone}`}>
                     <Phone className="w-5 h-5" />
                     تماس با ما
                   </a>
@@ -257,11 +233,7 @@ export default function ProductPage() {
           </div>
         </div>
 
-        <Suspense
-          fallback={
-            <section className="mt-12 rounded-2xl border border-border bg-muted/30 min-h-[20rem]" aria-hidden="true" />
-          }
-        >
+        <Suspense fallback={<section className="mt-12 rounded-2xl border border-border bg-muted/30 min-h-[20rem]" aria-hidden="true" />}>
           <LazyProductFeedbackSection productName={product.name} />
         </Suspense>
       </div>

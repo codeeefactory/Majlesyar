@@ -111,7 +111,7 @@ export default function EventPage() {
           </div>
           
           <p className="text-muted-foreground text-lg max-w-lg mb-8">
-            {event.description}
+            {event.seoDescription || event.description}
           </p>
 
           <div className="flex flex-wrap gap-4">
