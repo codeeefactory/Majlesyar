@@ -6,7 +6,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
 from telegram_bot.models import TelegramUpdateReceipt
-from telegram_bot.services.client import TelegramApiClient
+from telegram_bot.services.client import TelegramApiClient, TelegramApiError
 from telegram_bot.services.config import bot_enabled
 from telegram_bot.services.updates import process_update
 
@@ -32,11 +32,18 @@ class Command(BaseCommand):
             offset += 1
 
         while True:
-            updates = client.get_updates(offset=offset, timeout=options["poll_timeout"])
+            try:
+                updates = client.get_updates(offset=offset, timeout=options["poll_timeout"])
+            except TelegramApiError as exc:
+                if options["once"]:
+                    raise CommandError(str(exc)) from exc
+                self.stderr.write(self.style.WARNING(f"Telegram polling failed: {exc}"))
+                time.sleep(max(options["sleep_seconds"], 5))
+                continue
+
             for update in updates:
                 process_update(update, source="polling", client=client)
                 offset = int(update["update_id"]) + 1
             if options["once"]:
                 break
             time.sleep(options["sleep_seconds"])
-

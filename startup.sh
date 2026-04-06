@@ -4,6 +4,7 @@ set -Eeuo pipefail
 APP_NAME="majlesyar"
 IMAGE_NAME="${APP_NAME}:latest"
 CONTAINER_NAME="${APP_NAME}"
+BOT_CONTAINER_NAME="${APP_NAME}-telegram-bot"
 HOST_PORT="127.0.0.1:8000"
 APP_PORT="8000"
 DOMAIN="majlesyar.com"
@@ -20,6 +21,8 @@ APP_START_CMD='python manage.py migrate --noinput && python manage.py sync_produ
 ADMIN_USERNAME="admin"
 ADMIN_PASSWORD="admin"
 ADMIN_EMAIL="admin@majlesyar.com"
+BOT_POLL_TIMEOUT="5"
+BOT_SLEEP_SECONDS="5"
 
 apt-get update -y && apt-get install -y git curl ca-certificates cron sqlite3 rsync nginx
 
@@ -32,6 +35,30 @@ systemctl enable --now cron
 
 mkdir -p "$DATA_DIR/media"
 mkdir -p "$BACKUP_DIR"
+
+env_file_has_key() {
+  local key="$1"
+  grep -q "^${key}=" "$DATA_DIR/.env.production"
+}
+
+ensure_env_var_default() {
+  local key="$1"
+  local value="$2"
+  if ! env_file_has_key "$key"; then
+    printf '%s=%s\n' "$key" "$value" >> "$DATA_DIR/.env.production"
+  fi
+}
+
+env_file_get() {
+  local key="$1"
+  awk -F= -v key="$key" '$1 == key { sub(/^[^=]*=/, "", $0); print $0; exit }' "$DATA_DIR/.env.production"
+}
+
+env_is_truthy() {
+  local value="${1:-}"
+  value="$(printf '%s' "$value" | tr '[:upper:]' '[:lower:]')"
+  [[ "$value" == "1" || "$value" == "true" || "$value" == "yes" || "$value" == "on" ]]
+}
 
 update_repo() {
   if [[ -d "$WORKDIR/.git" ]]; then
@@ -74,6 +101,19 @@ create_predeploy_backup() {
 if [[ -d "$LEGACY_MEDIA_DIR" ]]; then
   rsync -a "$LEGACY_MEDIA_DIR"/ "$DATA_DIR/media"/
 fi
+
+ensure_env_var_default "TELEGRAM_BOT_ENABLED" "0"
+ensure_env_var_default "TELEGRAM_BOT_TOKEN" ""
+ensure_env_var_default "TELEGRAM_BOT_USE_WEBHOOK" "1"
+ensure_env_var_default "TELEGRAM_BOT_WEBHOOK_SECRET" ""
+ensure_env_var_default "TELEGRAM_BOT_WEBHOOK_PATH" "api/v1/telegram/webhook/"
+ensure_env_var_default "TELEGRAM_BOT_BASE_URL" "https://$DOMAIN"
+ensure_env_var_default "TELEGRAM_BOT_ALLOWED_USER_IDS" ""
+ensure_env_var_default "TELEGRAM_BOT_ALLOWED_CHAT_IDS" ""
+ensure_env_var_default "TELEGRAM_BOT_ADMIN_ONLY" "1"
+ensure_env_var_default "TELEGRAM_BOT_NOTIFICATIONS_ENABLED" "0"
+ensure_env_var_default "TELEGRAM_BOT_CONFIRMATION_TTL_SECONDS" "600"
+ensure_env_var_default "TELEGRAM_BOT_RATE_LIMIT_PER_MINUTE" "30"
 
 # Migrate legacy db only if current db is missing or empty
 if [[ -f "$LEGACY_DB_PATH" ]]; then
@@ -159,6 +199,51 @@ if changed:
     user.save()
 print('superuser ready')
 \"\"\")"
+
+configure_telegram_bot() {
+  local bot_enabled
+  local bot_token
+  local use_webhook
+
+  bot_enabled="$(env_file_get TELEGRAM_BOT_ENABLED)"
+  bot_token="$(env_file_get TELEGRAM_BOT_TOKEN)"
+  use_webhook="$(env_file_get TELEGRAM_BOT_USE_WEBHOOK)"
+
+  docker rm -f "$BOT_CONTAINER_NAME" >/dev/null 2>&1 || true
+
+  if ! env_is_truthy "$bot_enabled"; then
+    echo "telegram bot disabled"
+    return
+  fi
+
+  if [[ -z "${bot_token}" ]]; then
+    echo "telegram bot enabled but TELEGRAM_BOT_TOKEN is empty"
+    return
+  fi
+
+  if env_is_truthy "$use_webhook"; then
+    docker exec "$CONTAINER_NAME" python manage.py configure_telegram_webhook
+    echo "telegram bot webhook configured"
+    return
+  fi
+
+  docker exec "$CONTAINER_NAME" python manage.py configure_telegram_webhook --delete >/dev/null 2>&1 || true
+
+  docker run -d \
+    --name "$BOT_CONTAINER_NAME" \
+    --restart unless-stopped \
+    --env-file "$DATA_DIR/.env.production" \
+    -v "$DATA_DIR/db.sqlite3:/app/db.sqlite3" \
+    -v "$DATA_DIR/media:/app/media" \
+    "$IMAGE_NAME" \
+    sh -c "python manage.py migrate --noinput && python manage.py run_telegram_bot --poll-timeout ${BOT_POLL_TIMEOUT} --sleep-seconds ${BOT_SLEEP_SECONDS}"
+
+  sleep 3
+  docker logs --tail 50 "$BOT_CONTAINER_NAME"
+  echo "telegram bot polling worker started"
+}
+
+configure_telegram_bot
 
 cat > /usr/local/bin/majlesyar-backup.sh <<SH
 #!/usr/bin/env bash
