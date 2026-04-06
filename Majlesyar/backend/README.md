@@ -192,3 +192,38 @@ If you want backend to use Postgres in Compose, set:
 $env:USE_POSTGRES="1"
 docker compose --profile postgres up --build
 ```
+
+## Telegram Bot
+
+Private admin bot support is implemented in `backend/telegram_bot`.
+
+Core commands:
+
+- `/start`, `/help`, `/ping`, `/whoami`, `/status`, `/health`
+- `/dashboard`
+- `/products [query]`, `/product <slug-or-id>`
+- `/feature <slug-or-id>`, `/unfeature <slug-or-id>`
+- `/activate <slug-or-id>`, `/deactivate <slug-or-id>`
+- `/orders [status]`, `/order <public_id>`
+- `/orderstatus <public_id> <status>`
+- `/settings`
+
+Run polling:
+
+```powershell
+..\backend\.venv\Scripts\python manage.py run_telegram_bot
+```
+
+Configure webhook:
+
+```powershell
+..\backend\.venv\Scripts\python manage.py configure_telegram_webhook
+```
+
+Send order notifications:
+
+```powershell
+..\backend\.venv\Scripts\python manage.py telegram_notify_new_orders
+```
+
+See `docs/TELEGRAM_BOT.md` for the security model and env vars.

@@ -6,8 +6,23 @@ from pathlib import Path
 
 from django.core.validators import FileExtensionValidator
 
-ALLOWED_IMAGE_EXTENSIONS = ("jpg", "jpeg", "png", "webp")
+ALLOWED_IMAGE_EXTENSIONS = ("jpg", "jpeg", "png", "webp", "avif")
 image_extension_validator = FileExtensionValidator(allowed_extensions=ALLOWED_IMAGE_EXTENSIONS)
+
+
+def register_image_plugins() -> bool:
+    try:
+        import pillow_avif  # noqa: F401
+    except ImportError:
+        return False
+    return True
+
+
+def image_supports_extension(file_name: str | None, extension: str) -> bool:
+    normalized_extension = extension.lower().lstrip(".")
+    if normalized_extension != "avif":
+        return True
+    return register_image_plugins()
 
 
 def extract_image_basename(file_name: str | None) -> str:

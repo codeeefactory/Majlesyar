@@ -175,7 +175,7 @@ class Category(models.Model):
         null=True,
         validators=[image_extension_validator],
         verbose_name="????????",
-        help_text="????????????: ???????? ???????? ???????? ???? ???? ???????? jpg?? jpeg?? png ???? webp ???????????????? ????????.",
+        help_text="راهنما: لوگو دسته بندی را با فرمت‌های jpg، jpeg، png، webp یا avif بارگذاری کنید.",
     )
 
 
@@ -285,7 +285,7 @@ class Product(models.Model):
         null=True,
         validators=[image_extension_validator],
         verbose_name="تصویر محصول",
-        help_text="راهنما: تصویر محصول را با کیفیت مناسب و فرمت‌های jpg، jpeg، png یا webp بارگذاری کنید. می توانید با گزینه پاک کردن، انتخاب تصویر را حذف کنید.",
+        help_text="راهنما: تصویر محصول را با کیفیت مناسب و فرمت‌های jpg، jpeg، png، webp یا avif بارگذاری کنید. می توانید با گزینه پاک کردن، انتخاب تصویر را حذف کنید.",
     )
     image_alt = models.CharField(
         max_length=255,
@@ -436,7 +436,7 @@ class BuilderItem(models.Model):
         null=True,
         validators=[image_extension_validator],
         verbose_name="تصویر",
-        help_text="نکته: بارگذاری تصویر با فرمت‌های jpg، jpeg، png یا webp برای نمایش بهتر این آیتم.",
+        help_text="نکته: بارگذاری تصویر با فرمت‌های jpg، jpeg، png، webp یا avif برای نمایش بهتر این آیتم.",
     )
 
     class Meta:

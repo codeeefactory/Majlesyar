@@ -26,6 +26,16 @@ def env_list(name: str, default: str = "") -> list[str]:
     return [item.strip() for item in raw.split(",") if item.strip()]
 
 
+def env_int_list(name: str, default: str = "") -> list[int]:
+    values: list[int] = []
+    for item in env_list(name, default):
+        try:
+            values.append(int(item))
+        except ValueError:
+            continue
+    return values
+
+
 def admin_overrides_stylesheet(_request) -> str:
     return static_url("admin/css/persian-admin-overrides.css")
 
@@ -60,6 +70,7 @@ INSTALLED_APPS = [
     "vision",
     "site_settings",
     "orders",
+    "telegram_bot",
 ]
 
 MIDDLEWARE = [
@@ -260,3 +271,24 @@ VISION_TOP_K = int(os.getenv("VISION_TOP_K", "3"))
 VISION_DEVICE = os.getenv("VISION_DEVICE", "auto")
 VISION_MAX_PIXELS = int(os.getenv("VISION_MAX_PIXELS", "16000000"))
 VISION_MAX_DIMENSION = int(os.getenv("VISION_MAX_DIMENSION", "1600"))
+
+telegram_webhook_path = os.getenv("TELEGRAM_BOT_WEBHOOK_PATH", "api/v1/telegram/webhook/").strip()
+telegram_webhook_path = telegram_webhook_path.strip("/")
+if not telegram_webhook_path:
+    telegram_webhook_path = "api/v1/telegram/webhook"
+telegram_webhook_path = f"{telegram_webhook_path}/"
+
+TELEGRAM_BOT = {
+    "ENABLED": env_bool("TELEGRAM_BOT_ENABLED", False),
+    "TOKEN": os.getenv("TELEGRAM_BOT_TOKEN", "").strip(),
+    "USE_WEBHOOK": env_bool("TELEGRAM_BOT_USE_WEBHOOK", True),
+    "WEBHOOK_SECRET": os.getenv("TELEGRAM_BOT_WEBHOOK_SECRET", "").strip(),
+    "WEBHOOK_PATH": telegram_webhook_path,
+    "BASE_URL": os.getenv("TELEGRAM_BOT_BASE_URL", "").strip().rstrip("/"),
+    "ALLOWED_USER_IDS": env_int_list("TELEGRAM_BOT_ALLOWED_USER_IDS"),
+    "ALLOWED_CHAT_IDS": env_int_list("TELEGRAM_BOT_ALLOWED_CHAT_IDS"),
+    "ADMIN_ONLY": env_bool("TELEGRAM_BOT_ADMIN_ONLY", True),
+    "NOTIFICATIONS_ENABLED": env_bool("TELEGRAM_BOT_NOTIFICATIONS_ENABLED", False),
+    "CONFIRMATION_TTL_SECONDS": int(os.getenv("TELEGRAM_BOT_CONFIRMATION_TTL_SECONDS", "600")),
+    "RATE_LIMIT_PER_MINUTE": int(os.getenv("TELEGRAM_BOT_RATE_LIMIT_PER_MINUTE", "30")),
+}

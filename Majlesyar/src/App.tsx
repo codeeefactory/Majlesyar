@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { CartProvider } from "@/contexts/CartContext";
 import { SettingsProvider } from "@/contexts/SettingsContext";
 import { AdminAuthProvider } from "@/contexts/AdminAuthContext";
+import { measureAndStoreClientPing } from "@/lib/network";
 import ProductPage from "./pages/ProductPage";
 
 // Keep product route eager; defer homepage code on non-home routes.
@@ -76,41 +77,47 @@ function DeferredFloatingContactButton() {
   );
 }
 
-const App = () => (
-  <SettingsProvider>
-    <CartProvider>
-      <DeferredToaster />
-      <BrowserRouter>
-        <Suspense fallback={<PageLoader />}>
-          <Routes>
-            {/* Critical SEO Route */}
-            <Route path="/" element={<HomePage />} />
+const App = () => {
+  useEffect(() => {
+    void measureAndStoreClientPing();
+  }, []);
 
-            {/* Lazy loaded Routes */}
-            <Route path="/shop" element={<ShopPage />} />
-            <Route path="/product/:slug" element={<ProductPage />} />
-            <Route path="/events/:slug" element={<EventPage />} />
-            <Route path="/builder" element={<BuilderPage />} />
-            <Route path="/cart" element={<CartPage />} />
-            <Route path="/checkout" element={<CheckoutPage />} />
-            <Route path="/order/:id" element={<OrderPage />} />
-            <Route path="/track" element={<TrackOrderPage />} />
-            <Route path="/contact" element={<ContactPage />} />
-            <Route path="/about" element={<AboutPage />} />
+  return (
+    <SettingsProvider>
+      <CartProvider>
+        <DeferredToaster />
+        <BrowserRouter>
+          <Suspense fallback={<PageLoader />}>
+            <Routes>
+              {/* Critical SEO Route */}
+              <Route path="/" element={<HomePage />} />
 
-            {/* Admin Routes - wrapped with AdminAuthProvider */}
-            <Route path="/admin/login" element={<AdminRoute><AdminLoginPage /></AdminRoute>} />
-            <Route path="/admin/orders" element={<AdminRoute><AdminOrdersPage /></AdminRoute>} />
-            <Route path="/admin/orders/:id" element={<AdminRoute><AdminOrdersPage /></AdminRoute>} />
+              {/* Lazy loaded Routes */}
+              <Route path="/shop" element={<ShopPage />} />
+              <Route path="/product/:slug" element={<ProductPage />} />
+              <Route path="/events/:slug" element={<EventPage />} />
+              <Route path="/builder" element={<BuilderPage />} />
+              <Route path="/cart" element={<CartPage />} />
+              <Route path="/checkout" element={<CheckoutPage />} />
+              <Route path="/order/:id" element={<OrderPage />} />
+              <Route path="/track" element={<TrackOrderPage />} />
+              <Route path="/contact" element={<ContactPage />} />
+              <Route path="/about" element={<AboutPage />} />
 
-            {/* Catch-all */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Suspense>
-        <DeferredFloatingContactButton />
-      </BrowserRouter>
-    </CartProvider>
-  </SettingsProvider>
-);
+              {/* Admin Routes - wrapped with AdminAuthProvider */}
+              <Route path="/admin/login" element={<AdminRoute><AdminLoginPage /></AdminRoute>} />
+              <Route path="/admin/orders" element={<AdminRoute><AdminOrdersPage /></AdminRoute>} />
+              <Route path="/admin/orders/:id" element={<AdminRoute><AdminOrdersPage /></AdminRoute>} />
+
+              {/* Catch-all */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
+          <DeferredFloatingContactButton />
+        </BrowserRouter>
+      </CartProvider>
+    </SettingsProvider>
+  );
+};
 
 export default App;

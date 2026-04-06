@@ -1,8 +1,10 @@
+import os
+
 from rest_framework import serializers
 from PIL import Image, UnidentifiedImageError
 from django.utils.text import slugify
 
-from .image_utils import derive_image_label, image_extension_validator
+from .image_utils import derive_image_label, image_extension_validator, image_supports_extension
 from .models import (
     BuilderItem,
     Category,
@@ -213,6 +215,9 @@ class ProductWriteSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("حجم تصویر باید حداکثر ۵ مگابایت باشد.")
 
         image_extension_validator(value)
+        _stem, extension = os.path.splitext(value.name or "")
+        if extension and not image_supports_extension(value.name, extension):
+            raise serializers.ValidationError("پشتیبانی AVIF نیازمند نصب بسته pillow-avif-plugin است.")
 
         try:
             image = Image.open(value)

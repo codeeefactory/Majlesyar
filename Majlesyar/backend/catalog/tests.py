@@ -1,5 +1,6 @@
 ﻿import shutil
 import tempfile
+import unittest
 from io import BytesIO
 from unittest.mock import patch
 from django.contrib.auth import get_user_model
@@ -10,7 +11,11 @@ from PIL import Image
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+from .image_utils import register_image_plugins
 from .models import Category, Product, Tag
+
+
+AVIF_SUPPORTED = register_image_plugins()
 
 
 class AdminProductApiTests(APITestCase):
@@ -48,6 +53,7 @@ class AdminProductApiTests(APITestCase):
             "JPEG": "image/jpeg",
             "PNG": "image/png",
             "WEBP": "image/webp",
+            "AVIF": "image/avif",
         }
         buffer = BytesIO()
         Image.new("RGB", (10, 10), (255, 0, 0)).save(buffer, format=image_format)
@@ -226,6 +232,30 @@ class AdminProductApiTests(APITestCase):
 
         self.assertTrue(created.image.storage.exists(created.image.name))
 
+    @unittest.skipUnless(AVIF_SUPPORTED, "AVIF plugin is not installed in this environment.")
+    def test_staff_can_create_product_with_avif_image(self):
+        self._staff_auth()
+        payload = {
+            "name": "محصول آویف",
+            "description": "توضیحات",
+            "price": "456000",
+            "event_types": ["memorial"],
+            "contents": ["آیتم 1"],
+            "featured": "false",
+            "available": "true",
+            "image_file": self._make_uploaded_image("funeral-pack.avif", "AVIF"),
+        }
+
+        response = self.client.post(reverse("admin-product-list-create"), payload, format="multipart")
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        created = Product.objects.get(id=response.data["id"])
+        self.assertTrue(created.image.name.endswith(".avif"))
+        self.assertEqual(created.image_name, "funeral pack")
+        self.assertEqual(created.image_alt, "funeral pack")
+
+        self.assertTrue(created.image.storage.exists(created.image.name))
+
     def test_manual_image_alt_remains_editable(self):
         self._staff_auth()
         payload = {
@@ -326,6 +356,43 @@ class AdminProductApiTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         created = Product.objects.get(id=response.data["id"])
         self.assertEqual(created.contents, ["خرما", "حلوا"])
+        self.assertEqual(created.photo_analysis["top_label"], "خرما")
+        mocked_analyze.assert_called_once()
+
+    @unittest.skipUnless(AVIF_SUPPORTED, "AVIF plugin is not installed in this environment.")
+    @patch(
+        "catalog.models.analyze_product_image",
+        return_value={
+            "success": True,
+            "detections": [
+                {"label": "خرما", "label_key": "date", "confidence": 0.94},
+            ],
+            "top_label": "خرما",
+            "top_label_key": "date",
+            "uncertain": False,
+            "error": None,
+            "threshold": 0.72,
+            "model_version": "test-model",
+        },
+    )
+    def test_photo_processing_mode_accepts_avif_image(self, mocked_analyze):
+        self._staff_auth()
+        payload = {
+            "name": "پک تشخیص آویف",
+            "description": "بدون محتوا",
+            "price": "99000",
+            "input_mode": "photo_processing",
+            "event_types": [],
+            "contents": [],
+            "featured": "false",
+            "available": "true",
+            "image_file": self._make_uploaded_image("halva-khorma.avif", "AVIF"),
+        }
+
+        response = self.client.post(reverse("admin-product-list-create"), payload, format="multipart")
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        created = Product.objects.get(id=response.data["id"])
         self.assertEqual(created.photo_analysis["top_label"], "خرما")
         mocked_analyze.assert_called_once()
 

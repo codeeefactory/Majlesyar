@@ -7,6 +7,7 @@ from django.views.generic import RedirectView, TemplateView
 from config.site_views import robots_txt, sitemap_xml
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from telegram_bot.views import TelegramWebhookAPIView
 
 urlpatterns = [
     path("majmanage/", admin.site.urls),
@@ -17,6 +18,7 @@ urlpatterns = [
     path("api/v1/", include("catalog.urls")),
     path("api/v1/", include("site_settings.urls")),
     path("api/v1/", include("orders.urls")),
+    path(settings.TELEGRAM_BOT["WEBHOOK_PATH"], TelegramWebhookAPIView.as_view(), name="telegram-webhook"),
     path("robots.txt", robots_txt, name="robots-txt"),
     path("sitemap.xml", sitemap_xml, name="sitemap-xml"),
 ]
