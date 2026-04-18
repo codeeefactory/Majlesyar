@@ -40,10 +40,8 @@ export default function ContactPage() {
   return (
     <AppShell>
       <SEO
-        title="تماس با ما - مجلس یار"
-        description="تماس با مجلس یار برای سفارش پک‌های پذیرایی. تماس تلفنی، واتساپ و اینستاگرام."
+        pageKey="contact"
         path="/contact"
-        keywords={['تماس', 'سفارش', 'مجلس یار', 'شماره تماس', 'واتساپ']}
         breadcrumbs={[
           { name: 'خانه', url: '/' },
           { name: 'تماس با ما', url: '/contact' },

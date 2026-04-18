@@ -78,10 +78,27 @@ export function Footer() {
       <div className="container py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="space-y-4 md:col-span-1">
-            <h3 className="font-semibold text-foreground">مجلس یار</h3>
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl gold-gradient overflow-hidden flex items-center justify-center shadow-soft shrink-0">
+                {settings.siteLogoUrl ? (
+                  <img
+                    src={settings.siteLogoUrl}
+                    alt={settings.siteBranding.logoAlt}
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                ) : (
+                  <Store className="w-6 h-6 text-primary-foreground" aria-hidden="true" />
+                )}
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground">{settings.siteBranding.siteName}</h3>
+                <p className="text-xs text-muted-foreground">{settings.siteBranding.siteTagline}</p>
+              </div>
+            </div>
             <p className="text-muted-foreground text-sm leading-relaxed">
-              ارائه‌دهنده پک‌های پذیرایی و پک نذری برای انواع مراسمات.
-              فینگر فود، ترحیم، گل و دفاع پایان‌نامه.
+              {settings.siteBranding.defaultMetaDescription}
             </p>
             <Link
               to="/about"
@@ -159,7 +176,7 @@ export function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors text-sm"
-                  aria-label="پیج اینستاگرام مجلس یار"
+                  aria-label={`پیج اینستاگرام ${settings.siteBranding.siteName}`}
                 >
                   <Instagram className="w-4 h-4" aria-hidden="true" />
                   {getInstagramHandle(settings.instagramUrl)}
@@ -181,7 +198,7 @@ export function Footer() {
                 allowFullScreen
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
-                title="موقعیت مجلس یار روی نقشه"
+                title={`موقعیت ${settings.siteBranding.siteName} روی نقشه`}
                 className="w-full"
               />
             ) : (
@@ -229,8 +246,10 @@ export function Footer() {
         </div>
 
         <div className="mt-8 pt-8 border-t border-border text-center text-sm text-muted-foreground">
-          <p>© {persianYear} مجلس یار. تمامی حقوق محفوظ است.</p>
-          <p className="mt-2 text-xs">حداقل سفارش: ۴۰ عدد | ارسال: تهران و البرز | کیفیت تضمینی</p>
+          <p>© {persianYear} {settings.siteBranding.siteName}. تمامی حقوق محفوظ است.</p>
+          <p className="mt-2 text-xs">
+            حداقل سفارش: {settings.minOrderQty.toLocaleString('fa-IR')} عدد | ارسال: {settings.allowedProvinces.join(' و ')} | کیفیت تضمینی
+          </p>
         </div>
       </div>
     </footer>

@@ -70,6 +70,7 @@ INSTALLED_APPS = [
     "vision",
     "site_settings",
     "orders",
+    "operations",
     "telegram_bot",
 ]
 
@@ -212,10 +213,13 @@ SESSION_COOKIE_SECURE = env_bool("SESSION_COOKIE_SECURE", not DEBUG)
 CSRF_PROXY_ALLOW_MISSING_REFERER = env_bool("CSRF_PROXY_ALLOW_MISSING_REFERER", True)
 
 UNFOLD = {
-    "SITE_TITLE": "پنل مدیریت مجلس یار",
-    "SITE_HEADER": "مجلس یار",
-    "SITE_SUBHEADER": "مدیریت فروش و سفارش پک‌های پذیرایی",
-    "SITE_SYMBOL": "inventory_2",
+    "SITE_TITLE": "config.admin_branding.get_admin_site_title",
+    "SITE_HEADER": "config.admin_branding.get_admin_site_header",
+    "SITE_SUBHEADER": "config.admin_branding.get_admin_site_subheader",
+    "SITE_SYMBOL": "config.admin_branding.get_admin_site_symbol",
+    "SITE_LOGO": "config.admin_branding.get_admin_site_logo",
+    "SITE_ICON": "config.admin_branding.get_admin_site_icon",
+    "SITE_FAVICONS": "config.admin_branding.get_admin_site_favicons",
     "THEME": "light",
     "BORDER_RADIUS": "0.75rem",
     "SHOW_HISTORY": True,
@@ -226,42 +230,7 @@ UNFOLD = {
     "SCRIPTS": [
         admin_overrides_script,
     ],
-    "COLORS": {
-        "base": {
-            "50": "#fdfbf7",
-            "100": "#faf6ef",
-            "200": "#f3ebdd",
-            "300": "#e8dcc7",
-            "400": "#d8c3a6",
-            "500": "#c2a585",
-            "600": "#9f8468",
-            "700": "#7e6851",
-            "800": "#5f4f3f",
-            "900": "#463b31",
-            "950": "#2f2620",
-        },
-        "primary": {
-            "50": "#e6f9fd",
-            "100": "#ccf3fb",
-            "200": "#99e8f8",
-            "300": "#66dcf4",
-            "400": "#33d1f1",
-            "500": "#00c2f2",
-            "600": "#00a9d4",
-            "700": "#0088aa",
-            "800": "#006b85",
-            "900": "#004f63",
-            "950": "#003342",
-        },
-        "font": {
-            "subtle-light": "#6a5a49",
-            "subtle-dark": "#d8c3a6",
-            "default-light": "#3c3128",
-            "default-dark": "#f3ebdd",
-            "important-light": "#241d17",
-            "important-dark": "#faf6ef",
-        },
-    },
+    "COLORS": "config.admin_branding.get_admin_colors",
 }
 
 VISION_ENABLED = env_bool("VISION_ENABLED", True)
@@ -292,3 +261,6 @@ TELEGRAM_BOT = {
     "CONFIRMATION_TTL_SECONDS": int(os.getenv("TELEGRAM_BOT_CONFIRMATION_TTL_SECONDS", "600")),
     "RATE_LIMIT_PER_MINUTE": int(os.getenv("TELEGRAM_BOT_RATE_LIMIT_PER_MINUTE", "30")),
 }
+
+KAVENEGAR_API_KEY = os.getenv("KAVENEGAR_API_KEY", "").strip()
+KAVENEGAR_SENDER = os.getenv("KAVENEGAR_SENDER", "").strip()

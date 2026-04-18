@@ -1,22 +1,10 @@
-import type { Settings } from "@/types/domain";
+import type { EventPage, Settings } from "@/types/domain";
 
 export const CONTACT_PHONE = "+989915505141";
 export const CONTACT_PHONE_DISPLAY = CONTACT_PHONE;
 export const CONTACT_PHONE_WHATSAPP = CONTACT_PHONE.replace("+", "");
 
-export interface EventType {
-  id: string;
-  name: string;
-  slug: string;
-  description: string;
-  seoTitle?: string;
-  seoDescription?: string;
-  seoKeywords?: string[];
-  faqs?: { question: string; answer: string }[];
-  icon: string;
-  color: string;
-  available?: boolean;
-}
+export type EventType = EventPage;
 
 export const eventTypes: EventType[] = [
   {
@@ -177,6 +165,132 @@ export const defaultSettings: Settings = {
   mapsUrl: "https://maps.google.com/?q=Tehran,Valiasr",
   mapsEmbedUrl:
     "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3239.9627430068!2d51.4066!3d35.7219!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMzXCsDQzJzE4LjgiTiA1McKwMjQnMjMuOCJF!5e0!3m2!1sen!2s!4v1699999999999!5m2!1sen!2s",
+  siteLogoUrl: undefined,
+  siteFaviconUrl: undefined,
+  siteOgImageUrl: undefined,
+  siteBranding: {
+    siteName: "مجلس یار",
+    siteAlternateName: "Majlesyar",
+    siteTagline: "پک‌های پذیرایی ویژه مراسمات",
+    logoAlt: "لوگوی مجلس یار",
+    metaAuthor: "مجلس یار",
+    defaultMetaTitle: "سفارش آنلاین تاج گل، پک ترحیم و حلوا خرما (ارسال فوری)",
+    defaultMetaDescription:
+      "مجلس یار؛ مرجع خدمات مجالس ترحیم و تولد. سفارش آنلاین حلوا خرما، پک میوه، فینگر فود و تاج گل با پایین‌ترین قیمت و ارسال فوری. برای تضمین کیفیت، بخشی از وجه را هنگام تحویل بپردازید!",
+    defaultMetaKeywords: [
+      "پک پذیرایی",
+      "پک نذری",
+      "کترینگ مراسم",
+      "فینگر فود",
+      "ترحیم",
+      "گل مراسم",
+      "مجلس یار",
+      "حلوا و خرما",
+    ],
+    adminSiteTitle: "پنل مدیریت مجلس یار",
+    adminSiteHeader: "مجلس یار",
+    adminSiteSubheader: "مدیریت فروش و سفارش پک‌های پذیرایی",
+    adminSiteSymbol: "inventory_2",
+  },
+  themePalette: {
+    primary: "#0C9FC7",
+    accent: "#D6A45B",
+    background: "#FDFBF7",
+    surface: "#FFFFFF",
+    foreground: "#24303A",
+    mutedForeground: "#5E6B78",
+    success: "#218A52",
+    warning: "#C98A10",
+  },
+  pageSeo: {
+    home: {
+      title: "سفارش آنلاین تاج گل، پک ترحیم و حلوا خرما (ارسال فوری)",
+      description:
+        "مجلس یار؛ مرجع خدمات مجالس ترحیم و تولد. سفارش آنلاین حلوا خرما، پک میوه، فینگر فود و تاج گل با پایین‌ترین قیمت و ارسال فوری. برای تضمین کیفیت، بخشی از وجه را هنگام تحویل بپردازید!",
+      keywords: [
+        "حلوا",
+        "خرما",
+        "حلوا و خرما",
+        "پک ترحیم",
+        "گل مراسم",
+        "گل ترحیم",
+        "سفارش حلوا",
+        "سفارش خرما",
+        "پذیرایی ترحیم",
+      ],
+    },
+    shop: {
+      title: "فروشگاه حلوا، ترحیم و گل مراسم",
+      description:
+        "خرید و سفارش انواع حلوا، پک ترحیم، گل مراسم و دیگر محصولات پذیرایی با بهترین کیفیت و تحویل سریع در تهران و البرز.",
+      keywords: ["حلوا", "پک ترحیم", "گل مراسم", "گل ترحیم", "سفارش حلوا", "پذیرایی ترحیم"],
+    },
+    builder: {
+      title: "ساخت پک اختصاصی",
+      description: "ساخت پک پذیرایی سفارشی با انتخاب بسته‌بندی، میوه، نوشیدنی و اسنک دلخواه",
+      keywords: ["ساخت پک", "پک اختصاصی", "پک سفارشی", "پذیرایی سفارشی"],
+    },
+    about: {
+      title: "درباره ما",
+      description: "مجلس‌یار با هدف ارائه خدمات کامل و باکیفیت برای انواع مراسم و مجالس راه‌اندازی شده است.",
+      keywords: ["درباره مجلس یار", "خدمات مجالس", "پذیرایی مراسم"],
+    },
+    contact: {
+      title: "تماس با ما",
+      description: "تماس با مجلس یار برای سفارش پک‌های پذیرایی. تماس تلفنی، واتساپ و اینستاگرام.",
+      keywords: ["تماس", "سفارش", "مجلس یار", "شماره تماس", "واتساپ"],
+    },
+    cart: {
+      title: "سبد خرید",
+      description: "مشاهده و مدیریت سبد خرید پک‌های پذیرایی",
+      keywords: ["سبد خرید", "سفارش آنلاین", "پک پذیرایی"],
+    },
+    checkout: {
+      title: "تکمیل سفارش",
+      description: "تکمیل اطلاعات و ثبت سفارش پک‌های پذیرایی",
+      keywords: ["تکمیل سفارش", "ثبت سفارش", "پذیرایی مراسم"],
+    },
+    track: {
+      title: "پیگیری سفارش",
+      description: "پیگیری وضعیت سفارش پک‌های پذیرایی با کد سفارش",
+      keywords: ["پیگیری سفارش", "کد سفارش", "وضعیت سفارش"],
+    },
+    order: {
+      title: "جزئیات سفارش",
+      description: "مشاهده جزئیات و وضعیت سفارش",
+      keywords: ["جزئیات سفارش", "وضعیت سفارش", "سفارش مجلس یار"],
+    },
+  },
+  eventPages: eventTypes,
+  siteTopNotice: {
+    title: "پرداخت در محل",
+    message: "با افتخار تنها مجموعه‌ای هستیم که ۸۰ درصد از مبلغ را در زمان تحویل دریافت می‌کنیم.",
+    badge: "۸۰٪ هنگام تحویل",
+  },
+  homepageBenefitsSection: {
+    eyebrow: "تعهدهای مجلس‌یار",
+    title: "مزیت‌هایی که بعد از انتخاب محصول هم کنار شما می‌ماند",
+    items: [
+      {
+        title: "تضمین ارسال به موقع",
+        description: "با افتخار تنها مجموعه‌ای هستیم که در ارسال به موقع تضمین می‌دهیم",
+        note: "در صورت دیر رسیدن تمامی سفارشات رایگان تحویل داده می‌شود",
+      },
+      {
+        title: "کیفیت عالی",
+        description:
+          "در مجلس‌یار اقلام مورد نیاز، بعد از سفارش شما خریداری می‌شود، تا از تازگی و کیفیت اطمینان حاصل شود.",
+      },
+      {
+        title: "قیمت منصفانه",
+        description: "با افتخار پیدا کردن محصولی پایین از قیمت مجلس‌یار تقریباً غیرممکن است.",
+      },
+      {
+        title: "بهداشت",
+        description: "و در آخر با افتخار تمامی کارکنان مجلس‌یار دارای کارت بهداشت می‌باشند.",
+      },
+    ],
+  },
 };
 
 export const allProvinces = [

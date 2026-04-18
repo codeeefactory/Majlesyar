@@ -5,7 +5,7 @@ import { SEO } from '@/components/SEO';
 import { ProductCard } from '@/components/ProductCard';
 import { Button } from '@/components/ui/button';
 import { listProducts } from '@/lib/api';
-import { eventTypes } from '@/data/siteConstants';
+import { useSettings } from '@/contexts/SettingsContext';
 import { ArrowRight, Package, Wrench } from 'lucide-react';
 import type { Product } from '@/types/domain';
 
@@ -13,8 +13,9 @@ export default function EventPage() {
   const { slug } = useParams<{ slug: string }>();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const { settings } = useSettings();
 
-  const event = eventTypes.find((e) => e.slug === slug);
+  const event = settings.eventPages.find((e) => e.slug === slug);
   const isEventAvailable = event?.available !== false;
 
   useEffect(() => {

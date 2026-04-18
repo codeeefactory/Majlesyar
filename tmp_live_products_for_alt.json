@@ -1,0 +1,296 @@
+[
+  {
+    "id": "70422abb-905b-45b7-b344-3becafa8bd51",
+    "name": "دسته گل 1",
+    "url_slug": "flower-bouquet-1",
+    "uri": "/product/flower-bouquet-1",
+    "description": "دسته گل مناسب سفارش مراسم و هدیه با چیدمان آماده.",
+    "price": null,
+    "category_ids": [
+      "78a660e2-9682-41d0-88f2-e232b7d6d543",
+      "55bb5c6a-287d-475f-b733-d31e5bff5819"
+    ],
+    "tag_ids": [
+      "9f830d33-a94f-468b-b8ee-0be9485e3dfb",
+      "9c3a4565-3d59-47b5-999c-1344c55ddd0b"
+    ],
+    "event_types": [
+      "party"
+    ],
+    "contents": [
+      "گل آرایی آماده",
+      "سفارش طبق تصویر"
+    ],
+    "image": "https://majlesyar.com/media/products/%D8%AF%D8%B3%D8%AA%D9%87_%DA%AF%D9%84_1.jpg",
+    "image_name": "دسته گل 1",
+    "image_alt": "دسته گل 1",
+    "photo_analysis": {},
+    "featured": true,
+    "available": true
+  },
+  {
+    "id": "fdc90b40-07f8-49d8-93b2-deaf876e1279",
+    "name": "دسته گل 2",
+    "url_slug": "flower-bouquet-2",
+    "uri": "/product/flower-bouquet-2",
+    "description": "دسته گل مناسب سفارش مراسم و هدیه با چیدمان آماده.",
+    "price": null,
+    "category_ids": [
+      "78a660e2-9682-41d0-88f2-e232b7d6d543",
+      "55bb5c6a-287d-475f-b733-d31e5bff5819"
+    ],
+    "tag_ids": [
+      "9f830d33-a94f-468b-b8ee-0be9485e3dfb",
+      "9c3a4565-3d59-47b5-999c-1344c55ddd0b"
+    ],
+    "event_types": [
+      "party"
+    ],
+    "contents": [
+      "گل آرایی آماده",
+      "سفارش طبق تصویر"
+    ],
+    "image": "https://majlesyar.com/media/products/%D8%AF%D8%B3%D8%AA%D9%87_%DA%AF%D9%84_2.jpg",
+    "image_name": "دسته گل 2",
+    "image_alt": "دسته گل 2",
+    "photo_analysis": {},
+    "featured": true,
+    "available": true
+  },
+  {
+    "id": "c85930e3-954d-4b9c-88b0-c234ac11ca63",
+    "name": "دسته گل 3",
+    "url_slug": "flower-bouquet-3",
+    "uri": "/product/flower-bouquet-3",
+    "description": "دسته گل مناسب سفارش مراسم و هدیه با چیدمان آماده.",
+    "price": null,
+    "category_ids": [
+      "78a660e2-9682-41d0-88f2-e232b7d6d543",
+      "55bb5c6a-287d-475f-b733-d31e5bff5819"
+    ],
+    "tag_ids": [
+      "9f830d33-a94f-468b-b8ee-0be9485e3dfb",
+      "9c3a4565-3d59-47b5-999c-1344c55ddd0b"
+    ],
+    "event_types": [
+      "party"
+    ],
+    "contents": [
+      "گل آرایی آماده",
+      "سفارش طبق تصویر"
+    ],
+    "image": "https://majlesyar.com/media/products/%D8%AF%D8%B3%D8%AA%D9%87_%DA%AF%D9%84_3.jpg",
+    "image_name": "دسته گل 3",
+    "image_alt": "دسته گل 3",
+    "photo_analysis": {},
+    "featured": true,
+    "available": true
+  },
+  {
+    "id": "250e57dc-0bcb-47a7-8995-07712bbc9537",
+    "name": "دسته گل 4",
+    "url_slug": "flower-bouquet-4",
+    "uri": "/product/flower-bouquet-4",
+    "description": "دسته گل مناسب سفارش مراسم و هدیه با چیدمان آماده.",
+    "price": null,
+    "category_ids": [
+      "78a660e2-9682-41d0-88f2-e232b7d6d543",
+      "55bb5c6a-287d-475f-b733-d31e5bff5819"
+    ],
+    "tag_ids": [
+      "9f830d33-a94f-468b-b8ee-0be9485e3dfb",
+      "9c3a4565-3d59-47b5-999c-1344c55ddd0b"
+    ],
+    "event_types": [
+      "party"
+    ],
+    "contents": [
+      "گل آرایی آماده",
+      "سفارش طبق تصویر"
+    ],
+    "image": "https://majlesyar.com/media/products/%D8%AF%D8%B3%D8%AA%D9%87_%DA%AF%D9%84_4.jpg",
+    "image_name": "دسته گل 4",
+    "image_alt": "دسته گل 4",
+    "photo_analysis": {},
+    "featured": true,
+    "available": true
+  },
+  {
+    "id": "40442fc2-196d-4fa6-9824-6ca63e79c873",
+    "name": "سینی حلوا اجیلی 1",
+    "url_slug": "halva-tray-1",
+    "uri": "/product/halva-tray-1",
+    "description": "سینی حلوا آماده مناسب پذیرایی مراسم با چیدمان کامل.",
+    "price": null,
+    "category_ids": [
+      "492562a8-aceb-498a-9f05-92ecdde13d68",
+      "637895c0-404f-4eb3-95fd-684483c718bf",
+      "d16d11bc-6272-46c4-9545-9a066084daa6"
+    ],
+    "tag_ids": [
+      "9f830d33-a94f-468b-b8ee-0be9485e3dfb",
+      "1c03820a-d6f9-4fb4-96b5-b6437fe6aa41"
+    ],
+    "event_types": [
+      "memorial"
+    ],
+    "contents": [
+      "سینی حلوا",
+      "تزئین آماده"
+    ],
+    "image": "https://majlesyar.com/media/products/%D8%B3%DB%8C%D9%86%DB%8C_%D8%AD%D9%84%D9%88%D8%A7_%D8%A7%D8%AC%DB%8C%D9%84%DB%8C_1.jpg",
+    "image_name": "سینی حلوا اجیلی 1",
+    "image_alt": "سینی حلوا اجیلی 1",
+    "photo_analysis": {},
+    "featured": false,
+    "available": true
+  },
+  {
+    "id": "5e319c99-5437-467a-a491-1d7567e44a7e",
+    "name": "پک ترحیم 1",
+    "url_slug": "memorial-pack-1",
+    "uri": "/product/memorial-pack-1",
+    "description": "پک پذیرایی آماده برای مراسم ترحیم با اقلام داخل تصویر.",
+    "price": null,
+    "category_ids": [
+      "2164187b-e6ab-48ae-b3e1-fc438e384e75",
+      "492562a8-aceb-498a-9f05-92ecdde13d68"
+    ],
+    "tag_ids": [
+      "9f830d33-a94f-468b-b8ee-0be9485e3dfb",
+      "1c03820a-d6f9-4fb4-96b5-b6437fe6aa41"
+    ],
+    "event_types": [
+      "memorial"
+    ],
+    "contents": [
+      "پک آماده",
+      "اقلام مطابق تصویر"
+    ],
+    "image": "https://majlesyar.com/media/products/IMG_20260124_181936_1_Ul5nFIX_gy8kjvi_bWdVjqH.webp",
+    "image_name": "IMG 20260124 181936 (1)",
+    "image_alt": "پک ترحیم شامل آبمیوه پاکتی ،موز ، سیب و کیک و خیار",
+    "photo_analysis": {},
+    "featured": false,
+    "available": true
+  },
+  {
+    "id": "204c7ed3-217a-43bf-8bda-8c7c5bd8df11",
+    "name": "پک ترحیم 2",
+    "url_slug": "memorial-pack-2",
+    "uri": "/product/memorial-pack-2",
+    "description": "پک پذیرایی آماده برای مراسم ترحیم با اقلام داخل تصویر.",
+    "price": null,
+    "category_ids": [
+      "2164187b-e6ab-48ae-b3e1-fc438e384e75",
+      "492562a8-aceb-498a-9f05-92ecdde13d68"
+    ],
+    "tag_ids": [
+      "9f830d33-a94f-468b-b8ee-0be9485e3dfb",
+      "1c03820a-d6f9-4fb4-96b5-b6437fe6aa41"
+    ],
+    "event_types": [
+      "memorial"
+    ],
+    "contents": [
+      "پک آماده",
+      "اقلام مطابق تصویر"
+    ],
+    "image": "https://majlesyar.com/media/products/pak_tarhim_2.webp",
+    "image_name": "پک ترحیم 2",
+    "image_alt": "پک ترحیم 2",
+    "photo_analysis": {},
+    "featured": false,
+    "available": true
+  },
+  {
+    "id": "3370f923-9d02-474d-82af-a3861e0c1043",
+    "name": "پک ترحیم 3",
+    "url_slug": "memorial-pack-3",
+    "uri": "/product/memorial-pack-3",
+    "description": "پک پذیرایی آماده برای مراسم ترحیم با اقلام داخل تصویر.",
+    "price": null,
+    "category_ids": [
+      "492562a8-aceb-498a-9f05-92ecdde13d68",
+      "78a660e2-9682-41d0-88f2-e232b7d6d543"
+    ],
+    "tag_ids": [
+      "9f830d33-a94f-468b-b8ee-0be9485e3dfb",
+      "9916df5e-a981-42ee-a51a-e7512167d056",
+      "1c03820a-d6f9-4fb4-96b5-b6437fe6aa41"
+    ],
+    "event_types": [
+      "memorial"
+    ],
+    "contents": [
+      "پک آماده",
+      "اقلام مطابق تصویر"
+    ],
+    "image": "https://majlesyar.com/media/products/pak_tarhim_3.webp",
+    "image_name": "pak tarhim 3",
+    "image_alt": "pak tarhim 3",
+    "photo_analysis": {},
+    "featured": false,
+    "available": true
+  },
+  {
+    "id": "3786f0e8-c254-4c02-9d67-81bc5969ec4b",
+    "name": "پک ترحیم 4",
+    "url_slug": "memorial-pack-4",
+    "uri": "/product/memorial-pack-4",
+    "description": "پک پذیرایی آماده برای مراسم ترحیم با اقلام داخل تصویر.",
+    "price": null,
+    "category_ids": [
+      "492562a8-aceb-498a-9f05-92ecdde13d68",
+      "78a660e2-9682-41d0-88f2-e232b7d6d543"
+    ],
+    "tag_ids": [
+      "9f830d33-a94f-468b-b8ee-0be9485e3dfb",
+      "9916df5e-a981-42ee-a51a-e7512167d056",
+      "1c03820a-d6f9-4fb4-96b5-b6437fe6aa41"
+    ],
+    "event_types": [
+      "memorial"
+    ],
+    "contents": [
+      "پک آماده",
+      "اقلام مطابق تصویر"
+    ],
+    "image": "https://majlesyar.com/media/products/pak_tarhim_4.webp",
+    "image_name": "pak tarhim 4",
+    "image_alt": "pak tarhim 4",
+    "photo_analysis": {},
+    "featured": false,
+    "available": true
+  },
+  {
+    "id": "68fd4421-8d18-48e6-ae20-a936c9f2b688",
+    "name": "پک ترحیم 5",
+    "url_slug": "memorial-pack-5",
+    "uri": "/product/memorial-pack-5",
+    "description": "پک پذیرایی آماده برای مراسم ترحیم با اقلام داخل تصویر.",
+    "price": null,
+    "category_ids": [
+      "492562a8-aceb-498a-9f05-92ecdde13d68",
+      "78a660e2-9682-41d0-88f2-e232b7d6d543"
+    ],
+    "tag_ids": [
+      "9f830d33-a94f-468b-b8ee-0be9485e3dfb",
+      "9916df5e-a981-42ee-a51a-e7512167d056",
+      "1c03820a-d6f9-4fb4-96b5-b6437fe6aa41"
+    ],
+    "event_types": [
+      "memorial"
+    ],
+    "contents": [
+      "پک آماده",
+      "اقلام مطابق تصویر"
+    ],
+    "image": "https://majlesyar.com/media/products/pak_tarhim_5.webp",
+    "image_name": "pak tarhim 5",
+    "image_alt": "pak tarhim 5",
+    "photo_analysis": {},
+    "featured": false,
+    "available": true
+  }
+]

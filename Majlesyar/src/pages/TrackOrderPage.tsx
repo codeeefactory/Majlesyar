@@ -42,8 +42,7 @@ export default function TrackOrderPage() {
   return (
     <AppShell>
       <SEO
-        title="پیگیری سفارش"
-        description="پیگیری وضعیت سفارش پک‌های پذیرایی با کد سفارش"
+        pageKey="track"
         path="/track"
         breadcrumbs={[
           { name: 'خانه', url: '/' },

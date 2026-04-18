@@ -15,8 +15,7 @@ export default function AboutPage() {
   return (
     <AppShell>
       <SEO
-        title="درباره ما"
-        description="مجلس‌یار با هدف ارائه خدمات کامل و باکیفیت برای انواع مراسم و مجالس راه‌اندازی شده است."
+        pageKey="about"
         path="/about"
       />
 

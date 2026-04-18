@@ -16,7 +16,7 @@ RUN set -eux; \
     fi; \
     cd "${APP_DIR}"; \
     npm ci; \
-    npm run build -- --base=/static/; \
+    npx vite build --base=/static/; \
     cp -a dist /frontend_dist
 
 

@@ -13,6 +13,7 @@ interface FAQItem {
 }
 
 interface SEOProps {
+  pageKey?: string;
   title?: string;
   description?: string;
   path?: string;
@@ -30,33 +31,25 @@ interface SEOProps {
   keywords?: string[];
 }
 
-const SITE_NAME = "مجلس یار";
-const DEFAULT_DESCRIPTION =
-  "سفارش آنلاین پک پذیرایی، گل مراسم، فینگر فود و خدمات ترحیم با ارسال سریع در تهران و البرز و تضمین کیفیت.";
-const DEFAULT_KEYWORDS = [
-  "پک پذیرایی",
-  "پک نذری",
-  "کترینگ مراسم",
-  "فینگر فود",
-  "ترحیم",
-  "گل مراسم",
-  "دفاع پایان‌نامه",
-  "مجلس یار",
-  "پذیرایی مراسمات",
-  "سفارش آنلاین پذیرایی",
-  "کترینگ تهران",
-  "فینگر فود تهران",
-  "سفارش گل",
-  "پک میوه",
-  "پک اسنک",
-];
+const PRODUCTION_SITE_URL = "https://majlesyar.com";
 const DEFAULT_OG_IMAGE = "https://lovable.dev/opengraph-image-p98pqg.png";
 
 function getBaseUrl() {
   if (typeof window !== "undefined") {
     return window.location.origin;
   }
-  return "https://majlesyar.runflare.run";
+  return PRODUCTION_SITE_URL;
+}
+
+function buildDocumentTitle(pageTitle: string, siteName: string, siteTagline: string) {
+  const trimmedTitle = pageTitle.trim();
+  if (!trimmedTitle) {
+    return `${siteName} | ${siteTagline}`;
+  }
+  if (trimmedTitle.includes(siteName)) {
+    return trimmedTitle;
+  }
+  return `${trimmedTitle} | ${siteName}`;
 }
 
 function upsertMeta(attr: "name" | "property", key: string, content: string) {
@@ -119,29 +112,45 @@ function removeJsonLd(key: string) {
 }
 
 export function SEO({
+  pageKey,
   title,
-  description = DEFAULT_DESCRIPTION,
+  description,
   path = "",
-  ogImage = DEFAULT_OG_IMAGE,
+  ogImage,
   product,
   breadcrumbs,
   faq,
   noindex = false,
-  keywords = DEFAULT_KEYWORDS,
+  keywords,
 }: SEOProps) {
   const { settings } = useSettings();
 
   useEffect(() => {
+    const branding = settings.siteBranding;
+    const pageSeo = pageKey ? settings.pageSeo[pageKey] : undefined;
+    const resolvedTitle = title || pageSeo?.title || branding.defaultMetaTitle;
+    const resolvedDescription =
+      description || pageSeo?.description || branding.defaultMetaDescription;
+    const resolvedKeywords = keywords || pageSeo?.keywords || branding.defaultMetaKeywords;
+    const resolvedOgImage =
+      ogImage ||
+      product?.image ||
+      settings.siteOgImageUrl ||
+      settings.siteLogoUrl ||
+      settings.siteFaviconUrl ||
+      DEFAULT_OG_IMAGE;
+
     const baseUrl = getBaseUrl();
-    const fullTitle = title ? `${title} | ${SITE_NAME}` : `${SITE_NAME} | پک‌های پذیرایی ویژه مراسمات`;
+    const fullTitle = buildDocumentTitle(resolvedTitle, branding.siteName, branding.siteTagline);
     const canonicalUrl = `${baseUrl}${path}`;
-    const keywordsValue = keywords.join(", ");
+    const keywordsValue = resolvedKeywords.join(", ");
     const sameAs = getSameAsLinks([
       settings.instagramUrl,
       settings.telegramUrl,
       settings.whatsappUrl,
       settings.baleUrl,
     ]);
+    const logoUrl = settings.siteLogoUrl || settings.siteFaviconUrl || `${baseUrl}/favicon.ico`;
 
     if (typeof document !== "undefined") {
       document.documentElement.lang = "fa";
@@ -152,32 +161,36 @@ export function SEO({
     }
 
     upsertMeta("name", "title", fullTitle);
-    upsertMeta("name", "description", description);
+    upsertMeta("name", "description", resolvedDescription);
     upsertMeta("name", "keywords", keywordsValue);
+    upsertMeta("name", "author", branding.metaAuthor);
+    upsertMeta("name", "application-name", branding.siteName);
+    upsertMeta("name", "apple-mobile-web-app-title", branding.siteName);
     upsertMeta("name", "robots", noindex ? "noindex, nofollow" : "index, follow");
     upsertCanonical(canonicalUrl);
 
     upsertMeta("property", "og:type", product ? "product" : "website");
     upsertMeta("property", "og:url", canonicalUrl);
     upsertMeta("property", "og:title", fullTitle);
-    upsertMeta("property", "og:description", description);
-    upsertMeta("property", "og:image", ogImage);
+    upsertMeta("property", "og:description", resolvedDescription);
+    upsertMeta("property", "og:image", resolvedOgImage);
     upsertMeta("property", "og:locale", "fa_IR");
-    upsertMeta("property", "og:site_name", SITE_NAME);
+    upsertMeta("property", "og:site_name", branding.siteName);
 
     upsertMeta("name", "twitter:card", "summary_large_image");
     upsertMeta("name", "twitter:url", canonicalUrl);
     upsertMeta("name", "twitter:title", fullTitle);
-    upsertMeta("name", "twitter:description", description);
-    upsertMeta("name", "twitter:image", ogImage);
+    upsertMeta("name", "twitter:description", resolvedDescription);
+    upsertMeta("name", "twitter:image", resolvedOgImage);
 
     const organizationSchema = {
       "@context": "https://schema.org",
       "@type": "Organization",
-      name: SITE_NAME,
+      name: branding.siteName,
+      alternateName: branding.siteAlternateName,
       url: baseUrl,
-      logo: `${baseUrl}/favicon.ico`,
-      description: DEFAULT_DESCRIPTION,
+      logo: logoUrl,
+      description: resolvedDescription,
       contactPoint: {
         "@type": "ContactPoint",
         telephone: settings.contactPhone,
@@ -197,13 +210,13 @@ export function SEO({
       "@context": "https://schema.org",
       "@type": "FoodEstablishment",
       "@id": `${baseUrl}/#business`,
-      name: SITE_NAME,
-      alternateName: "Majlesyar",
-      description: DEFAULT_DESCRIPTION,
+      name: branding.siteName,
+      alternateName: branding.siteAlternateName,
+      description: resolvedDescription,
       url: baseUrl,
       telephone: settings.contactPhone,
       priceRange: "$$",
-      image: `${baseUrl}/favicon.ico`,
+      image: settings.siteOgImageUrl || logoUrl,
       address: {
         "@type": "PostalAddress",
         streetAddress: settings.contactAddress,
@@ -221,13 +234,14 @@ export function SEO({
       ],
       hasOfferCatalog: {
         "@type": "OfferCatalog",
-        name: "پک‌های پذیرایی",
-        itemListElement: [
-          { "@type": "Offer", itemOffered: { "@type": "Service", name: "فینگر فود مراسم" } },
-          { "@type": "Offer", itemOffered: { "@type": "Service", name: "پک نذری و ترحیم" } },
-          { "@type": "Offer", itemOffered: { "@type": "Service", name: "گل و گل‌آرایی مراسم" } },
-          { "@type": "Offer", itemOffered: { "@type": "Service", name: "پک دفاع پایان‌نامه" } },
-        ],
+        name: branding.siteTagline,
+        itemListElement: settings.eventPages.map((eventPage) => ({
+          "@type": "Offer",
+          itemOffered: {
+            "@type": "Service",
+            name: eventPage.name,
+          },
+        })),
       },
       aggregateRating: {
         "@type": "AggregateRating",
@@ -239,7 +253,8 @@ export function SEO({
     const websiteSchema = {
       "@context": "https://schema.org",
       "@type": "WebSite",
-      name: SITE_NAME,
+      name: branding.siteName,
+      alternateName: [branding.siteAlternateName, "majlesyar.com"],
       url: baseUrl,
       potentialAction: {
         "@type": "SearchAction",
@@ -259,7 +274,8 @@ export function SEO({
         name: product.name,
         description: product.description,
         category: product.category || "پک پذیرایی",
-        brand: { "@type": "Brand", name: SITE_NAME },
+        brand: { "@type": "Brand", name: branding.siteName },
+        image: product.image || resolvedOgImage,
         ...(product.price
           ? {
               offers: {
@@ -267,7 +283,7 @@ export function SEO({
                 price: product.price,
                 priceCurrency: "IRR",
                 availability: "https://schema.org/InStock",
-                seller: { "@type": "Organization", name: SITE_NAME },
+                seller: { "@type": "Organization", name: branding.siteName },
               },
             }
           : {}),
@@ -314,6 +330,7 @@ export function SEO({
       }
     };
   }, [
+    pageKey,
     title,
     description,
     path,
@@ -323,13 +340,7 @@ export function SEO({
     faq,
     noindex,
     keywords,
-    settings.contactPhone,
-    settings.contactAddress,
-    settings.workingHours,
-    settings.instagramUrl,
-    settings.telegramUrl,
-    settings.whatsappUrl,
-    settings.baleUrl,
+    settings,
   ]);
 
   return null;

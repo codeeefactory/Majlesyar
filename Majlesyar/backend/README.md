@@ -46,6 +46,45 @@ Server: `http://localhost:8000`
   - Max size: 5MB
 - Files are served under `/media/...` (toggle with `SERVE_MEDIA=1|0`).
 
+## Bulk Remote Product Importer
+
+If you want to scan the live site first and then bulk-create products from a local image folder plus a UTF-8 names file, use:
+
+```powershell
+cd backend
+..\backend\.venv\Scripts\python manage.py import_remote_products `
+  --base-url https://majlesyar.com `
+  --username admin `
+  --password admin `
+  --images-dir C:\path\to\images `
+  --names-file C:\path\to\names.txt `
+  --dry-run
+```
+
+Name file formats:
+
+- One product name per line, matched to images in sorted order
+- `image-file.jpg|نام محصول` for explicit image-to-name mapping
+
+What the command does:
+
+- Authenticates against the remote JWT admin API
+- Scans remote categories, tags, and existing products before importing
+- Reads images from the local folder
+- Reads product names from the text file
+- Uses the project’s local vision pipeline to detect product contents from images
+- Generates a description and suitable `image_alt`
+- Uploads the product with `input_mode=photo_processing`
+
+Helpful flags:
+
+- `--scan-only` to only inspect the remote backend
+- `--dry-run` to preview candidates without uploading
+- `--default-category-slug <slug>` and `--default-tag-slug <slug>` to force extra labels
+- `--allow-duplicates` to bypass duplicate name/slug checks
+- `--price 250000` to set one price for all imported products
+- `--timeout 60 --retries 3` if the hosted site is responding slowly
+
 ## Local Product Recognition
 
 The backend now supports internal-only product photo analysis for these labels:

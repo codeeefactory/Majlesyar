@@ -3,7 +3,10 @@ from __future__ import annotations
 from pathlib import Path
 
 from django.conf import settings
+from django.db.utils import OperationalError, ProgrammingError
 from django.http import HttpResponse
+from django.shortcuts import redirect
+from django.templatetags.static import static as static_url
 from django.views.decorators.http import require_safe
 
 
@@ -60,6 +63,21 @@ def robots_txt(request) -> HttpResponse:
     content = _strip_unknown_robots_directives(content)
 
     return HttpResponse(content, content_type="text/plain; charset=utf-8")
+
+
+@require_safe
+def favicon_redirect(request):
+    try:
+        from site_settings.models import SiteSetting
+
+        site_setting = SiteSetting.load()
+    except (OperationalError, ProgrammingError):
+        site_setting = None
+
+    if site_setting and site_setting.site_favicon:
+        return redirect(site_setting.site_favicon.url, permanent=False)
+
+    return redirect(static_url("favicon.ico"), permanent=False)
 
 
 @require_safe

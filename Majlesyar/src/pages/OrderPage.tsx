@@ -102,8 +102,8 @@ export default function OrderPage() {
   return (
     <AppShell>
       <SEO
+        pageKey="order"
         title={`سفارش ${order.id}`}
-        description="مشاهده جزئیات و وضعیت سفارش"
         path={`/order/${order.id}`}
         noindex={true}
       />

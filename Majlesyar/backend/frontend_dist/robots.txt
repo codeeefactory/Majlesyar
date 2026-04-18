@@ -1,5 +1,5 @@
-# Robots.txt for Pak Top
-# https://majlesyar.runflare.run
+# Robots.txt for Majlesyar
+# https://majlesyar.com
 
 User-agent: *
 Allow: /
@@ -24,4 +24,4 @@ User-agent: Google-Extended
 Allow: /
 
 # Sitemap location
-Sitemap: https://majlesyar.runflare.run/sitemap.xml
+Sitemap: https://majlesyar.com/sitemap.xml

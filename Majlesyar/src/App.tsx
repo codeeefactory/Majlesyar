@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { CartProvider } from "@/contexts/CartContext";
 import { SettingsProvider } from "@/contexts/SettingsContext";
 import { AdminAuthProvider } from "@/contexts/AdminAuthContext";
+import { SiteThemeSync } from "@/components/SiteThemeSync";
 import { measureAndStoreClientPing } from "@/lib/network";
 import ProductPage from "./pages/ProductPage";
 
@@ -84,6 +85,7 @@ const App = () => {
 
   return (
     <SettingsProvider>
+      <SiteThemeSync />
       <CartProvider>
         <DeferredToaster />
         <BrowserRouter>

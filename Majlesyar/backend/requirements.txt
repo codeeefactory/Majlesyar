@@ -8,6 +8,7 @@ django-filter>=25.2,<26.0
 whitenoise>=6.9,<7.0
 Pillow>=12.1,<13.0
 pillow-avif-plugin>=1.5.2,<2.0
+requests>=2.32,<3.0
 psycopg[binary]>=3.3,<4.0
 gunicorn>=25.0,<26.0
 open_clip_torch>=2.24,<3.0

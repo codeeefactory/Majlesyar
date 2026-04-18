@@ -6,6 +6,7 @@ import type {
   Product,
   Settings,
 } from "@/types/domain";
+import { defaultSettings } from "@/data/siteConstants";
 import {
   buildUrl,
   clearAuthTokens,
@@ -67,6 +68,68 @@ interface ApiSettings {
   bale_url: string;
   maps_url: string;
   maps_embed_url: string;
+  site_logo?: string | null;
+  site_favicon?: string | null;
+  site_og_image?: string | null;
+  site_branding?: {
+    site_name?: string;
+    site_alternate_name?: string;
+    site_tagline?: string;
+    logo_alt?: string;
+    meta_author?: string;
+    default_meta_title?: string;
+    default_meta_description?: string;
+    default_meta_keywords?: string[];
+    admin_site_title?: string;
+    admin_site_header?: string;
+    admin_site_subheader?: string;
+    admin_site_symbol?: string;
+  };
+  theme_palette?: {
+    primary?: string;
+    accent?: string;
+    background?: string;
+    surface?: string;
+    foreground?: string;
+    muted_foreground?: string;
+    success?: string;
+    warning?: string;
+  };
+  page_seo?: Record<
+    string,
+    {
+      title?: string;
+      description?: string;
+      keywords?: string[];
+    }
+  >;
+  event_pages?: {
+    id?: string;
+    name?: string;
+    slug?: string;
+    description?: string;
+    seo_title?: string;
+    seo_description?: string;
+    seo_keywords?: string[];
+    faqs?: { question?: string; answer?: string }[];
+    icon?: string;
+    color?: string;
+    available?: boolean;
+  }[];
+  site_top_notice?: {
+    title?: string;
+    message?: string;
+    badge?: string;
+  };
+  homepage_benefits_section?: {
+    eyebrow?: string;
+    title?: string;
+    items?: {
+      title?: string;
+      description?: string;
+      note?: string;
+    }[];
+  };
 }
 
 interface ApiOrderItem {
@@ -104,6 +167,14 @@ interface ApiOrder {
   created_at: string;
   items: ApiOrderItem[];
   notes: ApiOrderNote[];
+}
+
+export interface OfflineSessionImportResult {
+  applied_actions: number;
+  clients_created: number;
+  clients_updated: number;
+  invoices_created: number;
+  invoices_updated: number;
 }
 
 const RAW_API_BASE_URL = import.meta.env.VITE_API_BASE_URL?.trim();
@@ -177,6 +248,71 @@ function mapBuilderItem(apiBuilderItem: ApiBuilderItem): BuilderItem {
 }
 
 function mapSettings(apiSettings: ApiSettings): Settings {
+  const defaultTopNotice = defaultSettings.siteTopNotice;
+  const defaultHomepageBenefits = defaultSettings.homepageBenefitsSection;
+  const defaultBranding = defaultSettings.siteBranding;
+  const defaultThemePalette = defaultSettings.themePalette;
+  const defaultPageSeo = defaultSettings.pageSeo;
+  const defaultEventPages = defaultSettings.eventPages;
+  const rawTopNotice = apiSettings.site_top_notice || {};
+  const rawHomepageBenefits = apiSettings.homepage_benefits_section || {};
+  const rawBranding = apiSettings.site_branding || {};
+  const rawThemePalette = apiSettings.theme_palette || {};
+  const rawPageSeo = apiSettings.page_seo || {};
+  const rawEventPages = Array.isArray(apiSettings.event_pages) ? apiSettings.event_pages : [];
+  const rawHomepageItems = Array.isArray(rawHomepageBenefits.items) ? rawHomepageBenefits.items : [];
+  const resolvedPageSeoEntries = {
+    ...defaultPageSeo,
+    ...Object.fromEntries(
+      Object.entries(rawPageSeo).map(([pageKey, value]) => [
+        pageKey,
+        {
+          title: value?.title || defaultPageSeo[pageKey]?.title || "",
+          description: value?.description || defaultPageSeo[pageKey]?.description || "",
+          keywords:
+            Array.isArray(value?.keywords) && value?.keywords.length
+              ? value.keywords.filter(Boolean)
+              : defaultPageSeo[pageKey]?.keywords || [],
+        },
+      ]),
+    ),
+  };
+  const resolvedEventPages = rawEventPages.length
+    ? rawEventPages
+        .map((page, index) => {
+          const fallback = defaultEventPages[index] || defaultEventPages.find((item) => item.slug === page.slug);
+          if (!page.slug && !fallback?.slug) {
+            return null;
+          }
+          return {
+            id: page.id || fallback?.id || page.slug || "",
+            name: page.name || fallback?.name || "",
+            slug: page.slug || fallback?.slug || "",
+            description: page.description || fallback?.description || "",
+            seoTitle: page.seo_title || fallback?.seoTitle || page.name || fallback?.name || "",
+            seoDescription:
+              page.seo_description || fallback?.seoDescription || page.description || fallback?.description || "",
+            seoKeywords:
+              Array.isArray(page.seo_keywords) && page.seo_keywords.length
+                ? page.seo_keywords.filter(Boolean)
+                : fallback?.seoKeywords || [],
+            faqs:
+              Array.isArray(page.faqs) && page.faqs.length
+                ? page.faqs
+                    .map((faq) => ({
+                      question: faq.question || "",
+                      answer: faq.answer || "",
+                    }))
+                    .filter((faq) => faq.question || faq.answer)
+                : fallback?.faqs || [],
+            icon: page.icon || fallback?.icon || "📦",
+            color: page.color || fallback?.color || "bg-muted",
+            available: page.available ?? fallback?.available ?? true,
+          };
+        })
+        .filter((page): page is NonNullable<typeof page> => Boolean(page && page.slug && page.name))
+    : defaultEventPages;
+
   return {
     minOrderQty: apiSettings.min_order_qty,
     leadTimeHours: apiSettings.lead_time_hours,
@@ -192,6 +328,57 @@ function mapSettings(apiSettings: ApiSettings): Settings {
     baleUrl: apiSettings.bale_url || "",
     mapsUrl: apiSettings.maps_url || "",
     mapsEmbedUrl: apiSettings.maps_embed_url || "",
+    siteLogoUrl: apiSettings.site_logo ? normalizeImageUrl(apiSettings.site_logo) : undefined,
+    siteFaviconUrl: apiSettings.site_favicon ? normalizeImageUrl(apiSettings.site_favicon) : undefined,
+    siteOgImageUrl: apiSettings.site_og_image ? normalizeImageUrl(apiSettings.site_og_image) : undefined,
+    siteBranding: {
+      siteName: rawBranding.site_name || defaultBranding.siteName,
+      siteAlternateName: rawBranding.site_alternate_name || defaultBranding.siteAlternateName,
+      siteTagline: rawBranding.site_tagline || defaultBranding.siteTagline,
+      logoAlt: rawBranding.logo_alt || defaultBranding.logoAlt,
+      metaAuthor: rawBranding.meta_author || defaultBranding.metaAuthor,
+      defaultMetaTitle: rawBranding.default_meta_title || defaultBranding.defaultMetaTitle,
+      defaultMetaDescription:
+        rawBranding.default_meta_description || defaultBranding.defaultMetaDescription,
+      defaultMetaKeywords:
+        Array.isArray(rawBranding.default_meta_keywords) && rawBranding.default_meta_keywords.length
+          ? rawBranding.default_meta_keywords.filter(Boolean)
+          : defaultBranding.defaultMetaKeywords,
+      adminSiteTitle: rawBranding.admin_site_title || defaultBranding.adminSiteTitle,
+      adminSiteHeader: rawBranding.admin_site_header || defaultBranding.adminSiteHeader,
+      adminSiteSubheader: rawBranding.admin_site_subheader || defaultBranding.adminSiteSubheader,
+      adminSiteSymbol: rawBranding.admin_site_symbol || defaultBranding.adminSiteSymbol,
+    },
+    themePalette: {
+      primary: rawThemePalette.primary || defaultThemePalette.primary,
+      accent: rawThemePalette.accent || defaultThemePalette.accent,
+      background: rawThemePalette.background || defaultThemePalette.background,
+      surface: rawThemePalette.surface || defaultThemePalette.surface,
+      foreground: rawThemePalette.foreground || defaultThemePalette.foreground,
+      mutedForeground: rawThemePalette.muted_foreground || defaultThemePalette.mutedForeground,
+      success: rawThemePalette.success || defaultThemePalette.success,
+      warning: rawThemePalette.warning || defaultThemePalette.warning,
+    },
+    pageSeo: resolvedPageSeoEntries,
+    eventPages: resolvedEventPages,
+    siteTopNotice: {
+      title: rawTopNotice.title || defaultTopNotice.title,
+      message: rawTopNotice.message || defaultTopNotice.message,
+      badge: rawTopNotice.badge || defaultTopNotice.badge,
+    },
+    homepageBenefitsSection: {
+      eyebrow: rawHomepageBenefits.eyebrow || defaultHomepageBenefits.eyebrow,
+      title: rawHomepageBenefits.title || defaultHomepageBenefits.title,
+      items: rawHomepageItems.length
+        ? rawHomepageItems
+            .map((item) => ({
+              title: item.title || "",
+              description: item.description || "",
+              note: item.note || "",
+            }))
+            .filter((item) => item.title || item.description || item.note)
+        : defaultHomepageBenefits.items,
+    },
   };
 }
 
@@ -448,6 +635,40 @@ export async function addOrderNote(id: string, note: string): Promise<Order | nu
   } catch {
     return null;
   }
+}
+
+export async function uploadOfflineSessionBundle(file: File): Promise<OfflineSessionImportResult> {
+  const loggedIn = await isAdminLoggedIn();
+  if (!loggedIn) {
+    throw new HttpError("نشست مدیریتی معتبر نیست. دوباره وارد شوید.", 401, null);
+  }
+
+  const tokens = getAuthTokens();
+  if (!tokens?.access) {
+    throw new HttpError("توکن دسترسی در دسترس نیست.", 401, null);
+  }
+
+  const formData = new FormData();
+  formData.append("session_file", file);
+
+  const response = await fetch(buildUrl("/api/v1/admin/offline-session/import/"), {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${tokens.access}`,
+    },
+    body: formData,
+  });
+
+  const payload = await parseResponseBody(response);
+  if (!response.ok) {
+    throw new HttpError(
+      extractErrorMessage(payload, `Request failed with status ${response.status}`),
+      response.status,
+      payload,
+    );
+  }
+
+  return payload as OfflineSessionImportResult;
 }
 
 export async function adminLogin(username: string, password: string): Promise<boolean> {

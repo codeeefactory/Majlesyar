@@ -134,6 +134,15 @@ class Command(BaseCommand):
         site_setting.bale_url = settings_data.get("bale_url", site_setting.bale_url)
         site_setting.maps_url = settings_data.get("maps_url", site_setting.maps_url)
         site_setting.maps_embed_url = settings_data.get("maps_embed_url", site_setting.maps_embed_url)
+        site_setting.site_branding = settings_data.get("site_branding", site_setting.site_branding)
+        site_setting.theme_palette = settings_data.get("theme_palette", site_setting.theme_palette)
+        site_setting.page_seo = settings_data.get("page_seo", site_setting.page_seo)
+        site_setting.event_pages = settings_data.get("event_pages", site_setting.event_pages)
+        site_setting.site_top_notice = settings_data.get("site_top_notice", site_setting.site_top_notice)
+        site_setting.homepage_benefits_section = settings_data.get(
+            "homepage_benefits_section",
+            site_setting.homepage_benefits_section,
+        )
         site_setting.save()
 
         self.stdout.write(self.style.SUCCESS("Initial data seeded successfully."))

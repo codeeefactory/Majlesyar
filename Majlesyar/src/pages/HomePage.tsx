@@ -3,9 +3,10 @@ import { Link } from 'react-router-dom';
 import { AppShell } from '@/components/layout';
 import { Button } from '@/components/ui/button';
 import { EventCard } from '@/components/EventCard';
+import { HomepageBenefitsSection } from '@/components/HomepageBenefitsSection';
 import { ProductCard } from '@/components/ProductCard';
 import { SEO } from '@/components/SEO';
-import { eventTypes } from '@/data/siteConstants';
+import { useSettings } from '@/contexts/SettingsContext';
 import { Sparkles, Clock, ArrowLeft, Truck, Shield, Star, Wrench } from 'lucide-react';
 import { listProducts } from '@/lib/api';
 import type { Product } from '@/types/domain';
@@ -13,6 +14,7 @@ import type { Product } from '@/types/domain';
 export default function HomePage() {
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
   const [productsLoading, setProductsLoading] = useState(true);
+  const { settings } = useSettings();
 
   useEffect(() => {
     let isMounted = true;
@@ -36,12 +38,7 @@ export default function HomePage() {
 
   return (
     <AppShell>
-      <SEO
-        title="سفارش آنلاین تاج گل، پک ترحیم و حلوا خرما (ارسال فوری)"
-        description="مجلس یار؛ مرجع خدمات مجالس ترحیم و تولد. سفارش آنلاین حلوا خرما، پک میوه، فینگر فود و تاج گل با پایین‌ترین قیمت و ارسال فوری. برای تضمین کیفیت، بخشی از وجه را هنگام تحویل بپردازید!"
-        path="/"
-        keywords={['حلوا', 'خرما', 'حلوا و خرما', 'پک ترحیم', 'گل مراسم', 'گل ترحیم', 'سفارش حلوا', 'سفارش خرما', 'پذیرایی ترحیم']}
-      />
+      <SEO pageKey="home" path="/" />
       {/* Combined Hero & Event Types Section */}
       <section className="relative overflow-hidden" aria-labelledby="hero-title">
         <div className="absolute inset-0 cream-gradient" />
@@ -61,7 +58,7 @@ export default function HomePage() {
             </header>
 
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-              {eventTypes.map((event) => (
+              {settings.eventPages.map((event) => (
                 <div key={event.id}>
                   <EventCard {...event} />
                 </div>
@@ -70,7 +67,7 @@ export default function HomePage() {
           </div>
 
           {/* Trust badges below Event Types */}
-          <ul className="mb-12 md:mb-16 grid grid-cols-2 md:grid-cols-4 gap-4" aria-label="مزایای مجلس یار">
+          <ul className="mb-12 md:mb-16 grid grid-cols-2 md:grid-cols-4 gap-4" aria-label={`مزایای ${settings.siteBranding.siteName}`}>
             {[
               { icon: Truck, label: 'ارسال سریع', desc: 'تهران و البرز' },
               { icon: Shield, label: 'تضمین کیفیت', desc: 'مواد تازه' },
@@ -101,7 +98,7 @@ export default function HomePage() {
             
             <h1 id="hero-title" className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-foreground leading-tight">
               پذیرایی حرفه‌ای با
-              <span className="text-gradient-gold block mt-2">مجلس یار</span>
+              <span className="text-gradient-gold block mt-2">{settings.siteBranding.siteName}</span>
             </h1>
             
             <p className="text-lg md:text-xl text-muted-foreground max-w-lg mx-auto leading-relaxed">
@@ -173,6 +170,8 @@ export default function HomePage() {
               ))}
         </div>
       </section>
+
+      <HomepageBenefitsSection />
 
       <section className="container py-16" aria-labelledby="cta-heading">
         <article className="bg-card rounded-3xl p-8 md:p-12 border border-border relative overflow-hidden">

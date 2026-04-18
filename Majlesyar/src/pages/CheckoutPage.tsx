@@ -115,8 +115,7 @@ export default function CheckoutPage() {
   return (
     <AppShell>
       <SEO
-        title="تکمیل سفارش"
-        description="تکمیل اطلاعات و ثبت سفارش پک‌های پذیرایی"
+        pageKey="checkout"
         path="/checkout"
         noindex={true}
       />

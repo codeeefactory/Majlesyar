@@ -308,8 +308,7 @@ export default function BuilderPage() {
   return (
     <AppShell>
       <SEO
-        title="ساخت پک اختصاصی"
-        description="ساخت پک پذیرایی سفارشی با انتخاب بسته‌بندی، میوه، نوشیدنی و اسنک دلخواه"
+        pageKey="builder"
         path="/builder"
         breadcrumbs={[
           { name: 'خانه', url: '/' },

@@ -43,8 +43,7 @@ export default function CartPage() {
   return (
     <AppShell>
       <SEO
-        title="سبد خرید"
-        description="مشاهده و مدیریت سبد خرید پک‌های پذیرایی"
+        pageKey="cart"
         path="/cart"
         noindex={true}
       />

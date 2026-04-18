@@ -3,8 +3,8 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path, re_path
-from django.views.generic import RedirectView, TemplateView
-from config.site_views import robots_txt, sitemap_xml
+from django.views.generic import TemplateView
+from config.site_views import favicon_redirect, robots_txt, sitemap_xml
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from telegram_bot.views import TelegramWebhookAPIView
@@ -18,6 +18,7 @@ urlpatterns = [
     path("api/v1/", include("catalog.urls")),
     path("api/v1/", include("site_settings.urls")),
     path("api/v1/", include("orders.urls")),
+    path("api/v1/", include("operations.urls")),
     path(settings.TELEGRAM_BOT["WEBHOOK_PATH"], TelegramWebhookAPIView.as_view(), name="telegram-webhook"),
     path("robots.txt", robots_txt, name="robots-txt"),
     path("sitemap.xml", sitemap_xml, name="sitemap-xml"),
@@ -25,7 +26,7 @@ urlpatterns = [
 
 if (settings.BASE_DIR / "frontend_dist" / "index.html").exists():
     urlpatterns += [
-        path("favicon.ico", RedirectView.as_view(url="/static/favicon.ico", permanent=False)),
+        path("favicon.ico", favicon_redirect, name="favicon-redirect"),
         re_path(
             r"^(?!api/|admin/|media/|static/).*$",
             TemplateView.as_view(template_name="index.html"),

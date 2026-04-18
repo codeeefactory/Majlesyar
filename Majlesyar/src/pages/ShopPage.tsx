@@ -146,11 +146,9 @@ export default function ShopPage() {
   return (
     <AppShell>
       <SEO
-        title="فروشگاه حلوا، ترحیم و گل مراسم"
-        description="خرید و سفارش انواع حلوا، پک ترحیم، گل مراسم و دیگر محصولات پذیرایی با بهترین کیفیت و تحویل سریع در تهران و البرز."
+        pageKey="shop"
         path="/shop"
         breadcrumbs={breadcrumbs}
-        keywords={['حلوا', 'پک ترحیم', 'گل مراسم', 'گل ترحیم', 'سفارش حلوا', 'پذیرایی ترحیم']}
       />
       <div className="container py-8">
         {/* Breadcrumb Navigation */}
