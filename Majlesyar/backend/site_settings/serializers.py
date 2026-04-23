@@ -52,3 +52,33 @@ class SiteSettingSerializer(serializers.ModelSerializer):
 
     def get_site_og_image(self, obj: SiteSetting) -> str | None:
         return self._build_absolute_media_url(obj.site_og_image)
+
+
+class SiteSettingWriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SiteSetting
+        fields = (
+            "min_order_qty",
+            "lead_time_hours",
+            "allowed_provinces",
+            "delivery_windows",
+            "payment_methods",
+            "contact_phone",
+            "contact_address",
+            "working_hours",
+            "instagram_url",
+            "telegram_url",
+            "whatsapp_url",
+            "bale_url",
+            "maps_url",
+            "maps_embed_url",
+            "site_logo",
+            "site_favicon",
+            "site_og_image",
+            "site_branding",
+            "theme_palette",
+            "page_seo",
+            "event_pages",
+            "site_top_notice",
+            "homepage_benefits_section",
+        )

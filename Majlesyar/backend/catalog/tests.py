@@ -12,7 +12,8 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from .image_utils import register_image_plugins
-from .models import Category, Product, Tag
+from .models import BuilderItem, Category, PageProductPlacement, Product, Tag
+from site_settings.models import SiteSetting
 
 
 AVIF_SUPPORTED = register_image_plugins()
@@ -471,3 +472,246 @@ class AdminProductApiTests(APITestCase):
         self.assertTrue(created.photo_analysis["uncertain"])
         self.assertEqual(created.photo_analysis["error"], "model_unavailable")
         mocked_analyze.assert_called_once()
+
+
+class AdminCatalogSupportApiTests(APITestCase):
+    def setUp(self):
+        user_model = get_user_model()
+        self.staff_user = user_model.objects.create_user(
+            username="catalog_admin",
+            password="pass12345",
+            is_staff=True,
+        )
+        self.client.force_authenticate(user=self.staff_user)
+
+    def test_staff_can_create_update_and_delete_category(self):
+        create_response = self.client.post(
+            reverse("admin-category-list-create"),
+            {
+                "name": "گل ترحیم",
+                "slug": "funeral-flowers",
+                "icon": "F",
+                "color": "#00C2F2",
+            },
+            format="json",
+        )
+
+        self.assertEqual(create_response.status_code, status.HTTP_201_CREATED)
+        category_id = create_response.data["id"]
+
+        patch_response = self.client.patch(
+            reverse("admin-category-detail", kwargs={"id": category_id}),
+            {
+                "name": "گل ترحیم ویژه",
+                "slug": "funeral-flowers-premium",
+                "icon": "FP",
+                "color": "#0F766E",
+            },
+            format="json",
+        )
+
+        self.assertEqual(patch_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(patch_response.data["name"], "گل ترحیم ویژه")
+
+        delete_response = self.client.delete(reverse("admin-category-detail", kwargs={"id": category_id}))
+
+        self.assertEqual(delete_response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Category.objects.filter(id=category_id).exists())
+
+    def test_staff_can_create_update_and_delete_tag(self):
+        create_response = self.client.post(
+            reverse("admin-tag-list-create"),
+            {
+                "name": "ارسال فوری",
+                "slug": "fast-delivery",
+            },
+            format="json",
+        )
+
+        self.assertEqual(create_response.status_code, status.HTTP_201_CREATED)
+        tag_id = create_response.data["id"]
+
+        patch_response = self.client.patch(
+            reverse("admin-tag-detail", kwargs={"id": tag_id}),
+            {
+                "name": "ارسال فوق سریع",
+                "slug": "ultra-fast-delivery",
+            },
+            format="json",
+        )
+
+        self.assertEqual(patch_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(patch_response.data["slug"], "ultra-fast-delivery")
+
+        delete_response = self.client.delete(reverse("admin-tag-detail", kwargs={"id": tag_id}))
+
+        self.assertEqual(delete_response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Tag.objects.filter(id=tag_id).exists())
+
+    def test_staff_can_create_update_and_delete_builder_item(self):
+        create_response = self.client.post(
+            reverse("admin-builder-item-list-create"),
+            {
+                "name": "ظرف میوه",
+                "group": BuilderItem.Group.PACKAGING,
+                "price": 45000,
+                "required": True,
+            },
+            format="json",
+        )
+
+        self.assertEqual(create_response.status_code, status.HTTP_201_CREATED)
+        builder_item_id = create_response.data["id"]
+
+        patch_response = self.client.patch(
+            reverse("admin-builder-item-detail", kwargs={"id": builder_item_id}),
+            {
+                "name": "ظرف میوه بزرگ",
+                "group": BuilderItem.Group.ADDON,
+                "price": 65000,
+                "required": False,
+            },
+            format="json",
+        )
+
+        self.assertEqual(patch_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(patch_response.data["group"], BuilderItem.Group.ADDON)
+        self.assertEqual(patch_response.data["price"], 65000)
+        self.assertFalse(patch_response.data["required"])
+
+        delete_response = self.client.delete(
+            reverse("admin-builder-item-detail", kwargs={"id": builder_item_id})
+        )
+
+        self.assertEqual(delete_response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(BuilderItem.objects.filter(id=builder_item_id).exists())
+
+
+class PageProductOrderingApiTests(APITestCase):
+    def setUp(self):
+        user_model = get_user_model()
+        self.staff_user = user_model.objects.create_user(
+            username="page_admin",
+            password="pass12345",
+            is_staff=True,
+        )
+        self.client.force_authenticate(user=self.staff_user)
+
+        settings = SiteSetting.load()
+        settings.event_pages = [
+            {
+                "id": "memorial",
+                "name": "ترحیم",
+                "slug": "memorial",
+                "description": "صفحه محصولات ترحیم",
+                "available": True,
+            }
+        ]
+        settings.save()
+
+        self.home_a = Product.objects.create(
+            name="پک ویژه الف",
+            url_slug="home-a",
+            description="محصول اول",
+            price=150000,
+            featured=True,
+            available=True,
+            event_types=["memorial"],
+            contents=[],
+        )
+        self.home_b = Product.objects.create(
+            name="پک ویژه ب",
+            url_slug="home-b",
+            description="محصول دوم",
+            price=170000,
+            featured=True,
+            available=True,
+            event_types=["memorial"],
+            contents=[],
+        )
+        self.home_c = Product.objects.create(
+            name="پک ویژه ج",
+            url_slug="home-c",
+            description="محصول سوم",
+            price=190000,
+            featured=True,
+            available=True,
+            event_types=["memorial"],
+            contents=[],
+        )
+
+    def test_admin_targets_include_home_shop_and_event_pages(self):
+        response = self.client.get(reverse("admin-page-product-targets"))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        page_keys = {item["page_key"] for item in response.data}
+        self.assertIn("home", page_keys)
+        self.assertIn("shop", page_keys)
+        self.assertIn("event:memorial", page_keys)
+
+    def test_admin_state_returns_preview_products_for_selected_page(self):
+        response = self.client.get(
+            reverse("admin-page-product-placements"),
+            {"page_type": "home", "page_slug": "featured"},
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["page_key"], "home")
+        self.assertFalse(response.data["uses_custom_order"])
+        preview_ids = [item["id"] for item in response.data["preview_products"]]
+        self.assertEqual(preview_ids, [str(self.home_a.id), str(self.home_b.id), str(self.home_c.id)])
+
+    def test_reorder_persists_and_public_preview_reflects_saved_order(self):
+        reorder_response = self.client.post(
+            reverse("admin-page-product-placements-reorder"),
+            {
+                "page_type": "home",
+                "page_slug": "featured",
+                "product_ids": [str(self.home_c.id), str(self.home_a.id)],
+            },
+            format="json",
+        )
+
+        self.assertEqual(reorder_response.status_code, status.HTTP_200_OK)
+        self.assertTrue(reorder_response.data["uses_custom_order"])
+        self.assertEqual(
+            [item["product_id"] for item in reorder_response.data["placements"]],
+            [str(self.home_c.id), str(self.home_a.id)],
+        )
+        self.assertEqual(
+            [item["id"] for item in reorder_response.data["preview_products"]],
+            [str(self.home_c.id), str(self.home_a.id)],
+        )
+
+        placements = list(
+            PageProductPlacement.objects.filter(page_type="home", page_slug="featured").order_by("position")
+        )
+        self.assertEqual([str(item.product_id) for item in placements], [str(self.home_c.id), str(self.home_a.id)])
+
+        preview_response = self.client.get(
+            reverse("page-product-preview"),
+            {"page_type": "home", "page_slug": "featured"},
+        )
+
+        self.assertEqual(preview_response.status_code, status.HTTP_200_OK)
+        self.assertTrue(preview_response.data["uses_custom_order"])
+        self.assertEqual(
+            [item["id"] for item in preview_response.data["products"]],
+            [str(self.home_c.id), str(self.home_a.id)],
+        )
+
+    def test_shop_preview_keeps_remaining_products_after_custom_priority(self):
+        reorder_response = self.client.post(
+            reverse("admin-page-product-placements-reorder"),
+            {
+                "page_type": "shop",
+                "page_slug": "listing",
+                "product_ids": [str(self.home_b.id)],
+            },
+            format="json",
+        )
+
+        self.assertEqual(reorder_response.status_code, status.HTTP_200_OK)
+        preview_ids = [item["id"] for item in reorder_response.data["preview_products"]]
+        self.assertEqual(preview_ids[0], str(self.home_b.id))
+        self.assertCountEqual(preview_ids, [str(self.home_a.id), str(self.home_b.id), str(self.home_c.id)])

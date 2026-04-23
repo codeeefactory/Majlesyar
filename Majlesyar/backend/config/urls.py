@@ -19,6 +19,7 @@ urlpatterns = [
     path("api/v1/", include("site_settings.urls")),
     path("api/v1/", include("orders.urls")),
     path("api/v1/", include("operations.urls")),
+    path("api/v1/", include("telegram_bot.urls")),
     path(settings.TELEGRAM_BOT["WEBHOOK_PATH"], TelegramWebhookAPIView.as_view(), name="telegram-webhook"),
     path("robots.txt", robots_txt, name="robots-txt"),
     path("sitemap.xml", sitemap_xml, name="sitemap-xml"),

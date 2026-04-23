@@ -1,4 +1,8 @@
+from django.contrib.auth import get_user_model
 from django.test import TestCase
+from django.urls import reverse
+from rest_framework import status
+from rest_framework.test import APITestCase
 
 from .models import (
     DEFAULT_EVENT_PAGES,
@@ -137,3 +141,47 @@ class PingAPIViewTests(TestCase):
         )
         self.assertEqual(response.headers["Pragma"], "no-cache")
         self.assertEqual(response.headers["Expires"], "0")
+
+
+class AdminSiteSettingApiTests(APITestCase):
+    def setUp(self):
+        user_model = get_user_model()
+        self.staff_user = user_model.objects.create_user(
+            username="site_admin",
+            password="pass12345",
+            is_staff=True,
+        )
+        self.client.force_authenticate(user=self.staff_user)
+
+    def test_staff_can_patch_site_settings(self):
+        response = self.client.patch(
+            reverse("admin-site-setting-detail"),
+            {
+                "min_order_qty": 5,
+                "lead_time_hours": 12,
+                "allowed_provinces": ["تهران", "البرز"],
+                "delivery_windows": [{"id": "morning", "label": "صبح"}],
+                "payment_methods": [{"id": "cash", "label": "نقدی", "enabled": True}],
+                "contact_phone": "02100000000",
+                "contact_address": "تهران",
+                "working_hours": "9-18",
+                "instagram_url": "https://instagram.com/majlesyar",
+                "telegram_url": "https://t.me/majlesyar",
+                "whatsapp_url": "https://wa.me/989121234567",
+                "bale_url": "https://ble.ir/majlesyar",
+                "maps_url": "https://maps.google.com",
+                "maps_embed_url": "https://maps.google.com/embed",
+                "site_branding": {"site_name": "مجلس‌یار دسکتاپ"},
+                "theme_palette": {"primary": "#00C2F2"},
+                "page_seo": {"home": {"title": "عنوان تازه"}},
+                "event_pages": [{"slug": "memorial", "name": "ترحیم"}],
+                "site_top_notice": {"message": "اطلاعیه جدید"},
+                "homepage_benefits_section": {"title": "مزایای تازه", "items": []},
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["min_order_qty"], 5)
+        self.assertEqual(response.data["contact_phone"], "02100000000")
+        self.assertEqual(response.data["site_branding"]["site_name"], "مجلس‌یار دسکتاپ")

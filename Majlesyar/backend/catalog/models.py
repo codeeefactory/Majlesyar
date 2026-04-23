@@ -166,15 +166,15 @@ class Category(models.Model):
         max_length=64,
         blank=True,
         default="",
-        verbose_name="??????",
-        help_text="????????: ???? ?????? (????????: #F1C40F ???? bg-primary/20).",
+        verbose_name="رنگ",
+        help_text="نکته: کد رنگ را وارد کنید (مثال: #F1C40F یا bg-primary/20).",
     )
     logo = models.ImageField(
         upload_to="category-logos/",
         blank=True,
         null=True,
         validators=[image_extension_validator],
-        verbose_name="????????",
+        verbose_name="لوگو",
         help_text="راهنما: لوگو دسته بندی را با فرمت‌های jpg، jpeg، png، webp یا avif بارگذاری کنید.",
     )
 
@@ -392,6 +392,63 @@ class Product(models.Model):
 
     def __str__(self) -> str:
         return self.name
+
+
+class PageProductPlacement(models.Model):
+    class PageType(models.TextChoices):
+        HOME = "home", "صفحه اصلی"
+        SHOP = "shop", "فروشگاه"
+        EVENT = "event", "صفحه مراسم"
+
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
+        verbose_name="شناسه",
+        help_text="این شناسه به‌صورت خودکار ساخته می‌شود.",
+    )
+    page_type = models.CharField(
+        max_length=24,
+        choices=PageType.choices,
+        verbose_name="نوع صفحه",
+        help_text="مشخص می‌کند این محصول در کدام نوع صفحه مرتب شده است.",
+    )
+    page_slug = models.CharField(
+        max_length=128,
+        blank=True,
+        default="",
+        verbose_name="شناسه صفحه",
+        help_text="برای صفحه‌های رویداد، اسلاگ رویداد و برای صفحه‌های ثابت کلید داخلی صفحه ذخیره می‌شود.",
+    )
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name="page_placements",
+        verbose_name="محصول",
+        help_text="محصولی که در این صفحه نمایش داده می‌شود.",
+    )
+    position = models.PositiveIntegerField(
+        default=1,
+        validators=[MinValueValidator(1)],
+        verbose_name="ترتیب نمایش",
+        help_text="عدد کوچکتر یعنی نمایش زودتر در همان صفحه.",
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="زمان ایجاد")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="آخرین به‌روزرسانی")
+
+    class Meta:
+        ordering = ["page_type", "page_slug", "position", "created_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["page_type", "page_slug", "product"],
+                name="unique_page_product_placement",
+            ),
+        ]
+        verbose_name = "چیدمان محصول در صفحه"
+        verbose_name_plural = "چیدمان محصولات در صفحه‌ها"
+
+    def __str__(self) -> str:
+        return f"{self.page_type}:{self.page_slug or 'default'} -> {self.product.name} ({self.position})"
 
 
 class BuilderItem(models.Model):

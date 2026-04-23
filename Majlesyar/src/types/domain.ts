@@ -21,6 +21,48 @@ export interface Product {
   available: boolean;
 }
 
+export interface PageProductPreview {
+  pageType: "home" | "shop" | "event";
+  pageSlug: string;
+  pageKey: string;
+  pageTitle: string;
+  pageDescription: string;
+  routePath: string;
+  usesCustomOrder: boolean;
+  products: Product[];
+}
+
+export interface PagePreviewTarget {
+  pageType: "home" | "shop" | "event";
+  pageSlug: string;
+  pageKey: string;
+  pageTitle: string;
+  pageDescription: string;
+  routePath: string;
+}
+
+export interface PageProductPlacement {
+  id: string;
+  pageType: "home" | "shop" | "event";
+  pageSlug: string;
+  pageKey: string;
+  position: number;
+  productId: string;
+  product: Product;
+}
+
+export interface PageProductPlacementState {
+  pageType: "home" | "shop" | "event";
+  pageSlug: string;
+  pageKey: string;
+  pageTitle: string;
+  pageDescription: string;
+  routePath: string;
+  usesCustomOrder: boolean;
+  placements: PageProductPlacement[];
+  previewProducts: Product[];
+}
+
 export interface BuilderItem {
   id: string;
   name: string;

@@ -5,11 +5,11 @@ import { ProductCard } from '@/components/ProductCard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { SEO } from '@/components/SEO';
-import { listProducts, listCategories } from '@/lib/api';
+import { getPageProductPreview, listCategories, listProducts } from '@/lib/api';
 import type { Category, Product } from '@/types/domain';
 import { Search, SlidersHorizontal, X, ChevronLeft, Home, Loader2 } from 'lucide-react';
 
-type SortOption = 'featured' | 'price-asc' | 'price-desc';
+type SortOption = 'page-order' | 'price-asc' | 'price-desc';
 
 const ITEMS_PER_PAGE = 4;
 
@@ -28,7 +28,7 @@ export default function ShopPage() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(
     searchParams.get('category') || null
   );
-  const [sortBy, setSortBy] = useState<SortOption>('featured');
+  const [sortBy, setSortBy] = useState<SortOption>('page-order');
   const [showFilters, setShowFilters] = useState(false);
   
   // Pagination state
@@ -38,10 +38,11 @@ export default function ShopPage() {
 
   useEffect(() => {
     const loadData = async () => {
-      const [productsData, categoriesData] = await Promise.all([
-        listProducts(),
+      const [previewData, categoriesData] = await Promise.all([
+        getPageProductPreview('shop', 'listing'),
         listCategories(),
       ]);
+      const productsData = previewData?.products?.length ? previewData.products : await listProducts();
       setProducts(productsData);
       setCategories(categoriesData);
       setLoading(false);
@@ -85,9 +86,9 @@ export default function ShopPage() {
       case 'price-desc':
         result.sort((a, b) => (b.price || 0) - (a.price || 0));
         break;
-      case 'featured':
+      case 'page-order':
       default:
-        result.sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0));
+        break;
     }
 
     return result;
@@ -138,10 +139,10 @@ export default function ShopPage() {
   const clearFilters = () => {
     setSearchQuery('');
     setSelectedCategory(null);
-    setSortBy('featured');
+    setSortBy('page-order');
   };
 
-  const hasActiveFilters = searchQuery || selectedCategory || sortBy !== 'featured';
+  const hasActiveFilters = searchQuery || selectedCategory || sortBy !== 'page-order';
 
   return (
     <AppShell>
@@ -191,7 +192,7 @@ export default function ShopPage() {
             onChange={(e) => setSortBy(e.target.value as SortOption)}
             className="h-11 px-4 rounded-lg border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
           >
-            <option value="featured">پربازدید</option>
+            <option value="page-order">چیدمان صفحه</option>
             <option value="price-asc">ارزان‌ترین</option>
             <option value="price-desc">گران‌ترین</option>
           </select>

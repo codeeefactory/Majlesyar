@@ -5,13 +5,21 @@ import json
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
+from django.core.management import call_command
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import override_settings
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
 from .models import ClientProfile, Invoice, SmsLog, SmsTemplate
-from .services import ANNIVERSARY_TEMPLATE_CODE, FORTIETH_TEMPLATE_CODE, calculate_invoice_totals, calculate_reminder_dates
+from .services import (
+    ANNIVERSARY_TEMPLATE_CODE,
+    FORTIETH_TEMPLATE_CODE,
+    calculate_invoice_totals,
+    calculate_reminder_dates,
+    send_sms_via_kavenegar,
+)
 
 
 class OperationsApiTests(APITestCase):
@@ -218,3 +226,19 @@ class OperationsApiTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
         self.assertEqual(response.data["entity_type"], "invoice")
         self.assertIn("current_state", response.data)
+
+    def test_seed_desktop_ui_test_data_command_creates_expected_records(self):
+        call_command("clear_desktop_ui_test_data")
+        call_command("seed_desktop_ui_test_data")
+
+        user_model = get_user_model()
+        self.assertTrue(user_model.objects.filter(username="desktoptester", is_staff=True).exists())
+        self.assertTrue(ClientProfile.objects.filter(phone="09129990001").exists())
+        self.assertTrue(Invoice.objects.filter(notes="seeded desktop ui invoice").exists())
+        self.assertTrue(SmsTemplate.objects.filter(code=FORTIETH_TEMPLATE_CODE).exists())
+
+    @override_settings(MAJLESYAR_DESKTOP_UI_TEST_MODE=True)
+    def test_send_sms_uses_desktop_ui_test_mode_stub(self):
+        response = send_sms_via_kavenegar(receptor="09120000000", message="test message")
+        self.assertEqual(response["raw"][0]["status"], "queued")
+        self.assertEqual(response["raw"][0]["messageid"], "desktop-ui-test-message-id")

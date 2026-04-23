@@ -5,15 +5,30 @@ from django.http import Http404
 from rest_framework import generics
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from .models import BuilderItem, Category, Product, Tag
 from .serializers import (
     BuilderItemSerializer,
+    BuilderItemWriteSerializer,
     CategorySerializer,
     CategoryWriteSerializer,
+    PagePreviewTargetSerializer,
+    PageProductPlacementSerializer,
+    PageProductPlacementStateSerializer,
+    PageProductPreviewSerializer,
+    PageProductReorderSerializer,
     ProductSerializer,
     ProductWriteSerializer,
     TagSerializer,
+    TagWriteSerializer,
+)
+from .services import (
+    get_page_preview_target,
+    get_page_preview_targets,
+    get_page_product_placements,
+    get_page_products,
+    save_page_product_order,
 )
 from orders.permissions import IsStaffUser
 
@@ -103,6 +118,31 @@ class BuilderItemListAPIView(generics.ListAPIView):
     serializer_class = BuilderItemSerializer
 
 
+class PageProductPreviewAPIView(APIView):
+    authentication_classes = []
+    permission_classes = []
+
+    def get(self, request):
+        page_type = str(request.query_params.get("page_type") or "").strip()
+        page_slug = str(request.query_params.get("page_slug") or "").strip()
+        try:
+            target, products, uses_custom_order = get_page_products(page_type, page_slug)
+        except ValueError as exc:
+            return Response({"detail": str(exc)}, status=400)
+
+        payload = {
+            "page_type": target.page_type,
+            "page_slug": target.page_slug,
+            "page_key": target.page_key,
+            "page_title": target.page_title,
+            "page_description": target.page_description,
+            "route_path": target.route_path,
+            "uses_custom_order": uses_custom_order,
+            "products": products,
+        }
+        return Response(PageProductPreviewSerializer(payload, context={"request": request}).data)
+
+
 class AdminProductListCreateAPIView(generics.ListCreateAPIView):
     permission_classes = [IsStaffUser]
     parser_classes = [JSONParser, MultiPartParser, FormParser]
@@ -182,7 +222,13 @@ class AdminProductDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
 class AdminCategoryListCreateAPIView(generics.ListCreateAPIView):
     permission_classes = [IsStaffUser]
     parser_classes = [JSONParser, MultiPartParser, FormParser]
-    queryset = Category.objects.all()
+
+    def get_queryset(self):
+        queryset = Category.objects.all()
+        search = self.request.query_params.get("search")
+        if search:
+            queryset = queryset.filter(Q(name__icontains=search) | Q(slug__icontains=search))
+        return queryset
 
     def get_serializer_class(self):
         if self.request.method == "POST":
@@ -200,3 +246,131 @@ class AdminCategoryDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
         if self.request.method in ("PATCH", "PUT"):
             return CategoryWriteSerializer
         return CategorySerializer
+
+
+class AdminTagListCreateAPIView(generics.ListCreateAPIView):
+    permission_classes = [IsStaffUser]
+    parser_classes = [JSONParser, MultiPartParser, FormParser]
+
+    def get_queryset(self):
+        queryset = Tag.objects.all()
+        search = self.request.query_params.get("search")
+        if search:
+            queryset = queryset.filter(Q(name__icontains=search) | Q(slug__icontains=search))
+        return queryset
+
+    def get_serializer_class(self):
+        if self.request.method == "POST":
+            return TagWriteSerializer
+        return TagSerializer
+
+
+class AdminTagDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsStaffUser]
+    parser_classes = [JSONParser, MultiPartParser, FormParser]
+    queryset = Tag.objects.all()
+    lookup_field = "id"
+
+    def get_serializer_class(self):
+        if self.request.method in ("PATCH", "PUT"):
+            return TagWriteSerializer
+        return TagSerializer
+
+
+class AdminBuilderItemListCreateAPIView(generics.ListCreateAPIView):
+    permission_classes = [IsStaffUser]
+    parser_classes = [JSONParser, MultiPartParser, FormParser]
+
+    def get_queryset(self):
+        queryset = BuilderItem.objects.all()
+        search = self.request.query_params.get("search")
+        if search:
+            queryset = queryset.filter(Q(name__icontains=search) | Q(group__icontains=search))
+        group = self.request.query_params.get("group")
+        if group:
+            queryset = queryset.filter(group=group)
+        return queryset
+
+    def get_serializer_class(self):
+        if self.request.method == "POST":
+            return BuilderItemWriteSerializer
+        return BuilderItemSerializer
+
+
+class AdminPagePreviewTargetListAPIView(APIView):
+    permission_classes = [IsStaffUser]
+
+    def get(self, request):
+        serializer = PagePreviewTargetSerializer(get_page_preview_targets(), many=True)
+        return Response(serializer.data)
+
+
+class AdminPageProductPlacementListAPIView(APIView):
+    permission_classes = [IsStaffUser]
+
+    def get(self, request):
+        page_type = str(request.query_params.get("page_type") or "").strip()
+        page_slug = str(request.query_params.get("page_slug") or "").strip()
+        try:
+            target, preview_products, uses_custom_order = get_page_products(page_type, page_slug)
+        except ValueError as exc:
+            return Response({"detail": str(exc)}, status=400)
+
+        placements = list(get_page_product_placements(page_type, page_slug))
+        payload = {
+            "page_type": target.page_type,
+            "page_slug": target.page_slug,
+            "page_key": target.page_key,
+            "page_title": target.page_title,
+            "page_description": target.page_description,
+            "route_path": target.route_path,
+            "uses_custom_order": uses_custom_order,
+            "placements": placements,
+            "preview_products": preview_products,
+        }
+        return Response(PageProductPlacementStateSerializer(payload, context={"request": request}).data)
+
+
+class AdminPageProductPlacementReorderAPIView(APIView):
+    permission_classes = [IsStaffUser]
+
+    def post(self, request):
+        serializer = PageProductReorderSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        validated = serializer.validated_data
+        try:
+            save_page_product_order(
+                page_type=validated["page_type"],
+                page_slug=validated.get("page_slug"),
+                product_ids=validated["product_ids"],
+                actor=request.user,
+            )
+            target, preview_products, uses_custom_order = get_page_products(validated["page_type"], validated.get("page_slug"))
+            placements = list(get_page_product_placements(validated["page_type"], validated.get("page_slug")))
+        except ValueError as exc:
+            return Response({"detail": str(exc)}, status=400)
+
+        payload = {
+            "page_type": target.page_type,
+            "page_slug": target.page_slug,
+            "page_key": target.page_key,
+            "page_title": target.page_title,
+            "page_description": target.page_description,
+            "route_path": target.route_path,
+            "uses_custom_order": uses_custom_order,
+            "placements": placements,
+            "preview_products": preview_products,
+        }
+        return Response(PageProductPlacementStateSerializer(payload, context={"request": request}).data)
+
+
+class AdminBuilderItemDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsStaffUser]
+    parser_classes = [JSONParser, MultiPartParser, FormParser]
+    queryset = BuilderItem.objects.all()
+    lookup_field = "id"
+
+    def get_serializer_class(self):
+        if self.request.method in ("PATCH", "PUT"):
+            return BuilderItemWriteSerializer
+        return BuilderItemSerializer

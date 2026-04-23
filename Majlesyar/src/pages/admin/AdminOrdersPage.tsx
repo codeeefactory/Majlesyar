@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Package, LogOut, Search, Eye, Upload, Sparkles, DatabaseZap, CheckCircle2 } from "lucide-react";
+import { Package, LogOut, Search, Eye, Upload, Sparkles, DatabaseZap, CheckCircle2, LayoutTemplate } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -113,10 +113,18 @@ export default function AdminOrdersPage() {
             </div>
             <span className="font-bold text-foreground">پنل مدیریت مجلس‌یار</span>
           </div>
-          <Button variant="ghost" size="sm" onClick={handleLogout} className="gap-2">
-            <LogOut className="h-4 w-4" />
-            خروج
-          </Button>
+          <div className="flex items-center gap-2">
+            <Link to="/admin/page-products">
+              <Button variant="ghost" size="sm" className="gap-2">
+                <LayoutTemplate className="h-4 w-4" />
+                چیدمان صفحات
+              </Button>
+            </Link>
+            <Button variant="ghost" size="sm" onClick={handleLogout} className="gap-2">
+              <LogOut className="h-4 w-4" />
+              خروج
+            </Button>
+          </div>
         </div>
       </header>
 

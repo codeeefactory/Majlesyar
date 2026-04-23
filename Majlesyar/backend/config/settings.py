@@ -264,3 +264,4 @@ TELEGRAM_BOT = {
 
 KAVENEGAR_API_KEY = os.getenv("KAVENEGAR_API_KEY", "").strip()
 KAVENEGAR_SENDER = os.getenv("KAVENEGAR_SENDER", "").strip()
+MAJLESYAR_DESKTOP_UI_TEST_MODE = os.getenv("MAJLESYAR_DESKTOP_UI_TEST_MODE", "").strip().lower() in {"1", "true", "yes", "on"}

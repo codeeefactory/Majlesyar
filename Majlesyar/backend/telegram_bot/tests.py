@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
+from django.urls import reverse
 from rest_framework.test import APIClient
+from rest_framework import status
 
 from catalog.models import Product
 from orders.models import Order
@@ -203,3 +205,67 @@ class TelegramBotTests(TestCase):
         self.assertEqual(len(self.fake_client.sent_messages), 1)
         self.assertIn("ORD-TEST123", self.fake_client.sent_messages[0]["text"])
         self.assertTrue(TelegramBotState.objects.filter(key="new_order_notifications").exists())
+
+
+@override_settings(
+    TELEGRAM_BOT={
+        "ENABLED": True,
+        "TOKEN": "test-token",
+        "USE_WEBHOOK": False,
+        "WEBHOOK_SECRET": "",
+        "WEBHOOK_PATH": "api/v1/telegram/webhook/",
+        "BASE_URL": "https://example.com",
+        "ALLOWED_USER_IDS": [],
+        "ALLOWED_CHAT_IDS": [],
+        "ADMIN_ONLY": True,
+        "NOTIFICATIONS_ENABLED": True,
+        "CONFIRMATION_TTL_SECONDS": 600,
+        "RATE_LIMIT_PER_MINUTE": 30,
+    }
+)
+class TelegramAdminApiTests(TestCase):
+    def setUp(self):
+        user_model = get_user_model()
+        self.staff_user = user_model.objects.create_user(
+            username="telegram_admin",
+            password="pass12345",
+            is_staff=True,
+        )
+        self.client = APIClient()
+        self.client.force_authenticate(user=self.staff_user)
+        self.operator = TelegramOperator.objects.create(
+            telegram_user_id=5555,
+            telegram_chat_id=7777,
+            username="deskbot",
+            django_user=self.staff_user,
+        )
+        self.state = TelegramBotState.objects.create(key="desktop", value={"enabled": True})
+
+    def test_staff_can_list_and_update_telegram_admin_resources(self):
+        operators_response = self.client.get(reverse("admin-telegram-operator-list-create"))
+        self.assertEqual(operators_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(operators_response.data[0]["telegram_user_id"], 5555)
+
+        create_response = self.client.post(
+            reverse("admin-telegram-operator-list-create"),
+            {
+                "telegram_user_id": 8888,
+                "telegram_chat_id": 9999,
+                "username": "opsdesk",
+                "first_name": "Ops",
+                "last_name": "Desk",
+                "django_user": self.staff_user.id,
+                "is_active": True,
+                "notifications_enabled": True,
+            },
+            format="json",
+        )
+        self.assertEqual(create_response.status_code, status.HTTP_201_CREATED)
+
+        state_response = self.client.patch(
+            reverse("admin-telegram-state-detail", kwargs={"pk": self.state.pk}),
+            {"key": "desktop", "value": {"enabled": False}},
+            format="json",
+        )
+        self.assertEqual(state_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(state_response.data["value"]["enabled"], False)

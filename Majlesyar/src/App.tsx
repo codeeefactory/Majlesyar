@@ -4,6 +4,8 @@ import { CartProvider } from "@/contexts/CartContext";
 import { SettingsProvider } from "@/contexts/SettingsContext";
 import { AdminAuthProvider } from "@/contexts/AdminAuthContext";
 import { SiteThemeSync } from "@/components/SiteThemeSync";
+import { PageLoader } from "@/components/PageLoader";
+import { RouteChangeLoader } from "@/components/RouteChangeLoader";
 import { measureAndStoreClientPing } from "@/lib/network";
 import ProductPage from "./pages/ProductPage";
 
@@ -22,17 +24,11 @@ const ContactPage = lazy(() => import("./pages/ContactPage"));
 const AboutPage = lazy(() => import("./pages/AboutPage"));
 const AdminLoginPage = lazy(() => import("./pages/admin/AdminLoginPage"));
 const AdminOrdersPage = lazy(() => import("./pages/admin/AdminOrdersPage"));
+const AdminPageProductsPage = lazy(() => import("./pages/admin/AdminPageProductsPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const LazyToaster = lazy(() => import("@/components/ui/sonner").then((m) => ({ default: m.Toaster })));
 const LazyFloatingContactButton = lazy(() =>
   import("./components/FloatingContactButton").then((m) => ({ default: m.FloatingContactButton })),
-);
-
-// Loading fallback
-const PageLoader = () => (
-  <div className="min-h-screen flex items-center justify-center bg-background">
-    <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-  </div>
 );
 
 // Admin route wrapper - only loads AdminAuthProvider for admin pages
@@ -89,6 +85,7 @@ const App = () => {
       <CartProvider>
         <DeferredToaster />
         <BrowserRouter>
+          <RouteChangeLoader />
           <Suspense fallback={<PageLoader />}>
             <Routes>
               {/* Critical SEO Route */}
@@ -110,6 +107,7 @@ const App = () => {
               <Route path="/admin/login" element={<AdminRoute><AdminLoginPage /></AdminRoute>} />
               <Route path="/admin/orders" element={<AdminRoute><AdminOrdersPage /></AdminRoute>} />
               <Route path="/admin/orders/:id" element={<AdminRoute><AdminOrdersPage /></AdminRoute>} />
+              <Route path="/admin/page-products" element={<AdminRoute><AdminPageProductsPage /></AdminRoute>} />
 
               {/* Catch-all */}
               <Route path="*" element={<NotFound />} />

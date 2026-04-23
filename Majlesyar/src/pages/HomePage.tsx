@@ -8,7 +8,7 @@ import { ProductCard } from '@/components/ProductCard';
 import { SEO } from '@/components/SEO';
 import { useSettings } from '@/contexts/SettingsContext';
 import { Sparkles, Clock, ArrowLeft, Truck, Shield, Star, Wrench } from 'lucide-react';
-import { listProducts } from '@/lib/api';
+import { getPageProductPreview, listProducts } from '@/lib/api';
 import type { Product } from '@/types/domain';
 
 export default function HomePage() {
@@ -18,8 +18,15 @@ export default function HomePage() {
 
   useEffect(() => {
     let isMounted = true;
-    listProducts()
-      .then((products) => {
+    getPageProductPreview('home', 'featured')
+      .then(async (preview) => {
+        if (!isMounted) return;
+        if (preview?.products?.length) {
+          setFeaturedProducts(preview.products);
+          return;
+        }
+
+        const products = await listProducts();
         if (!isMounted) return;
         setFeaturedProducts(products.filter((p) => p.featured).slice(0, 4));
       })

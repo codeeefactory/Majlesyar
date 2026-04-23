@@ -49,7 +49,14 @@ class OrderSerializer(serializers.ModelSerializer):
         fields = (
             "public_id",
             "status",
+            "customer_name",
+            "customer_phone",
+            "customer_province",
+            "customer_address",
+            "customer_notes",
             "customer",
+            "delivery_date",
+            "delivery_window",
             "delivery",
             "payment_method",
             "total",
@@ -193,3 +200,115 @@ class OrderStatusUpdateSerializer(serializers.ModelSerializer):
 
 class OrderNoteCreateSerializer(serializers.Serializer):
     note = serializers.CharField()
+
+
+class AdminOrderItemWriteSerializer(serializers.Serializer):
+    product_id = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    name = serializers.CharField(max_length=255)
+    quantity = serializers.IntegerField(min_value=1)
+    price = serializers.IntegerField(min_value=0)
+    is_custom_pack = serializers.BooleanField(required=False, default=False)
+    custom_config = serializers.JSONField(required=False, allow_null=True)
+
+
+class AdminOrderWriteSerializer(serializers.Serializer):
+    public_id = serializers.CharField(required=False, allow_blank=True)
+    status = serializers.ChoiceField(choices=Order.Status.choices, required=False, default=Order.Status.PENDING)
+    customer_name = serializers.CharField(max_length=255)
+    customer_phone = serializers.CharField(max_length=32)
+    customer_province = serializers.CharField(max_length=128)
+    customer_address = serializers.CharField()
+    customer_notes = serializers.CharField(required=False, allow_blank=True)
+    delivery_date = serializers.DateField()
+    delivery_window = serializers.CharField(max_length=64)
+    payment_method = serializers.CharField(max_length=64)
+    items = AdminOrderItemWriteSerializer(many=True, min_length=1)
+
+    def validate_customer_phone(self, value: str) -> str:
+        if not re.match(r"^09\d{9}$", value):
+            raise serializers.ValidationError("شماره موبایل باید با فرمت صحیح ایران (09xxxxxxxxx) باشد.")
+        return value
+
+    def _resolve_product(self, raw_product_id: str | None) -> Product | None:
+        if not raw_product_id:
+            return None
+        try:
+            product_uuid = uuid.UUID(str(raw_product_id))
+        except (ValueError, TypeError):
+            return None
+        return Product.objects.filter(pk=product_uuid).first()
+
+    def _replace_items(self, order: Order, items: list[dict]) -> int:
+        order.items.all().delete()
+        total = 0
+        for item_data in items:
+            line_total = item_data["quantity"] * item_data["price"]
+            total += line_total
+            OrderItem.objects.create(
+                order=order,
+                product=self._resolve_product(item_data.get("product_id")),
+                name=item_data["name"],
+                quantity=item_data["quantity"],
+                price=item_data["price"],
+                is_custom_pack=item_data.get("is_custom_pack", False),
+                custom_config=item_data.get("custom_config"),
+            )
+        return total
+
+    def create(self, validated_data):
+        items = validated_data.pop("items", [])
+        validated_data.pop("public_id", None)
+        order = Order.objects.create(**validated_data, total=0)
+        order.total = self._replace_items(order, items)
+        order.save(update_fields=["total", "updated_at"])
+        return order
+
+    def update(self, instance: Order, validated_data):
+        items = validated_data.pop("items", None)
+        validated_data.pop("public_id", None)
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        if items is not None:
+            instance.total = self._replace_items(instance, items)
+            instance.save(update_fields=["total", "updated_at"])
+        return instance
+
+
+class ProductSalesReportQuerySerializer(serializers.Serializer):
+    date_from = serializers.DateField(required=False)
+    date_to = serializers.DateField(required=False)
+    product_id = serializers.UUIDField(required=False)
+
+    def validate(self, attrs):
+        date_from = attrs.get("date_from")
+        date_to = attrs.get("date_to")
+        if date_from and date_to and date_from > date_to:
+            raise serializers.ValidationError({"date_to": "تاریخ پایان باید بعد از تاریخ شروع باشد."})
+        return attrs
+
+
+class ProductSalesReportRowSerializer(serializers.Serializer):
+    order_public_id = serializers.CharField()
+    order_status = serializers.CharField()
+    product_id = serializers.UUIDField(allow_null=True)
+    product_name = serializers.CharField()
+    client_name = serializers.CharField()
+    client_phone = serializers.CharField()
+    quantity = serializers.IntegerField()
+    unit_price = serializers.IntegerField()
+    line_total = serializers.IntegerField()
+    ordered_at = serializers.DateTimeField(allow_null=True)
+    delivery_date = serializers.DateField(allow_null=True)
+
+
+class ProductSalesReportSerializer(serializers.Serializer):
+    date_from = serializers.DateField(allow_null=True)
+    date_to = serializers.DateField(allow_null=True)
+    product_id = serializers.UUIDField(allow_null=True)
+    product_name = serializers.CharField(allow_blank=True, allow_null=True)
+    rows_count = serializers.IntegerField()
+    total_quantity = serializers.IntegerField()
+    total_revenue = serializers.IntegerField()
+    unique_clients_count = serializers.IntegerField()
+    rows = ProductSalesReportRowSerializer(many=True)

@@ -4,7 +4,7 @@ import { AppShell } from '@/components/layout';
 import { SEO } from '@/components/SEO';
 import { ProductCard } from '@/components/ProductCard';
 import { Button } from '@/components/ui/button';
-import { listProducts } from '@/lib/api';
+import { getPageProductPreview, listProducts } from '@/lib/api';
 import { useSettings } from '@/contexts/SettingsContext';
 import { ArrowRight, Package, Wrench } from 'lucide-react';
 import type { Product } from '@/types/domain';
@@ -26,10 +26,15 @@ export default function EventPage() {
     }
 
     const loadProducts = async () => {
+      const preview = await getPageProductPreview('event', slug || '');
+      if (preview?.products?.length) {
+        setProducts(preview.products);
+        setLoading(false);
+        return;
+      }
+
       const allProducts = await listProducts();
-      const filtered = allProducts.filter((p) => 
-        p.eventTypes.includes(slug || '')
-      );
+      const filtered = allProducts.filter((p) => p.eventTypes.includes(slug || ''));
       setProducts(filtered);
       setLoading(false);
     };

@@ -8,12 +8,14 @@ from .image_utils import derive_image_label, image_extension_validator, image_su
 from .models import (
     BuilderItem,
     Category,
+    PageProductPlacement,
     Product,
     Tag,
     PRODUCT_INPUT_MODE_NORMAL,
     PRODUCT_INPUT_MODE_PHOTO_PROCESSING,
     sync_product_categories,
 )
+from .services import serialize_page_preview_target
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -46,6 +48,16 @@ class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
         fields = ("id", "name", "slug")
+
+
+class TagWriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Tag
+        fields = ("id", "name", "slug")
+        read_only_fields = ("id",)
+
+    def validate_slug(self, value: str) -> str:
+        return slugify((value or "").strip())
 
 
 class ProductSerializer(serializers.ModelSerializer):
@@ -308,3 +320,87 @@ class BuilderItemSerializer(serializers.ModelSerializer):
         if request:
             return request.build_absolute_uri(obj.image.url)
         return obj.image.url
+
+
+class BuilderItemWriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BuilderItem
+        fields = ("id", "name", "group", "price", "required", "image")
+        read_only_fields = ("id",)
+
+
+class PagePreviewTargetSerializer(serializers.Serializer):
+    page_type = serializers.CharField()
+    page_slug = serializers.CharField(allow_blank=True)
+    page_key = serializers.CharField()
+    page_title = serializers.CharField()
+    page_description = serializers.CharField(allow_blank=True)
+    route_path = serializers.CharField()
+
+    def to_representation(self, instance):
+        if hasattr(instance, "page_key"):
+            return serialize_page_preview_target(instance)
+        return super().to_representation(instance)
+
+
+class PageProductPlacementSerializer(serializers.ModelSerializer):
+    page_key = serializers.SerializerMethodField()
+    product_id = serializers.UUIDField(read_only=True)
+    product = ProductSerializer(read_only=True)
+
+    class Meta:
+        model = PageProductPlacement
+        fields = (
+            "id",
+            "page_type",
+            "page_slug",
+            "page_key",
+            "position",
+            "product_id",
+            "product",
+        )
+
+    def get_page_key(self, obj: PageProductPlacement) -> str:
+        if obj.page_type == PageProductPlacement.PageType.EVENT:
+            return f"event:{obj.page_slug}"
+        return obj.page_type
+
+
+class PageProductPreviewSerializer(serializers.Serializer):
+    page_type = serializers.CharField()
+    page_slug = serializers.CharField(allow_blank=True)
+    page_key = serializers.CharField()
+    page_title = serializers.CharField()
+    page_description = serializers.CharField(allow_blank=True)
+    route_path = serializers.CharField()
+    uses_custom_order = serializers.BooleanField()
+    products = ProductSerializer(many=True)
+
+
+class PageProductPlacementStateSerializer(serializers.Serializer):
+    page_type = serializers.CharField()
+    page_slug = serializers.CharField(allow_blank=True)
+    page_key = serializers.CharField()
+    page_title = serializers.CharField()
+    page_description = serializers.CharField(allow_blank=True)
+    route_path = serializers.CharField()
+    uses_custom_order = serializers.BooleanField()
+    placements = PageProductPlacementSerializer(many=True)
+    preview_products = ProductSerializer(many=True)
+
+
+class PageProductReorderSerializer(serializers.Serializer):
+    page_type = serializers.ChoiceField(choices=PageProductPlacement.PageType.choices)
+    page_slug = serializers.CharField(required=False, allow_blank=True)
+    product_ids = serializers.ListField(
+        child=serializers.UUIDField(format="hex_verbose"),
+        allow_empty=True,
+    )
+
+    def validate(self, attrs):
+        page_type = attrs.get("page_type")
+        page_slug = (attrs.get("page_slug") or "").strip()
+        if page_type == PageProductPlacement.PageType.EVENT and not page_slug:
+            raise serializers.ValidationError({"page_slug": "برای صفحه رویداد باید اسلاگ رویداد مشخص شود."})
+        attrs["page_slug"] = page_slug
+        return attrs

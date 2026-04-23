@@ -14,6 +14,34 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from orders.permissions import IsStaffUser
+from catalog.models import BuilderItem, Category, PageProductPlacement, Product, Tag
+from catalog.serializers import (
+    BuilderItemSerializer,
+    CategorySerializer,
+    PagePreviewTargetSerializer,
+    PageProductPlacementSerializer,
+    ProductSerializer,
+    TagSerializer,
+)
+from catalog.services import get_page_preview_targets
+from orders.models import Order
+from orders.serializers import OrderSerializer
+from site_settings.models import SiteSetting
+from site_settings.serializers import SiteSettingSerializer
+from telegram_bot.models import (
+    TelegramBotAuditLog,
+    TelegramBotState,
+    TelegramConfirmation,
+    TelegramOperator,
+    TelegramUpdateReceipt,
+)
+from telegram_bot.serializers import (
+    TelegramBotAuditLogSerializer,
+    TelegramBotStateSerializer,
+    TelegramConfirmationSerializer,
+    TelegramOperatorSerializer,
+    TelegramUpdateReceiptSerializer,
+)
 
 from .models import ClientProfile, Invoice, OperationsAuditLog, SmsLog, SmsTemplate
 from .serializers import (
@@ -271,6 +299,46 @@ class DesktopBootstrapAPIView(APIView):
                 ).data,
                 "audit_log_count": OperationsAuditLog.objects.count(),
                 "sms_log_count": SmsLog.objects.count(),
+                "products": ProductSerializer(
+                    Product.objects.prefetch_related("categories", "tags").all(),
+                    many=True,
+                    context={"request": request},
+                ).data,
+                "categories": CategorySerializer(Category.objects.all(), many=True, context={"request": request}).data,
+                "tags": TagSerializer(Tag.objects.all(), many=True).data,
+                "builder_items": BuilderItemSerializer(
+                    BuilderItem.objects.all(),
+                    many=True,
+                    context={"request": request},
+                ).data,
+                "page_preview_targets": PagePreviewTargetSerializer(get_page_preview_targets(), many=True).data,
+                "page_product_placements": PageProductPlacementSerializer(
+                    PageProductPlacement.objects.select_related("product").prefetch_related("product__categories", "product__tags").all(),
+                    many=True,
+                    context={"request": request},
+                ).data,
+                "orders": OrderSerializer(Order.objects.prefetch_related("items", "notes").all(), many=True).data,
+                "site_settings": SiteSettingSerializer(SiteSetting.load(), context={"request": request}).data,
+                "telegram_operators": TelegramOperatorSerializer(
+                    TelegramOperator.objects.select_related("django_user").all(),
+                    many=True,
+                ).data,
+                "telegram_audit_logs": TelegramBotAuditLogSerializer(
+                    TelegramBotAuditLog.objects.select_related("operator", "django_user").all()[:50],
+                    many=True,
+                ).data,
+                "telegram_confirmations": TelegramConfirmationSerializer(
+                    TelegramConfirmation.objects.select_related("operator").all()[:50],
+                    many=True,
+                ).data,
+                "telegram_update_receipts": TelegramUpdateReceiptSerializer(
+                    TelegramUpdateReceipt.objects.all()[:50],
+                    many=True,
+                ).data,
+                "telegram_states": TelegramBotStateSerializer(
+                    TelegramBotState.objects.all(),
+                    many=True,
+                ).data,
             }
         )
 

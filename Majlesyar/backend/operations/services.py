@@ -97,6 +97,19 @@ def resolve_kavenegar_credentials() -> tuple[str, str]:
 
 
 def send_sms_via_kavenegar(*, receptor: str, message: str) -> dict:
+    if getattr(settings, "MAJLESYAR_DESKTOP_UI_TEST_MODE", False):
+        return {
+            "raw": [
+                {
+                    "messageid": "desktop-ui-test-message-id",
+                    "status": "queued",
+                    "statustext": "simulated",
+                    "receptor": receptor,
+                    "message": message,
+                }
+            ]
+        }
+
     api_key, sender = resolve_kavenegar_credentials()
     if not api_key:
         raise RuntimeError("KAVENEGAR_API_KEY is not configured.")

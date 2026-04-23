@@ -3,7 +3,7 @@ from django.contrib import admin
 from django.utils.html import format_html
 
 from config.admin_mixins import PersianAdminFormMixin
-from .models import BuilderItem, Category, Product, Tag
+from .models import BuilderItem, Category, PageProductPlacement, Product, Tag
 
 
 class ProductAdminForm(forms.ModelForm):
@@ -178,6 +178,24 @@ class BuilderItemAdmin(PersianAdminFormMixin, admin.ModelAdmin):
             {
                 "description": "راهنما: اطلاعات این آیتم را کامل وارد کنید تا در ساخت پک سفارشی درست نمایش داده شود.",
                 "fields": ("name", "group", "price", "required", "image"),
+            },
+        ),
+    )
+
+
+@admin.register(PageProductPlacement)
+class PageProductPlacementAdmin(PersianAdminFormMixin, admin.ModelAdmin):
+    list_display = ("page_type", "page_slug", "position", "product")
+    list_filter = ("page_type",)
+    search_fields = ("page_slug", "product__name", "product__url_slug")
+    ordering = ("page_type", "page_slug", "position")
+    autocomplete_fields = ("product",)
+    fieldsets = (
+        (
+            "چیدمان محصول در صفحه",
+            {
+                "description": "برای هر صفحه، محصولات را با ترتیب دقیق ذخیره کنید تا وب‌سایت و اپ دسکتاپ از یک چیدمان مشترک استفاده کنند.",
+                "fields": ("page_type", "page_slug", "product", "position"),
             },
         ),
     )

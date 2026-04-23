@@ -3,6 +3,10 @@ import type {
   Category,
   Order,
   OrderItem,
+  PagePreviewTarget,
+  PageProductPlacement,
+  PageProductPlacementState,
+  PageProductPreview,
   Product,
   Settings,
 } from "@/types/domain";
@@ -167,6 +171,48 @@ interface ApiOrder {
   created_at: string;
   items: ApiOrderItem[];
   notes: ApiOrderNote[];
+}
+
+interface ApiPageProductPreview {
+  page_type: "home" | "shop" | "event";
+  page_slug: string;
+  page_key: string;
+  page_title: string;
+  page_description: string;
+  route_path: string;
+  uses_custom_order: boolean;
+  products: ApiProduct[];
+}
+
+interface ApiPagePreviewTarget {
+  page_type: "home" | "shop" | "event";
+  page_slug: string;
+  page_key: string;
+  page_title: string;
+  page_description: string;
+  route_path: string;
+}
+
+interface ApiPageProductPlacement {
+  id: string;
+  page_type: "home" | "shop" | "event";
+  page_slug: string;
+  page_key: string;
+  position: number;
+  product_id: string;
+  product: ApiProduct;
+}
+
+interface ApiPageProductPlacementState {
+  page_type: "home" | "shop" | "event";
+  page_slug: string;
+  page_key: string;
+  page_title: string;
+  page_description: string;
+  route_path: string;
+  uses_custom_order: boolean;
+  placements: ApiPageProductPlacement[];
+  preview_products: ApiProduct[];
 }
 
 export interface OfflineSessionImportResult {
@@ -382,6 +428,56 @@ function mapSettings(apiSettings: ApiSettings): Settings {
   };
 }
 
+function mapPageProductPreview(apiPreview: ApiPageProductPreview): PageProductPreview {
+  return {
+    pageType: apiPreview.page_type,
+    pageSlug: apiPreview.page_slug || "",
+    pageKey: apiPreview.page_key,
+    pageTitle: apiPreview.page_title,
+    pageDescription: apiPreview.page_description,
+    routePath: apiPreview.route_path,
+    usesCustomOrder: apiPreview.uses_custom_order,
+    products: (apiPreview.products || []).map(mapProduct),
+  };
+}
+
+function mapPagePreviewTarget(apiTarget: ApiPagePreviewTarget): PagePreviewTarget {
+  return {
+    pageType: apiTarget.page_type,
+    pageSlug: apiTarget.page_slug || "",
+    pageKey: apiTarget.page_key,
+    pageTitle: apiTarget.page_title,
+    pageDescription: apiTarget.page_description,
+    routePath: apiTarget.route_path,
+  };
+}
+
+function mapPageProductPlacement(apiPlacement: ApiPageProductPlacement): PageProductPlacement {
+  return {
+    id: apiPlacement.id,
+    pageType: apiPlacement.page_type,
+    pageSlug: apiPlacement.page_slug || "",
+    pageKey: apiPlacement.page_key,
+    position: apiPlacement.position,
+    productId: apiPlacement.product_id,
+    product: mapProduct(apiPlacement.product),
+  };
+}
+
+function mapPageProductPlacementState(apiState: ApiPageProductPlacementState): PageProductPlacementState {
+  return {
+    pageType: apiState.page_type,
+    pageSlug: apiState.page_slug || "",
+    pageKey: apiState.page_key,
+    pageTitle: apiState.page_title,
+    pageDescription: apiState.page_description,
+    routePath: apiState.route_path,
+    usesCustomOrder: apiState.uses_custom_order,
+    placements: (apiState.placements || []).map(mapPageProductPlacement),
+    previewProducts: (apiState.preview_products || []).map(mapProduct),
+  };
+}
+
 function normalizeCustomConfig(raw: unknown): OrderItem["customConfig"] | undefined {
   if (!raw || typeof raw !== "object") return undefined;
   const config = raw as Record<string, unknown>;
@@ -433,6 +529,61 @@ function mapOrder(apiOrder: ApiOrder): Order {
 export async function listProducts(): Promise<Product[]> {
   const products = await requestJson<ApiProduct[]>("/api/v1/products/");
   return products.map(mapProduct);
+}
+
+export async function getPageProductPreview(
+  pageType: "home" | "shop" | "event",
+  pageSlug = "",
+): Promise<PageProductPreview | null> {
+  try {
+    const params = new URLSearchParams({ page_type: pageType });
+    if (pageSlug) {
+      params.set("page_slug", pageSlug);
+    }
+
+    const preview = await requestJson<ApiPageProductPreview>(`/api/v1/page-product-preview/?${params.toString()}`);
+    return mapPageProductPreview(preview);
+  } catch {
+    return null;
+  }
+}
+
+export async function listAdminPagePreviewTargets(): Promise<PagePreviewTarget[]> {
+  const targets = await requestJson<ApiPagePreviewTarget[]>("/api/v1/admin/page-product-targets/", { auth: true });
+  return targets.map(mapPagePreviewTarget);
+}
+
+export async function getAdminPageProductPlacementState(
+  pageType: "home" | "shop" | "event",
+  pageSlug = "",
+): Promise<PageProductPlacementState> {
+  const params = new URLSearchParams({ page_type: pageType });
+  if (pageSlug) {
+    params.set("page_slug", pageSlug);
+  }
+
+  const state = await requestJson<ApiPageProductPlacementState>(
+    `/api/v1/admin/page-product-placements/?${params.toString()}`,
+    { auth: true },
+  );
+  return mapPageProductPlacementState(state);
+}
+
+export async function saveAdminPageProductOrder(
+  pageType: "home" | "shop" | "event",
+  pageSlug: string,
+  productIds: string[],
+): Promise<PageProductPlacementState> {
+  const state = await requestJson<ApiPageProductPlacementState>("/api/v1/admin/page-product-placements/reorder/", {
+    method: "POST",
+    auth: true,
+    body: {
+      page_type: pageType,
+      page_slug: pageSlug,
+      product_ids: productIds,
+    },
+  });
+  return mapPageProductPlacementState(state);
 }
 
 export async function getProduct(identifier: string): Promise<Product | null> {
