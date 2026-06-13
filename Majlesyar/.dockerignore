@@ -1,6 +1,16 @@
 node_modules
 dist
 .git
+.deploy
+.playwright-cli
+.tmp_*
+test-results
+output
+certificates
+certificates.zip
+.env.production
+.env.dockerfile
+*.log
 
 backend/.venv
 backend/db.sqlite3

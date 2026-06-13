@@ -1,6 +1,6 @@
 import { useState, type ComponentProps } from 'react';
 import { Link } from 'react-router-dom';
-import { Phone, MapPin, Instagram, Store, Home, Calendar, Send } from 'lucide-react';
+import { Phone, MapPin, Instagram, Store, Send, ShoppingBag, Scale } from 'lucide-react';
 import baleLogo from '@/assets/social/bale.webp';
 import { useSettings } from '@/contexts/SettingsContext';
 import { getInstagramHandle } from '@/lib/contact';
@@ -27,6 +27,13 @@ const BaleIcon = ({ className, ...props }: SocialLogoProps) => (
     {...props}
   />
 );
+
+const footerProductLinks = [
+  { label: 'حلوا خرما، خرما گردو', to: '/halva-khorma' },
+  { label: 'پک میوه و پذیرایی', to: '/pack' },
+  { label: 'منوی فود', to: '/food' },
+  { label: 'گل', to: '/flower' },
+];
 
 export function Footer() {
   const { settings } = useSettings();
@@ -67,6 +74,30 @@ export function Footer() {
       bgColor: 'bg-[#00A884]',
       hoverColor: 'hover:bg-[#008866]',
     },
+    {
+      name: 'ایتا',
+      label: 'ایتا',
+      icon: Send,
+      url: settings.eitaaUrl,
+      bgColor: 'bg-[#f58220]',
+      hoverColor: 'hover:bg-[#d96f12]',
+    },
+    {
+      name: 'سروش',
+      label: 'سروش',
+      icon: Send,
+      url: settings.soroushUrl,
+      bgColor: 'bg-[#1d9bf0]',
+      hoverColor: 'hover:bg-[#0b7fc8]',
+    },
+    {
+      name: 'روبیکا',
+      label: 'روبیکا',
+      icon: Send,
+      url: settings.rubikaUrl,
+      bgColor: 'bg-[#7b3ff2]',
+      hoverColor: 'hover:bg-[#6330c8]',
+    },
   ].filter((link) => Boolean(link.url));
 
   return (
@@ -76,7 +107,7 @@ export function Footer() {
       style={{ contentVisibility: 'auto', containIntrinsicSize: '1px 1200px' }}
     >
       <div className="container py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div className="space-y-4 md:col-span-1">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-2xl gold-gradient overflow-hidden flex items-center justify-center shadow-soft shrink-0">
@@ -98,7 +129,7 @@ export function Footer() {
               </div>
             </div>
             <p className="text-muted-foreground text-sm leading-relaxed">
-              {settings.siteBranding.defaultMetaDescription}
+              مجلس یار مرجع تخصصی و یکپارچه تامین ملزومات مجالس و تشریفات در تهران و کرج است. ما با ارائه انواع پک های پذیرایی، فینگر فود، حلوا و خرمای مجلسی و لوکس ترین دیزاین های گل و ارائه غذا در تمامی رویدادها و مراسم های شما با افتخار همراهتان هستیم.
             </p>
             <Link
               to="/about"
@@ -108,51 +139,17 @@ export function Footer() {
             </Link>
           </div>
 
-          <nav className="space-y-4" aria-label="لینک‌های سریع">
-            <h3 className="font-semibold text-foreground">دسترسی سریع</h3>
-            <ul className="flex flex-col gap-2">
-              <li>
-                <Link to="/" className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors text-sm">
-                  <Home className="w-4 h-4" aria-hidden="true" />
-                  خانه
-                </Link>
-              </li>
-              <li>
-                <Link to="/shop" className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors text-sm">
-                  <Store className="w-4 h-4" aria-hidden="true" />
-                  فروشگاه پک‌ها
-                </Link>
-              </li>
-              <li>
-                <Link to="/contact" className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors text-sm">
-                  <Phone className="w-4 h-4" aria-hidden="true" />
-                  تماس با ما
-                </Link>
-              </li>
-            </ul>
-          </nav>
-
-          <nav className="space-y-4" aria-label="انواع مراسمات">
-            <h3 className="font-semibold text-foreground">انواع مراسمات</h3>
-            <ul className="flex flex-col gap-2">
-              <li>
-                <Link to="/events/conference" className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors text-sm">
-                  <Calendar className="w-4 h-4" aria-hidden="true" />
-                  فینگر فود
-                </Link>
-              </li>
-              <li>
-                <Link to="/events/party" className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors text-sm">
-                  <Calendar className="w-4 h-4" aria-hidden="true" />
-                  گل
-                </Link>
-              </li>
-              <li>
-                <Link to="/events/memorial" className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors text-sm">
-                  <Calendar className="w-4 h-4" aria-hidden="true" />
-                  پک نذری و ترحیم
-                </Link>
-              </li>
+          <nav className="space-y-4" aria-label="انواع محصولات">
+            <h3 className="font-semibold text-foreground">انواع محصولات</h3>
+            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {footerProductLinks.map((link) => (
+                <li key={link.to}>
+                  <Link to={link.to} className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors text-sm">
+                    <ShoppingBag className="w-4 h-4" aria-hidden="true" />
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </nav>
 
@@ -226,7 +223,6 @@ export function Footer() {
 
         <div className="mt-10 pt-8 border-t border-border">
           <div className="bg-gradient-to-br from-primary/5 via-accent/10 to-secondary/5 rounded-2xl p-6 md:p-8">
-            <h3 className="font-semibold text-foreground text-center mb-6">ارتباط سریع با ما</h3>
             <div className="flex justify-center items-center gap-3 md:gap-4 flex-wrap">
               {socialLinks.map((link) => (
                 <a
@@ -246,6 +242,13 @@ export function Footer() {
         </div>
 
         <div className="mt-8 pt-8 border-t border-border text-center text-sm text-muted-foreground">
+          <Link
+            to="/terms"
+            className="inline-flex items-center justify-center gap-2 text-foreground hover:text-primary transition-colors font-medium mb-4"
+          >
+            <Scale className="w-4 h-4" aria-hidden="true" />
+            قوانین و مقررات
+          </Link>
           <p>© {persianYear} {settings.siteBranding.siteName}. تمامی حقوق محفوظ است.</p>
           <p className="mt-2 text-xs">
             حداقل سفارش: {settings.minOrderQty.toLocaleString('fa-IR')} عدد | ارسال: {settings.allowedProvinces.join(' و ')} | کیفیت تضمینی

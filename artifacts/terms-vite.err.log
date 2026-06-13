@@ -1,0 +1,383 @@
+Browserslist: browsers data (caniuse-lite) is 12 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+[2m3:01:19 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/ping/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m3:01:19 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/settings/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m3:01:20 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/page-product-preview/?page_type=event&page_slug=pack[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m3:01:20 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/products/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m3:11:33 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/ping/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m3:11:33 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/settings/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m3:17:52 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/ping/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m3:17:52 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/settings/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m3:17:54 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/page-product-preview/?page_type=home&page_slug=featured[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m3:17:54 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/products/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m3:22:47 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/ping/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m3:22:47 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/settings/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m3:22:48 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/page-product-preview/?page_type=home&page_slug=featured[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m3:22:48 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/products/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m3:22:52 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/page-product-preview/?page_type=shop&page_slug=listing[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m3:22:52 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/categories/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m10:42:12 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/settings/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m10:42:12 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/ping/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m10:42:24 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/page-product-preview/?page_type=home&page_slug=featured[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m10:42:24 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/products/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m10:42:26 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/page-product-preview/?page_type=shop&page_slug=listing[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m10:42:26 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/categories/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m10:42:29 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/builder-items/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m10:42:37 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/page-product-preview/?page_type=shop&page_slug=listing[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m10:42:38 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/categories/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m10:42:39 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/page-product-preview/?page_type=home&page_slug=featured[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m10:42:39 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/products/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m10:48:03 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/settings/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m10:48:03 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/ping/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m10:48:03 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/page-product-preview/?page_type=event&page_slug=pack[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m10:48:03 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/products/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m10:48:19 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/settings/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m10:48:19 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/ping/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m10:48:21 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/settings/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m10:48:21 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/ping/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m10:48:21 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/page-product-preview/?page_type=event&page_slug=memorial-wreaths[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m10:48:21 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/products/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m10:48:37 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/settings/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m10:48:37 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/ping/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m10:53:42 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/ping/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m10:53:42 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/settings/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m10:53:43 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/page-product-preview/?page_type=home&page_slug=featured[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m10:53:43 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/products/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m10:53:45 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/builder-items/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m10:53:54 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/page-product-preview/?page_type=home&page_slug=featured[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m10:53:54 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/products/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m11:03:41 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/settings/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m11:03:41 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/ping/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m11:03:42 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/page-product-preview/?page_type=event&page_slug=flower-box[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m11:03:42 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/products/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m11:03:58 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/settings/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m11:03:58 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/ping/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m11:03:58 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/page-product-preview/?page_type=event&page_slug=food-juice[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m11:03:58 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/products/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m11:06:33 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/settings/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m11:06:33 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/ping/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m11:06:33 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/page-product-preview/?page_type=event&page_slug=food-juice[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m11:06:33 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/products/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m11:06:34 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/settings/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m11:06:34 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/ping/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m11:06:35 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/page-product-preview/?page_type=event&page_slug=flower-congratulation-wreaths[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m11:06:35 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/products/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m11:07:26 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/settings/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m11:07:26 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/ping/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m11:07:27 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/page-product-preview/?page_type=home&page_slug=featured[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m11:07:27 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/products/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m11:07:29 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/page-product-preview/?page_type=shop&page_slug=listing[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m11:07:29 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/categories/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m11:07:41 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/builder-items/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m11:07:44 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/page-product-preview/?page_type=home&page_slug=featured[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m11:07:44 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/products/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m11:07:56 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/ping/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m11:07:56 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/settings/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m11:07:57 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/page-product-preview/?page_type=home&page_slug=featured[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m11:07:57 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/products/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m11:08:03 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/page-product-preview/?page_type=event&page_slug=memorial-wreaths[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m11:08:03 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/products/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m11:08:25 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/ping/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m11:08:25 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/settings/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m11:08:26 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/page-product-preview/?page_type=home&page_slug=featured[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m11:08:26 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/products/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m11:08:39 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/builder-items/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m11:12:45 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/settings/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m11:12:45 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/ping/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m11:12:45 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/page-product-preview/?page_type=home&page_slug=featured[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m11:12:45 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/products/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m11:14:01 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/settings/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m11:14:01 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/ping/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m11:14:01 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/page-product-preview/?page_type=home&page_slug=featured[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m11:14:01 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/products/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m11:15:39 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/ping/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m11:15:39 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/settings/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m11:15:40 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/builder-items/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m11:15:42 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/page-product-preview/?page_type=home&page_slug=featured[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m11:15:43 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/products/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)

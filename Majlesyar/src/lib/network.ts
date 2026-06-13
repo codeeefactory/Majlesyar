@@ -5,6 +5,12 @@ const PING_ENDPOINT = "/api/v1/ping/";
 const MAX_MEASUREMENT_WINDOW_MS = 900;
 const MAX_ATTEMPTS = 3;
 
+type NavigatorWithConnection = Navigator & {
+  connection?: {
+    rtt?: number;
+  };
+};
+
 async function measureSingleRequest(): Promise<number> {
   const startedAt = performance.now();
   const response = await fetch(buildUrl(PING_ENDPOINT), {
@@ -50,7 +56,7 @@ export async function measureAndStoreClientPing(): Promise<number | null> {
         bestPingMs = pingMs;
       }
     } catch {
-      const connectionRtt = navigator.connection?.rtt;
+      const connectionRtt = (navigator as NavigatorWithConnection).connection?.rtt;
       if (typeof connectionRtt === "number" && connectionRtt > 0) {
         bestPingMs = Math.min(bestPingMs, connectionRtt);
       }

@@ -1,10 +1,11 @@
 import uuid
 
-from django.core.validators import MinValueValidator
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils.text import slugify
 
 from .image_utils import derive_image_label, image_extension_validator
+from .image_variants import ensure_product_image_variants
 from vision.service import analyze_product_image, save_prediction_result
 
 
@@ -37,13 +38,51 @@ PRODUCT_INPUT_MODE_NORMAL = "normal"
 PRODUCT_INPUT_MODE_PHOTO_PROCESSING = "photo_processing"
 
 
-def infer_event_types(name: str, description: str = "", contents: list[str] | None = None) -> list[str]:
+def get_content_item_name(item) -> str:
+    if isinstance(item, dict):
+        return str(item.get("name") or "").strip()
+    return str(item or "").strip()
+
+
+def get_content_item_price(item) -> int | None:
+    if not isinstance(item, dict):
+        return None
+    raw_price = item.get("price")
+    if raw_price in (None, ""):
+        return None
+    try:
+        price = int(raw_price)
+    except (TypeError, ValueError):
+        return None
+    return price if price >= 0 else None
+
+
+def get_content_item_names(contents: list | None) -> list[str]:
+    return [name for item in (contents or []) if (name := get_content_item_name(item))]
+
+
+def normalize_product_contents(contents: list | None) -> list[dict]:
+    normalized = []
+    for item in contents or []:
+        name = get_content_item_name(item)
+        if not name:
+            continue
+        normalized.append(
+            {
+                "name": name,
+                "price": get_content_item_price(item),
+            }
+        )
+    return normalized
+
+
+def infer_event_types(name: str, description: str = "", contents: list | None = None) -> list[str]:
     haystack = " ".join(
         value
         for value in [
             _normalize_text(name),
             _normalize_text(description),
-            _normalize_text(" ".join(contents or [])),
+            _normalize_text(" ".join(get_content_item_names(contents))),
         ]
         if value
     )
@@ -307,6 +346,12 @@ class Product(models.Model):
         verbose_name="نتیجه تحلیل تصویر",
         help_text="خروجی ساختارمند تشخیص محلی تصویر محصول.",
     )
+    image_variants = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name="Image variants",
+        help_text="Automatically generated AVIF, WebP, JPEG, and original backup metadata for responsive delivery.",
+    )
     featured = models.BooleanField(
         default=False,
         verbose_name="ویژه",
@@ -331,12 +376,19 @@ class Product(models.Model):
     def save(self, *args, **kwargs):
         previous_default_label = ""
         previous_image_name = ""
+        previous_image_variants = {}
         previous = None
         if self.pk:
-            previous = Product.objects.filter(pk=self.pk).only("image", "image_alt", "image_name").first()
+            previous = Product.objects.filter(pk=self.pk).only("image", "image_alt", "image_name", "image_variants").first()
             if previous and previous.image:
                 previous_default_label = derive_image_label(previous.image.name)
                 previous_image_name = previous.image.name
+            if previous:
+                previous_image_variants = previous.image_variants or {}
+
+        if not isinstance(self.contents, list):
+            self.contents = []
+        self.contents = normalize_product_contents(self.contents)
 
         if not isinstance(self.event_types, list):
             self.event_types = []
@@ -368,17 +420,28 @@ class Product(models.Model):
             if derived_label and (not self.image_alt or self.image_alt == previous_default_label):
                 self.image_alt = derived_label
 
+        current_image_name = self.image.name if self.image else ""
+        image_changed = current_image_name != previous_image_name
         super().save(*args, **kwargs)
         sync_product_categories(self)
 
+        should_refresh_variants = image_changed or bool(self.image and not self.image_variants) or bool(
+            not self.image and previous_image_variants
+        )
+        if should_refresh_variants:
+            image_variants = ensure_product_image_variants(self, force=image_changed)
+            if image_variants != (self.image_variants or {}):
+                self.image_variants = image_variants
+                Product.objects.filter(pk=self.pk).update(image_variants=image_variants)
+
         input_mode = getattr(self, "_input_mode", PRODUCT_INPUT_MODE_NORMAL)
         if input_mode == PRODUCT_INPUT_MODE_PHOTO_PROCESSING and self.image:
-            image_changed = self.image.name != previous_image_name
             if image_changed and hasattr(self.image, "path"):
                 analysis = analyze_product_image(self.image.path)
                 save_prediction_result(self, analysis)
                 update_fields = {"photo_analysis": self.photo_analysis}
                 if self.contents:
+                    self.contents = normalize_product_contents(self.contents)
                     update_fields["contents"] = self.contents
                 if self.event_types:
                     update_fields["event_types"] = self.event_types
@@ -392,6 +455,86 @@ class Product(models.Model):
 
     def __str__(self) -> str:
         return self.name
+
+
+class CustomerReview(models.Model):
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
+        verbose_name="شناسه",
+        help_text="نکته: این شناسه به صورت خودکار ساخته می شود.",
+    )
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.SET_NULL,
+        related_name="customer_reviews",
+        blank=True,
+        null=True,
+        verbose_name="محصول",
+        help_text="اگر نظر مربوط به یک محصول خاص است، آن محصول را انتخاب کنید.",
+    )
+    customer_name = models.CharField(
+        max_length=120,
+        verbose_name="نام مشتری",
+        help_text="نام نمایشی مشتری برای سایت.",
+    )
+    customer_city = models.CharField(
+        max_length=80,
+        blank=True,
+        default="",
+        verbose_name="شهر",
+        help_text="شهر یا محدوده مشتری، اختیاری.",
+    )
+    title = models.CharField(
+        max_length=160,
+        blank=True,
+        default="",
+        verbose_name="عنوان نظر",
+        help_text="عنوان کوتاه برای نظر مشتری.",
+    )
+    comment = models.TextField(
+        verbose_name="متن نظر",
+        help_text="متن کامل بازخورد مشتری.",
+    )
+    rating = models.PositiveSmallIntegerField(
+        default=5,
+        validators=[MinValueValidator(1), MaxValueValidator(5)],
+        verbose_name="امتیاز",
+        help_text="امتیاز از ۱ تا ۵.",
+    )
+    is_approved = models.BooleanField(
+        default=True,
+        verbose_name="تایید شده",
+        help_text="فقط نظرهای تایید شده در سایت نمایش داده می شوند.",
+    )
+    is_featured = models.BooleanField(
+        default=False,
+        verbose_name="ویژه",
+        help_text="نظرهای ویژه در بخش بازخورد مشتریان اولویت دارند.",
+    )
+    display_order = models.PositiveIntegerField(
+        default=100,
+        validators=[MinValueValidator(1)],
+        verbose_name="ترتیب نمایش",
+        help_text="عدد کوچکتر یعنی نمایش زودتر.",
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="زمان ایجاد",
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name="آخرین بروزرسانی",
+    )
+
+    class Meta:
+        ordering = ["display_order", "-is_featured", "-created_at"]
+        verbose_name = "نظر مشتری"
+        verbose_name_plural = "نظرهای مشتریان"
+
+    def __str__(self) -> str:
+        return f"{self.customer_name} - {self.rating}/5"
 
 
 class PageProductPlacement(models.Model):

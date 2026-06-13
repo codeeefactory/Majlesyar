@@ -6,30 +6,28 @@
 
 @layer base {
   :root {
-    /* Updated Color Palette - Cyan Primary */
-    --background: 40 33% 98%;
-    --foreground: 220 15% 20%;
+    /* Majlesyar.com Color Palette */
+    --background: 45 44% 96%;
+    --foreground: 216 19% 15%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 220 15% 20%;
+    --card: 38 38% 92%;
+    --card-foreground: 216 19% 15%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 220 15% 20%;
+    --popover: 38 38% 92%;
+    --popover-foreground: 216 19% 15%;
 
-    /* Cyan Primary - WCAG AA compliant (4.5:1 on white) */
-    --primary: 191 100% 32%;
+    /* Live brand cyan from majlesyar.com */
+    --primary: 192 100% 47%;
     --primary-foreground: 0 0% 100%;
 
-    /* Secondary - WCAG AA compliant foreground */
-    --secondary: 191 80% 92%;
-    --secondary-foreground: 191 100% 15%;
+    --secondary: 192 85% 90%;
+    --secondary-foreground: 216 19% 15%;
 
-    --muted: 40 20% 94%;
-    /* Muted foreground - WCAG AA compliant (4.5:1 on bg) */
-    --muted-foreground: 220 15% 40%;
+    --muted: 38 32% 88%;
+    --muted-foreground: 215 13% 39%;
 
-    --accent: 191 60% 92%;
-    --accent-foreground: 191 100% 18%;
+    --accent: 192 85% 90%;
+    --accent-foreground: 216 19% 15%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
@@ -40,29 +38,29 @@
     --warning: 45 93% 47%;
     --warning-foreground: 220 15% 15%;
 
-    --border: 40 20% 88%;
-    --input: 40 20% 88%;
-    --ring: 191 100% 40%;
+    --border: 38 24% 84%;
+    --input: 38 24% 84%;
+    --ring: 192 100% 47%;
 
     --radius: 0.75rem;
 
     /* Custom Design Tokens */
-    --gold-gradient: linear-gradient(135deg, hsl(191, 100%, 45%) 0%, hsl(191, 100%, 32%) 100%);
-    --teal-gradient: linear-gradient(135deg, hsl(191, 100%, 42%) 0%, hsl(191, 100%, 28%) 100%);
-    --cream-gradient: linear-gradient(180deg, hsl(40, 33%, 98%) 0%, hsl(40, 25%, 94%) 100%);
+    --gold-gradient: linear-gradient(135deg, hsl(192, 100%, 47%) 0%, hsl(192, 100%, 38%) 100%);
+    --teal-gradient: linear-gradient(135deg, hsl(192, 100%, 52%) 0%, hsl(192, 100%, 38%) 100%);
+    --cream-gradient: linear-gradient(180deg, hsl(45, 44%, 96%) 0%, hsl(38, 38%, 92%) 100%);
     
-    --shadow-soft: 0 4px 20px -4px hsl(220 15% 20% / 0.08);
-    --shadow-medium: 0 8px 30px -8px hsl(220 15% 20% / 0.12);
-    --shadow-glow: 0 0 40px hsl(191 100% 40% / 0.2);
+    --shadow-soft: 0 4px 20px -4px hsl(192 100% 47% / 0.10);
+    --shadow-medium: 0 8px 30px -8px hsl(192 100% 47% / 0.18);
+    --shadow-glow: 0 0 40px hsl(192 100% 47% / 0.22);
 
-    --sidebar-background: 40 20% 96%;
-    --sidebar-foreground: 318 14% 29%;
-    --sidebar-primary: 191 100% 32%;
+    --sidebar-background: 45 44% 96%;
+    --sidebar-foreground: 216 19% 15%;
+    --sidebar-primary: 192 100% 47%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 191 60% 92%;
-    --sidebar-accent-foreground: 191 100% 18%;
-    --sidebar-border: 40 20% 88%;
-    --sidebar-ring: 191 100% 40%;
+    --sidebar-accent: 192 85% 90%;
+    --sidebar-accent-foreground: 216 19% 15%;
+    --sidebar-border: 38 24% 84%;
+    --sidebar-ring: 192 100% 47%;
   }
 
   .dark {

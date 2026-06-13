@@ -1,0 +1,35 @@
+Browserslist: browsers data (caniuse-lite) is 12 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+[2m10:33:25 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/ping/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m10:33:25 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/settings/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m10:33:26 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/settings/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m10:33:26 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/ping/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m10:34:06 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/settings/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m10:34:06 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/ping/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m10:42:02 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/settings/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)
+[2m10:42:02 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/ping/[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1121:18)
+    at afterConnectMultiple (node:net:1688:7)

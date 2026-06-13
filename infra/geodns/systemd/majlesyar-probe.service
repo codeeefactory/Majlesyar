@@ -1,0 +1,9 @@
+[Unit]
+Description=Majlesyar GeoDNS probe cycle
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/default/majlesyar-geo-probe
+ExecStart=/usr/local/lib/majlesyar/probe_cycle.sh

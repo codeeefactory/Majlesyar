@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { CartProvider } from "@/contexts/CartContext";
 import { SettingsProvider } from "@/contexts/SettingsContext";
 import { AdminAuthProvider } from "@/contexts/AdminAuthContext";
+import { CustomerAuthProvider } from "@/contexts/CustomerAuthContext";
 import { SiteThemeSync } from "@/components/SiteThemeSync";
 import { PageLoader } from "@/components/PageLoader";
 import { RouteChangeLoader } from "@/components/RouteChangeLoader";
@@ -13,7 +14,6 @@ import ProductPage from "./pages/ProductPage";
 const HomePage = lazy(() => import("./pages/HomePage"));
 
 // Lazy loaded pages - secondary routes
-const ShopPage = lazy(() => import("./pages/ShopPage"));
 const EventPage = lazy(() => import("./pages/EventPage"));
 const BuilderPage = lazy(() => import("./pages/BuilderPage"));
 const CartPage = lazy(() => import("./pages/CartPage"));
@@ -22,6 +22,9 @@ const OrderPage = lazy(() => import("./pages/OrderPage"));
 const TrackOrderPage = lazy(() => import("./pages/TrackOrderPage"));
 const ContactPage = lazy(() => import("./pages/ContactPage"));
 const AboutPage = lazy(() => import("./pages/AboutPage"));
+const TermsPage = lazy(() => import("./pages/TermsPage"));
+const CustomerAuthPage = lazy(() => import("./pages/CustomerAuthPage"));
+const CustomerDashboardPage = lazy(() => import("./pages/CustomerDashboardPage"));
 const AdminLoginPage = lazy(() => import("./pages/admin/AdminLoginPage"));
 const AdminOrdersPage = lazy(() => import("./pages/admin/AdminOrdersPage"));
 const AdminPageProductsPage = lazy(() => import("./pages/admin/AdminPageProductsPage"));
@@ -83,18 +86,38 @@ const App = () => {
     <SettingsProvider>
       <SiteThemeSync />
       <CartProvider>
-        <DeferredToaster />
-        <BrowserRouter>
-          <RouteChangeLoader />
-          <Suspense fallback={<PageLoader />}>
-            <Routes>
+        <CustomerAuthProvider>
+          <DeferredToaster />
+          <BrowserRouter>
+            <RouteChangeLoader />
+            <Suspense fallback={<PageLoader />}>
+              <Routes>
               {/* Critical SEO Route */}
               <Route path="/" element={<HomePage />} />
 
               {/* Lazy loaded Routes */}
-              <Route path="/shop" element={<ShopPage />} />
               <Route path="/product/:slug" element={<ProductPage />} />
               <Route path="/events/:slug" element={<EventPage />} />
+              <Route path="/pack" element={<EventPage />} />
+              <Route path="/pack/memorial" element={<EventPage />} />
+              <Route path="/pack/personal" element={<EventPage />} />
+              <Route path="/pack/memorial/luxury" element={<EventPage />} />
+              <Route path="/flower" element={<EventPage />} />
+              <Route path="/flower/memorial-wreaths" element={<EventPage />} />
+              <Route path="/flower/bouquets" element={<EventPage />} />
+              <Route path="/flower/congratulation-wreaths" element={<EventPage />} />
+              <Route path="/flower/congratulatory-wreaths" element={<EventPage />} />
+              <Route path="/flower/funeral-bouquet" element={<EventPage />} />
+              <Route path="/flower/box" element={<EventPage />} />
+              <Route path="/halva-khorma" element={<EventPage />} />
+              <Route path="/halva-khorma/luxury" element={<EventPage />} />
+              <Route path="/food" element={<EventPage />} />
+              <Route path="/food/finger_food" element={<EventPage />} />
+              <Route path="/food/charcuterie-board" element={<EventPage />} />
+              <Route path="/food/shaleh-zard" element={<EventPage />} />
+              <Route path="/food/ashe-rashteh" element={<EventPage />} />
+              <Route path="/food/dessert" element={<EventPage />} />
+              <Route path="/food/juice" element={<EventPage />} />
               <Route path="/builder" element={<BuilderPage />} />
               <Route path="/cart" element={<CartPage />} />
               <Route path="/checkout" element={<CheckoutPage />} />
@@ -102,6 +125,11 @@ const App = () => {
               <Route path="/track" element={<TrackOrderPage />} />
               <Route path="/contact" element={<ContactPage />} />
               <Route path="/about" element={<AboutPage />} />
+              <Route path="/terms" element={<TermsPage />} />
+              <Route path="/login" element={<CustomerAuthPage />} />
+              <Route path="/signup" element={<CustomerAuthPage />} />
+              <Route path="/dashboard" element={<CustomerDashboardPage />} />
+              <Route path="/profile" element={<CustomerDashboardPage />} />
 
               {/* Admin Routes - wrapped with AdminAuthProvider */}
               <Route path="/admin/login" element={<AdminRoute><AdminLoginPage /></AdminRoute>} />
@@ -111,10 +139,11 @@ const App = () => {
 
               {/* Catch-all */}
               <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Suspense>
-          <DeferredFloatingContactButton />
-        </BrowserRouter>
+              </Routes>
+            </Suspense>
+            <DeferredFloatingContactButton />
+          </BrowserRouter>
+        </CustomerAuthProvider>
       </CartProvider>
     </SettingsProvider>
   );

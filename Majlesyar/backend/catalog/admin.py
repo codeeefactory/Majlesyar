@@ -3,7 +3,8 @@ from django.contrib import admin
 from django.utils.html import format_html
 
 from config.admin_mixins import PersianAdminFormMixin
-from .models import BuilderItem, Category, PageProductPlacement, Product, Tag
+from .image_variants import ensure_product_image_variants
+from .models import BuilderItem, Category, CustomerReview, PageProductPlacement, Product, Tag
 
 
 class ProductAdminForm(forms.ModelForm):
@@ -71,6 +72,7 @@ class ProductAdmin(PersianAdminFormMixin, admin.ModelAdmin):
     filter_horizontal = ("categories", "tags")
     list_editable = ("available", "featured")
     readonly_fields = ("image_preview", "created_at", "updated_at")
+    actions = ("regenerate_image_variants",)
     fieldsets = (
         (
             "اطلاعات اصلی",
@@ -132,6 +134,29 @@ class ProductAdmin(PersianAdminFormMixin, admin.ModelAdmin):
         if categories.exists():
             product.categories.add(*categories)
 
+    @admin.action(description="Regenerate optimized image variants")
+    def regenerate_image_variants(self, request, queryset):
+        processed = 0
+        skipped = 0
+        for product in queryset:
+            if not product.image:
+                skipped += 1
+                continue
+            metadata = ensure_product_image_variants(product, force=True)
+            Product.objects.filter(pk=product.pk).update(image_variants=metadata)
+            processed += 1
+
+        if processed:
+            self.message_user(
+                request,
+                f"Optimized variants regenerated for {processed} product image(s).",
+            )
+        if skipped:
+            self.message_user(
+                request,
+                f"{skipped} product(s) were skipped because they do not have an image.",
+            )
+
     @admin.display(description="پیش‌نمایش تصویر محصول")
     def image_preview(self, obj: Product | None) -> str:
         preview_image_url = obj.image.url if obj and obj.image else ""
@@ -165,6 +190,45 @@ class ProductAdmin(PersianAdminFormMixin, admin.ModelAdmin):
             image_markup,
             preview_state_text,
         )
+
+
+@admin.register(CustomerReview)
+class CustomerReviewAdmin(PersianAdminFormMixin, admin.ModelAdmin):
+    list_display = (
+        "customer_name",
+        "rating",
+        "product",
+        "is_approved",
+        "is_featured",
+        "display_order",
+        "created_at",
+    )
+    list_filter = ("is_approved", "is_featured", "rating", "product")
+    list_editable = ("is_approved", "is_featured", "display_order")
+    search_fields = ("customer_name", "customer_city", "title", "comment", "product__name")
+    autocomplete_fields = ("product",)
+    readonly_fields = ("created_at", "updated_at")
+    fieldsets = (
+        (
+            "اطلاعات نظر",
+            {
+                "description": "نظر مشتری را دقیق ثبت کنید و فقط موارد تایید شده را در سایت نمایش دهید.",
+                "fields": ("product", "customer_name", "customer_city", "title", "comment", "rating"),
+            },
+        ),
+        (
+            "نمایش در سایت",
+            {
+                "fields": ("is_approved", "is_featured", "display_order"),
+            },
+        ),
+        (
+            "زمان بندی",
+            {
+                "fields": ("created_at", "updated_at"),
+            },
+        ),
+    )
 
 
 @admin.register(BuilderItem)

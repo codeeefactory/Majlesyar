@@ -1,0 +1,61 @@
+site:
+  domain: majlesyar.com
+  default_ttl: 300
+  failover_ttl: 60
+  normal_policy:
+    iran: iran
+    default: global
+  service_template: "%cc.policy.majlesyar.com"
+  policy_hosts:
+    iran: ir.policy.majlesyar.com
+    default: default.policy.majlesyar.com
+  nameservers:
+    - name: ns1.majlesyar.com
+      ipv4: 203.0.113.53
+      ipv6: 2001:db8:53::1
+    - name: ns2.majlesyar.com
+      ipv4: 198.51.100.53
+      ipv6: 2001:db8:53::2
+  soa:
+    primary: ns1.majlesyar.com
+    hostmaster: hostmaster.majlesyar.com
+    refresh: 300
+    retry: 60
+    expire: 1209600
+    minimum: 60
+  origins:
+    iran:
+      name: ir-origin.majlesyar.com
+      ipv4: 198.51.100.20
+      ipv6: 2001:db8:20::20
+      health_path: /api/v1/health/
+    global:
+      name: global-origin.majlesyar.com
+      ipv4: 203.0.113.20
+      ipv6: 2001:db8:30::20
+      health_path: /api/v1/health/
+    maintenance:
+      name: maintenance-origin.majlesyar.com
+      ipv4: 203.0.113.30
+      ipv6: 2001:db8:40::30
+      health_path: /
+  extra_records:
+    majlesyar.com:
+      - type: TXT
+        ttl: 3600
+        content: google-site-verification=zQaa1D2m7L7U0kADGO1Noq87ehTzyIy9wnAmhcUr6aQ
+  current_observed_state:
+    provider: Cloudflare authoritative DNS with proxied HTTP service
+    nameservers:
+      - ariadne.ns.cloudflare.com
+      - huxley.ns.cloudflare.com
+    soa_serial: 2400467473
+    apex_ipv4:
+      - 104.21.61.192
+      - 172.67.213.17
+    apex_ipv6:
+      - 2606:4700:3037::ac43:d511
+      - 2606:4700:3033::6815:3dc0
+    www_record: not present
+    mx_records: not observed in public queries
+    dnssec_ds_records: not observed in public queries

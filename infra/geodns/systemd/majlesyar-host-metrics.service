@@ -1,0 +1,9 @@
+[Unit]
+Description=Majlesyar local host metrics refresh
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=-/etc/default/majlesyar-host-metrics
+ExecStart=/usr/bin/python3 /usr/local/lib/majlesyar/host_metrics.py --role ${ROLE} --prom-out ${PROM_OUT} --container-name ${CONTAINER_NAME} --nginx-url ${NGINX_URL} --app-url ${APP_URL} --maxmind-path ${MAXMIND_PATH}

@@ -1,5 +1,8 @@
 .git
 .gitignore
+.deploy
+.env.production
+.env.dockerfile
 node_modules
 dist
 .venv

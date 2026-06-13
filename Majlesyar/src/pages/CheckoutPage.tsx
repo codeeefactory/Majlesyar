@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { AppShell } from '@/components/layout';
 import { SEO } from '@/components/SEO';
@@ -9,15 +9,18 @@ import { Textarea } from '@/components/ui/textarea';
 import { RuleAlert } from '@/components/RuleAlert';
 import { JalaliDatePicker } from '@/components/JalaliDatePicker';
 import { useCart } from '@/contexts/CartContext';
+import { useCustomerAuth } from '@/contexts/CustomerAuthContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { createOrder } from '@/lib/api';
 import { notifyError, notifySuccess } from '@/lib/notify';
+import { storage } from '@/lib/storage';
 import { allProvinces } from '@/data/siteConstants';
 import { ArrowRight, Check, Loader2 } from 'lucide-react';
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
   const { items, totalPrice, totalQuantity, isMinQuantityMet, clearCart, minQuantityRequired } = useCart();
+  const { customer, isAuthenticated, updateProfile } = useCustomerAuth();
   const { settings } = useSettings();
   const [loading, setLoading] = useState(false);
 
@@ -33,6 +36,17 @@ export default function CheckoutPage() {
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (!customer) return;
+    setForm((current) => ({
+      ...current,
+      name: current.name || customer.fullName,
+      phone: current.phone || customer.phone,
+      province: current.province || customer.province,
+      address: current.address || customer.address,
+    }));
+  }, [customer]);
 
   // Calculate minimum delivery date (today + leadTimeHours)
   const getMinDeliveryDate = () => {
@@ -89,6 +103,17 @@ export default function CheckoutPage() {
         form.paymentMethod
       );
 
+      const savedOrders = storage.getOrders();
+      storage.setOrders([order, ...(Array.isArray(savedOrders) ? savedOrders : [])]);
+      if (isAuthenticated) {
+        updateProfile({
+          fullName: form.name,
+          phone: form.phone,
+          province: form.province,
+          address: form.address,
+        });
+      }
+
       clearCart();
       notifySuccess('سفارش شما با موفقیت ثبت شد');
       navigate(`/order/${order.id}`);
@@ -104,8 +129,8 @@ export default function CheckoutPage() {
       <AppShell>
         <div className="container py-16 text-center">
           <h1 className="text-2xl font-bold text-foreground mb-4">سبد خرید خالی است</h1>
-          <Link to="/shop">
-            <Button variant="gold">رفتن به فروشگاه</Button>
+          <Link to="/pack">
+            <Button variant="gold">رفتن به محصولات</Button>
           </Link>
         </div>
       </AppShell>

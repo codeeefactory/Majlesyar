@@ -3,18 +3,31 @@ import { Link } from 'react-router-dom';
 import { AppShell } from '@/components/layout';
 import { Button } from '@/components/ui/button';
 import { EventCard } from '@/components/EventCard';
+import { CustomerFeedbackSection } from '@/components/CustomerFeedbackSection';
 import { HomepageBenefitsSection } from '@/components/HomepageBenefitsSection';
 import { ProductCard } from '@/components/ProductCard';
 import { SEO } from '@/components/SEO';
 import { useSettings } from '@/contexts/SettingsContext';
 import { Sparkles, Clock, ArrowLeft, Truck, Shield, Star, Wrench } from 'lucide-react';
-import { getPageProductPreview, listProducts } from '@/lib/api';
-import type { Product } from '@/types/domain';
+import { getPageProductPreview, listCustomerReviews, listProducts } from '@/lib/api';
+import type { CustomerReview, Product } from '@/types/domain';
+
+const HOME_EVENT_CARDS = [
+  { routePath: '/halva-khorma', name: 'حلوا خرما، خرما گردو' },
+  { routePath: '/pack', name: 'پک میوه و پذیرایی' },
+  { routePath: '/food', name: 'منوی فود' },
+  { routePath: '/flower', name: 'گل' },
+];
 
 export default function HomePage() {
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
+  const [customerReviews, setCustomerReviews] = useState<CustomerReview[]>([]);
   const [productsLoading, setProductsLoading] = useState(true);
   const { settings } = useSettings();
+  const visibleEventPages = HOME_EVENT_CARDS.map((homeCard) => {
+    const event = settings.eventPages.find((item) => item.routePath === homeCard.routePath);
+    return event ? { ...event, name: homeCard.name } : null;
+  }).filter(Boolean);
 
   useEffect(() => {
     let isMounted = true;
@@ -43,6 +56,20 @@ export default function HomePage() {
     };
   }, []);
 
+  useEffect(() => {
+    let isMounted = true;
+    listCustomerReviews({ featured: true, limit: 6 })
+      .then((reviews) => {
+        if (isMounted) setCustomerReviews(reviews);
+      })
+      .catch(() => {
+        if (isMounted) setCustomerReviews([]);
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   return (
     <AppShell>
       <SEO pageKey="home" path="/" />
@@ -65,7 +92,7 @@ export default function HomePage() {
             </header>
 
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-              {settings.eventPages.map((event) => (
+              {visibleEventPages.map((event) => (
                 <div key={event.id}>
                   <EventCard {...event} />
                 </div>
@@ -114,12 +141,12 @@ export default function HomePage() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-3 justify-center items-stretch sm:items-center pt-4">
-              <Link to="/shop" className="w-full sm:w-auto">
+              <Link to="/pack" className="w-full sm:w-auto">
                 <Button
                   size="lg"
                   className="w-full sm:min-w-[200px] gap-2 min-h-[48px] touch-manipulation"
                 >
-                  مشاهده فروشگاه
+                  مشاهده محصولات
                   <ArrowLeft className="w-5 h-5" aria-hidden="true" />
                 </Button>
               </Link>
@@ -151,7 +178,7 @@ export default function HomePage() {
               محبوب‌ترین پک‌ها بین مشتریان ما
             </p>
           </div>
-          <Link to="/shop">
+          <Link to="/pack">
             <Button variant="ghost" className="gap-2 min-h-[44px] touch-manipulation">
               مشاهده همه
               <ArrowLeft className="w-4 h-4" aria-hidden="true" />
@@ -177,6 +204,8 @@ export default function HomePage() {
               ))}
         </div>
       </section>
+
+      <CustomerFeedbackSection reviews={customerReviews} />
 
       <HomepageBenefitsSection />
 

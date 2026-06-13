@@ -1,0 +1,9 @@
+[Unit]
+Description=Majlesyar GeoDNS failover evaluation and zone render
+After=network-online.target pdns.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/default/majlesyar-geodns
+ExecStart=/usr/local/lib/majlesyar/geodns_cycle.sh

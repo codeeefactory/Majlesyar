@@ -5,14 +5,14 @@ interface PageLoaderProps {
   brandName?: string;
 }
 
-const defaultBrandName = defaultSettings.siteBranding.siteAlternateName || "Majlesyar";
+const defaultBrandName = defaultSettings.siteBranding.siteName || "مجلس یار";
 
 export function PageLoader({ fullscreen = true, brandName = defaultBrandName }: PageLoaderProps) {
   return (
     <div
       role="status"
       aria-live="polite"
-      aria-label="Loading"
+      aria-label="در حال بارگذاری"
       className={`relative flex items-center justify-center overflow-hidden px-6 ${
         fullscreen ? "min-h-screen bg-background" : "py-6"
       }`}
@@ -48,7 +48,10 @@ export function PageLoader({ fullscreen = true, brandName = defaultBrandName }: 
 
         <div className="space-y-3 text-center">
           <div className="mx-auto h-px w-14 bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
-          <p className="truncate text-xs font-semibold tracking-[0.34em] text-primary/80">{brandName}</p>
+          <p className="truncate text-xl font-black leading-8 text-primary">{brandName}</p>
+          <p className="text-sm font-semibold leading-6 text-muted-foreground">
+            در حال بارگذاری...
+          </p>
         </div>
 
         <div className="mt-5 overflow-hidden rounded-full bg-muted/85">
@@ -57,7 +60,7 @@ export function PageLoader({ fullscreen = true, brandName = defaultBrandName }: 
           </div>
         </div>
 
-        <span className="sr-only">Loading</span>
+        <span className="sr-only">در حال بارگذاری</span>
       </div>
     </div>
   );

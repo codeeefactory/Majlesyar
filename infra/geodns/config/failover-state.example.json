@@ -1,0 +1,15 @@
+{
+  "mode": "automatic",
+  "updated_at": "2026-05-03T16:30:00Z",
+  "reason": "Both origin pools healthy; serve Iran locally and the rest of the world from the global origin.",
+  "policy": {
+    "iran": "iran",
+    "default": "global"
+  },
+  "effective_health": {
+    "iran_origin_up": true,
+    "global_origin_up": true,
+    "global_reachable_from_iran": true,
+    "iran_reachable_from_global": true
+  }
+}

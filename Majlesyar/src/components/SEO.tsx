@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useSettings } from "@/contexts/SettingsContext";
 import { getSameAsLinks } from "@/lib/contact";
+import type { CustomerReview } from "@/types/domain";
 
 interface BreadcrumbItem {
   name: string;
@@ -24,6 +25,16 @@ interface SEOProps {
     price?: number | null;
     image?: string;
     category?: string;
+    reviews?: CustomerReview[];
+  };
+  collection?: {
+    name: string;
+    description: string;
+    products: Array<{
+      name: string;
+      urlSlug: string;
+      id: string;
+    }>;
   };
   breadcrumbs?: BreadcrumbItem[];
   faq?: FAQItem[];
@@ -118,6 +129,7 @@ export function SEO({
   path = "",
   ogImage,
   product,
+  collection,
   breadcrumbs,
   faq,
   noindex = false,
@@ -149,8 +161,12 @@ export function SEO({
       settings.telegramUrl,
       settings.whatsappUrl,
       settings.baleUrl,
+      settings.eitaaUrl,
+      settings.soroushUrl,
+      settings.rubikaUrl,
     ]);
     const logoUrl = settings.siteLogoUrl || settings.siteFaviconUrl || `${baseUrl}/favicon.ico`;
+    const isHomePage = path === "/";
 
     if (typeof document !== "undefined") {
       document.documentElement.lang = "fa";
@@ -183,14 +199,17 @@ export function SEO({
     upsertMeta("name", "twitter:description", resolvedDescription);
     upsertMeta("name", "twitter:image", resolvedOgImage);
 
-    const organizationSchema = {
+    const brandSchema = {
       "@context": "https://schema.org",
-      "@type": "Organization",
+      "@type": ["Organization", "LocalBusiness"],
+      "@id": `${baseUrl}/#brand`,
       name: branding.siteName,
       alternateName: branding.siteAlternateName,
       url: baseUrl,
       logo: logoUrl,
-      description: resolvedDescription,
+      image: settings.siteOgImageUrl || resolvedOgImage,
+      description: branding.defaultMetaDescription,
+      telephone: settings.contactPhone,
       contactPoint: {
         "@type": "ContactPoint",
         telephone: settings.contactPhone,
@@ -200,26 +219,8 @@ export function SEO({
       address: {
         "@type": "PostalAddress",
         streetAddress: settings.contactAddress,
-        addressCountry: "IR",
-      },
-      areaServed: ["تهران", "البرز"],
-      sameAs,
-    };
-
-    const localBusinessSchema = {
-      "@context": "https://schema.org",
-      "@type": "FoodEstablishment",
-      "@id": `${baseUrl}/#business`,
-      name: branding.siteName,
-      alternateName: branding.siteAlternateName,
-      description: resolvedDescription,
-      url: baseUrl,
-      telephone: settings.contactPhone,
-      priceRange: "$$",
-      image: settings.siteOgImageUrl || logoUrl,
-      address: {
-        "@type": "PostalAddress",
-        streetAddress: settings.contactAddress,
+        addressLocality: "تهران",
+        addressRegion: "تهران",
         addressCountry: "IR",
       },
       geo: {
@@ -229,9 +230,10 @@ export function SEO({
       },
       openingHours: settings.workingHours,
       areaServed: [
-        { "@type": "City", name: "تهران" },
-        { "@type": "State", name: "البرز" },
+        { "@type": "AdministrativeArea", name: "Tehran" },
+        { "@type": "AdministrativeArea", name: "Alborz" },
       ],
+      sameAs,
       hasOfferCatalog: {
         "@type": "OfferCatalog",
         name: branding.siteTagline,
@@ -243,39 +245,72 @@ export function SEO({
           },
         })),
       },
-      aggregateRating: {
-        "@type": "AggregateRating",
-        ratingValue: "4.8",
-        reviewCount: "500",
-      },
     };
 
     const websiteSchema = {
       "@context": "https://schema.org",
       "@type": "WebSite",
+      "@id": `${baseUrl}/#website`,
       name: branding.siteName,
       alternateName: [branding.siteAlternateName, "majlesyar.com"],
       url: baseUrl,
-      potentialAction: {
-        "@type": "SearchAction",
-        target: `${baseUrl}/shop?q={search_term_string}`,
-        "query-input": "required name=search_term_string",
+      publisher: {
+        "@id": `${baseUrl}/#brand`,
       },
     };
 
-    upsertJsonLd("organization", organizationSchema);
-    upsertJsonLd("local-business", localBusinessSchema);
-    upsertJsonLd("website", websiteSchema);
+    if (isHomePage) {
+      upsertJsonLd("brand", brandSchema);
+      upsertJsonLd("website", websiteSchema);
+    } else {
+      removeJsonLd("brand");
+      removeJsonLd("website");
+    }
+    removeJsonLd("organization");
+    removeJsonLd("local-business");
 
     if (product) {
+      const productReviews = (product.reviews || []).filter((review) => review.comment && review.rating > 0);
+      const aggregateRating = productReviews.length
+        ? {
+            "@type": "AggregateRating",
+            ratingValue:
+              productReviews.reduce((sum, review) => sum + review.rating, 0) / productReviews.length,
+            reviewCount: productReviews.length,
+            bestRating: 5,
+            worstRating: 1,
+          }
+        : undefined;
       upsertJsonLd("product", {
         "@context": "https://schema.org",
         "@type": "Product",
         name: product.name,
         description: product.description,
+        url: canonicalUrl,
         category: product.category || "پک پذیرایی",
         brand: { "@type": "Brand", name: branding.siteName },
         image: product.image || resolvedOgImage,
+        ...(aggregateRating ? { aggregateRating } : {}),
+        ...(productReviews.length
+          ? {
+              review: productReviews.slice(0, 6).map((review) => ({
+                "@type": "Review",
+                author: {
+                  "@type": "Person",
+                  name: review.customerName,
+                },
+                name: review.title || review.productName || product.name,
+                reviewBody: review.comment,
+                datePublished: review.createdAt,
+                reviewRating: {
+                  "@type": "Rating",
+                  ratingValue: review.rating,
+                  bestRating: 5,
+                  worstRating: 1,
+                },
+              })),
+            }
+          : {}),
         ...(product.price
           ? {
               offers: {
@@ -290,6 +325,39 @@ export function SEO({
       });
     } else {
       removeJsonLd("product");
+    }
+
+    if (collection && !isHomePage) {
+      upsertJsonLd("collection-page", {
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        name: collection.name,
+        description: collection.description,
+        url: canonicalUrl,
+        mainEntity: {
+          "@type": "ItemList",
+          itemListElement: collection.products.map((item, index) => ({
+            "@type": "ListItem",
+            position: index + 1,
+            url: `${baseUrl}/product/${encodeURIComponent(item.urlSlug || item.id)}`,
+            name: item.name,
+          })),
+        },
+      });
+    } else {
+      removeJsonLd("collection-page");
+    }
+
+    if (pageKey === "about") {
+      upsertJsonLd("about-page", {
+        "@context": "https://schema.org",
+        "@type": "AboutPage",
+        name: resolvedTitle,
+        description: resolvedDescription,
+        url: canonicalUrl,
+      });
+    } else {
+      removeJsonLd("about-page");
     }
 
     if (breadcrumbs && breadcrumbs.length > 0) {
@@ -336,6 +404,7 @@ export function SEO({
     path,
     ogImage,
     product,
+    collection,
     breadcrumbs,
     faq,
     noindex,

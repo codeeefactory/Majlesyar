@@ -8,6 +8,8 @@ from django.db import transaction
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema
 from rest_framework import generics, status
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
@@ -254,6 +256,9 @@ class ReminderListAPIView(generics.ListAPIView):
 class DashboardSummaryAPIView(APIView):
     permission_classes = [IsStaffUser]
 
+    @extend_schema(
+        responses=OpenApiTypes.OBJECT,
+    )
     def get(self, request):
         today = timezone.localdate()
         return Response(build_dashboard_payload(today=today))
@@ -262,6 +267,9 @@ class DashboardSummaryAPIView(APIView):
 class DesktopBootstrapAPIView(APIView):
     permission_classes = [IsStaffUser]
 
+    @extend_schema(
+        responses=OpenApiTypes.OBJECT,
+    )
     def get(self, request):
         days = int(request.query_params.get("days", "30"))
         today = timezone.localdate()
@@ -346,6 +354,10 @@ class DesktopBootstrapAPIView(APIView):
 class SendReminderAPIView(APIView):
     permission_classes = [IsStaffUser]
 
+    @extend_schema(
+        request=SendReminderSerializer,
+        responses=OpenApiTypes.OBJECT,
+    )
     def post(self, request, client_id):
         client = get_object_or_404(ClientProfile, pk=client_id)
         serializer = SendReminderSerializer(data=request.data, context={"client": client})
@@ -430,6 +442,10 @@ class OfflineSessionImportAPIView(APIView):
         serializer.save()
         return "updated" if instance is not None else "created"
 
+    @extend_schema(
+        request=OpenApiTypes.OBJECT,
+        responses=OpenApiTypes.OBJECT,
+    )
     def post(self, request):
         try:
             bundle = self._read_bundle(request)

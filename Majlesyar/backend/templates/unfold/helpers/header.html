@@ -1,0 +1,38 @@
+{% load unfold majlesyar_admin %}
+
+{% admin_theme_manifest as admin_theme %}
+
+<div class="bg-white border-b border-base-200 mb-6 px-4 z-40 dark:bg-base-900 dark:border-base-800 dark:text-font-default-dark admin-header-shell {% element_classes 'header' %}">
+    <div class="{% if not cl.model_admin.list_fullwidth %}container{% endif %} admin-header-shell__container mx-auto py-4">
+        <div id="header-inner" class="flex items-center relative w-full">
+            <div class="flex items-center w-full">
+                {% block usertools %}
+                    {% if has_permission %}
+                        {% block welcome-msg %}
+                            {% include 'unfold/helpers/welcomemsg.html' %}
+                        {% endblock %}
+
+                        {% block userlinks %}
+                            {% include 'unfold/helpers/userlinks.html' %}
+                        {% endblock %}
+                    {% endif %}
+                {% endblock %}
+            </div>
+        </div>
+
+        {% if admin_theme.events %}
+            <div class="admin-top-spectrum" style="{{ admin_theme.blend_style }}" aria-label="ترکیب فعال خدمات">
+                <div class="admin-top-spectrum__badge">ترکیب محصول‌ها</div>
+                <div class="admin-top-spectrum__rail" role="list" aria-label="طیف‌های فعال">
+                    {% for event in admin_theme.events %}
+                        <span class="admin-top-spectrum__pill{% if event.is_active %} is-active{% endif %}" role="listitem" style="{{ event.style }}">
+                            <span class="admin-top-spectrum__pill-icon" aria-hidden="true">{{ event.icon }}</span>
+                            <span>{{ event.name }}</span>
+                        </span>
+                    {% endfor %}
+                </div>
+                <div class="admin-top-spectrum__summary">{{ admin_theme.summary.line }}</div>
+            </div>
+        {% endif %}
+    </div>
+</div>

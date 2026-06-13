@@ -1,0 +1,37 @@
+
+> vite_react_shadcn_ts@0.0.0 dev
+> vite --host 127.0.0.1 --port 5174
+
+Port 5174 is in use, trying another one...
+
+  [32m[1mVITE[22m v5.4.19[39m  [2mready in [0m[1m424[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://127.0.0.1:[1m5175[22m/[39m
+[2m11:05:05 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mbackend/frontend_dist/index.html[22m
+[2m11:05:05 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mbackend/frontend_dist/index.html[22m
+[2m10:34:33 AM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.tsx, /src/index.css[22m
+[2m10:34:33 AM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/ProductPage.tsx, /src/index.css[22m
+[2m10:34:33 AM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/components/ProductCard.tsx[22m
+[2m10:34:33 AM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/contexts/SettingsContext.tsx, /src/index.css, /src/components/PageLoader.tsx, /src/pages/ProductPage.tsx, /src/contexts/AdminAuthContext.tsx[22m
+[2m10:34:33 AM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/RouteChangeLoader.tsx, /src/index.css[22m
+[2m10:34:33 AM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/SEO.tsx, /src/index.css[22m
+[2m10:34:53 AM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/components/ProductCard.tsx[22m
+[2m10:36:01 AM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/layout/Header.tsx, /src/index.css[22m
+[2m10:39:29 AM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css, /src/contexts/SettingsContext.tsx, /src/contexts/AdminAuthContext.tsx, /src/pages/ProductPage.tsx[22m
+[2m10:42:20 AM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css, /src/pages/ProductPage.tsx[22m
+[2m10:43:39 AM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mbackend/frontend_dist/index.html[22m
+[2m10:46:24 AM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mbackend/frontend_dist/index.html[22m
+[2m10:52:12 AM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mbackend/frontend_dist/index.html[22m
+[2m10:52:13 AM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mbackend/frontend_dist/index.html[22m
+[2m10:54:42 AM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mbackend/frontend_dist/index.html[22m
+[2m11:01:25 AM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mbackend/frontend_dist/index.html[22m
+[2m9:21:42 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/layout/Footer.tsx, /src/index.css[22m
+[2m9:23:17 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mbackend/frontend_dist/index.html[22m
+[2m9:23:17 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mbackend/frontend_dist/index.html[22m
+[2m9:34:42 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css, /src/contexts/SettingsContext.tsx, /src/contexts/AdminAuthContext.tsx, /src/pages/ProductPage.tsx[22m
+[2m9:35:21 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/ProductPage.tsx, /src/index.css[22m
+[2m9:35:45 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/SEO.tsx, /src/index.css[22m
+[2m10:27:07 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css, /src/contexts/CartContext.tsx[22m
+[2m10:29:45 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.tsx, /src/index.css[22m
+[2m10:30:04 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/layout/Header.tsx, /src/index.css[22m
+[2m10:30:18 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/layout/Header.tsx, /src/index.css[22m

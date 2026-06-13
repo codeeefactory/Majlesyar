@@ -29,7 +29,7 @@ export default function CartPage() {
           <p className="text-muted-foreground mb-6">
             محصولات مورد نظر خود را به سبد خرید اضافه کنید
           </p>
-          <Link to="/shop">
+          <Link to="/pack">
             <Button variant="gold" size="lg" className="gap-2">
               <Package className="w-5 h-5" />
               مشاهده محصولات
@@ -160,9 +160,9 @@ export default function CartPage() {
                 </Button>
               </Link>
 
-              <Link to="/shop">
+              <Link to="/pack">
                 <Button variant="outline" className="w-full">
-                  ادامه خرید از فروشگاه
+                  ادامه خرید محصولات
                 </Button>
               </Link>
             </div>

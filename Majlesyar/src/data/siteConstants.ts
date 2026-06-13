@@ -1,20 +1,137 @@
 import type { EventPage, Settings } from "@/types/domain";
+import { pdfPageContentBlocks } from "@/data/pdfPageContent";
 
-export const CONTACT_PHONE = "+989915505141";
+export const CONTACT_PHONE = "09122148354";
 export const CONTACT_PHONE_DISPLAY = CONTACT_PHONE;
-export const CONTACT_PHONE_WHATSAPP = CONTACT_PHONE.replace("+", "");
+export const CONTACT_PHONE_WHATSAPP = "989122148354";
 
 export type EventType = EventPage;
+
+const QUESTION_LABEL = "\u0633\u0648\u0627\u0644:";
+const ANSWER_LABEL = "\u067e\u0627\u0633\u062e:";
+const FAQ_HEADING_LABEL = "\u0633\u0648\u0627\u0644\u0627\u062a \u0645\u062a\u062f\u0627\u0648\u0644";
+const ADDRESS_LABEL = "\u0622\u062f\u0631\u0633";
+
+const pdfFaqsFromContentBlocks = (contentBlocks?: EventPage["contentBlocks"]): EventPage["faqs"] => {
+  if (!contentBlocks?.length) return [];
+
+  const text = contentBlocks
+    .map((block) => block.text)
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim();
+  const faqs: NonNullable<EventPage["faqs"]> = [];
+  const pattern = /\u0633\u0648\u0627\u0644:\s*(.*?)\s*\u067e\u0627\u0633\u062e:\s*(.*?)(?=\s*\u0633\u0648\u0627\u0644:|$)/g;
+
+  let match: RegExpExecArray | null;
+  while ((match = pattern.exec(text))) {
+    const question = match[1]?.replace(FAQ_HEADING_LABEL, "").trim();
+    const answer = match[2]
+      ?.replaceAll(ANSWER_LABEL, "")
+      .split(ADDRESS_LABEL)[0]
+      .replace(/\s+\d+\s*$/, "")
+      .trim();
+
+    if (question && answer) {
+      faqs.push({ question, answer });
+    }
+  }
+
+  return faqs;
+};
+
+const withPdfFaqs = <T extends EventType>(event: T): T => ({
+  ...event,
+  faqs: pdfFaqsFromContentBlocks(event.contentBlocks) || event.faqs,
+});
+
+const hiddenEventRoutePathSet = new Set([
+  "/pack/personal",
+  "/pack/memorial/luxury",
+  "/flower/congratulation-wreaths",
+  "/flower/congratulatory-wreaths",
+  "/flower/funeral-bouquet",
+  "/flower/box",
+  "/halva-khorma/luxury",
+  "/food",
+  "/food/charcuterie-board",
+  "/food/ashe-rashteh",
+  "/food/dessert",
+  "/food/juice",
+]);
+
+export function isHiddenEventRoutePath(routePath?: string) {
+  if (!routePath) return false;
+  return hiddenEventRoutePathSet.has(routePath.replace(/\/+$/, "") || "/");
+}
+
+const sharedServiceBenefits = [
+  {
+    title: "پرداخت پس از تایید کیفیت",
+    description: "۸۰ درصد هزینه سفارش پس از تحویل و تایید نهایی کیفیت پرداخت می‌شود.",
+  },
+  {
+    title: "تعهد زمان تحویل",
+    description: "زمان مراسم قابل جابه‌جایی نیست؛ برای تحویل به‌موقع برنامه‌ریزی دقیق انجام می‌شود.",
+  },
+  {
+    title: "کیفیت تازه و بهداشتی",
+    description: "اقلام پس از ثبت سفارش تهیه، شست‌وشو و با بسته‌بندی مرتب آماده می‌شوند.",
+  },
+  {
+    title: "قیمت رقابتی",
+    description: "به دلیل تامین مستقیم و ساختار یکپارچه، سفارش‌های تعداد بالا با قیمت منصفانه ارائه می‌شوند.",
+  },
+];
+
+const internalPageLinks = {
+  home: { label: "خانه", url: "/" },
+  pack: { label: "پک میوه و پذیرایی", url: "/pack" },
+  memorial: { label: "پک ترحیم", url: "/pack/memorial" },
+  halvaKhorma: { label: "حلوا خرما", url: "/halva-khorma" },
+  khormaGerdoo: { label: "خرما گردو", url: "/halva-khorma" },
+  flower: { label: "گل ترحیم و تسلیت", url: "/flower/memorial-wreaths" },
+  memorialWreaths: { label: "تاج گل ترحیم", url: "/flower/memorial-wreaths" },
+  bouquets: { label: "دسته گل", url: "/flower/bouquets" },
+  flowerBox: { label: "باکس گل", url: "/flower/box" },
+  fingerFood: { label: "فینگر فود", url: "/food/finger_food" },
+  shalehZard: { label: "شله زرد", url: "/food/shaleh-zard" },
+};
+
+const hiddenEventPage = (
+  id: string,
+  name: string,
+  routePath: string,
+  description: string,
+  icon = "📦",
+  color = "bg-muted",
+  contentBlocks?: EventPage["contentBlocks"],
+): EventType => ({
+  id,
+  name,
+  slug: id,
+  routePath,
+  description,
+  seoTitle: `${name} | مجلس یار`,
+  seoDescription: description,
+  seoKeywords: [name, "مجلس یار"],
+  icon,
+  color,
+  contentBlocks,
+  available: true,
+  hidden: true,
+});
 
 export const eventTypes: EventType[] = [
   {
     id: "conference",
     name: "فینگر فود",
     slug: "conference",
-    description: "سفارش فینگر فود مراسم، همایش و پذیرایی شرکتی با چیدمان حرفه‌ای و آماده‌سازی سفارشی.",
-    seoTitle: "سفارش فینگر فود و مزه برای تولد و جشن | تنوع مزه جذاب | مجلس یار",
+    routePath: "/food/finger_food",
+    description: "مشاهده لیست انواع فودها، دسرها و... برای شرکت ها و مراسمات",
+    seoTitle: "خرید انواع فینگرفود برای تولد، جشن و مجالس | مجلس یار",
     seoDescription:
-      "سفارش فینگر فود، سینی مزه و ساندویچ سرد برای تولد و جشن‌ها. منوی متنوع با پایین‌ترین قیمت و ارسال فوری تهران، البرز. تضمین کیفیت و طعم عالی با امکان پرداخت بخشی از وجه زمان تحویل.",
+      "سفارش انواع فینگر فود لوکس شامل مینی ساندویچ، الویه و مرغ ویژه تولد، جشن و همایش. کیفیت عالی، قیمت مناسب، ارسال تهران و کرج و پرداخت در محل.",
     seoKeywords: [
       "فینگر فود",
       "فینگرفود",
@@ -24,6 +141,12 @@ export const eventTypes: EventType[] = [
       "سفارش فینگر فود",
       "فینگرفود تهران",
     ],
+    benefits: sharedServiceBenefits,
+    contentBlocks: pdfPageContentBlocks.fingerFood,
+    internalLinks: [internalPageLinks.pack, internalPageLinks.home],
+    introTitle: "معرفی بخش فینگر فود و مینی ساندویچ",
+    introDescription:
+      "مجلس‌یار فینگر فود، مینی ساندویچ و سینی مزه را برای همایش، تولد، افتتاحیه و پذیرایی شرکتی با امکان انتخاب آیتم‌ها و چیدمان اختصاصی آماده می‌کند.",
     faqs: [
       {
         question: "فینگر فود برای چه مراسمی مناسب است؟",
@@ -40,12 +163,13 @@ export const eventTypes: EventType[] = [
   },
   {
     id: "memorial",
-    name: "ترحیم",
+    name: "پک ترحیم",
     slug: "memorial",
+    routePath: "/pack/memorial",
     description: "سفارش پک ترحیم، حلوا و اقلام پذیرایی مراسم با بسته‌بندی محترمانه و تحویل سریع در تهران و البرز.",
-    seoTitle: "پک میوه، سینی میوه و پک ترحیم | قیمت رقابتی | مجلس یار",
+    seoTitle: "خرید پک ترحیم و پک میوه برای ختم + قیمت | مجلس یار",
     seoDescription:
-      "فروش انواع پک میوه ترحیم و سینی میوه مجلسی با میوه‌های دست‌چین و شسته شده. ارزان‌ترین قیمت بازار و ارسال فوری. پرداخت در محل جهت اطمینان شما از کیفیت میوه‌ها.",
+      "فروش انواع پک میوه ترحیم و سینی میوه مجلسی با میوه دست‌چین و شسته شده برای عزا. ارزان‌ترین قیمت بازار، ارسال فوری و پرداخت در محل جهت اطمینان از کیفیت.",
     seoKeywords: [
       "حلوا",
       "سینی حلوا",
@@ -57,6 +181,18 @@ export const eventTypes: EventType[] = [
       "سفارش پک ترحیم",
       "خرما و حلوا",
     ],
+    benefits: sharedServiceBenefits,
+    contentBlocks: pdfPageContentBlocks.memorial,
+    internalLinks: [
+      internalPageLinks.memorial,
+      internalPageLinks.halvaKhorma,
+      internalPageLinks.khormaGerdoo,
+      internalPageLinks.flower,
+      internalPageLinks.home,
+    ],
+    introTitle: "معرفی بخش پک ترحیم در مجلس",
+    introDescription:
+      "برای مراسم ختم، سالگرد و یادبود، پک ترحیم مجلس‌یار با میوه ممتاز، آبمیوه، دستمال و اقلام دلخواه آماده می‌شود تا پذیرایی آبرومند و بی‌دغدغه باشد.",
     faqs: [
       {
         question: "آیا امکان سفارش حلوا برای مراسم ترحیم وجود دارد؟",
@@ -79,7 +215,8 @@ export const eventTypes: EventType[] = [
     id: "defense",
     name: "حلوا و خرما",
     slug: "halva-khorma",
-    description: "سفارش حلوا و خرما برای مراسم ترحیم، ختم، یادبود و پذیرایی رسمی با بسته‌بندی مرتب و تحویل سریع.",
+    routePath: "/halva-khorma",
+    description: "سفارش حلوا خرما و خرما گردو برای مراسم ترحیم با ارسال فوری تهران و البرز",
     seoTitle: "خرما گردو و حلوا خرما مراسم ترحیم | انواع حلوا مجلسی | مجلس یار",
     seoDescription:
       "خرید آنلاین خرما گردو و حلوا خرما تازه برای مراسم ترحیم. انواع حلوا خرما شیک با تزیین حرفه‌ای و ارسال فوری تهران، البرز. تضمین کیفیت واقعی: بخشی از هزینه را پس از تحویل پرداخت کنید.",
@@ -93,6 +230,17 @@ export const eventTypes: EventType[] = [
       "خرما بسته بندی",
       "پک حلوا و خرما",
     ],
+    benefits: sharedServiceBenefits,
+    contentBlocks: pdfPageContentBlocks.halvaKhorma,
+    internalLinks: [
+      internalPageLinks.shalehZard,
+      internalPageLinks.bouquets,
+      internalPageLinks.memorial,
+      internalPageLinks.home,
+    ],
+    introTitle: "معرفی بخش حلوا خرما",
+    introDescription:
+      "حلوا و خرمای مجلس‌یار برای مراسم ترحیم، ختم، یادبود و پذیرایی رسمی با مواد تازه، تزیین حرفه‌ای و امکان سفارش عددی یا کیلویی ارائه می‌شود.",
     faqs: [
       {
         question: "حلوا و خرما برای چه مراسمی مناسب است؟",
@@ -111,10 +259,11 @@ export const eventTypes: EventType[] = [
     id: "party",
     name: "گل",
     slug: "party",
-    description: "سفارش گل و گل‌آرایی برای مراسم، ترحیم، هدیه و مناسبت‌های ویژه با طراحی آماده و اختصاصی.",
-    seoTitle: "تاج گل ترحیم و ختم | گل تسلیت با ارسال فوری و تضمین کیفیت | مجلس یار",
+    routePath: "/flower",
+    description: "مشاهده بخش گل و گل مجلس برای مراسمات تبریک، شادی و عزا",
+    seoTitle: "خرید گل آنلاین | مرجع خرید انواع گل در تهران | مجلس یار",
     seoDescription:
-      "سفارش تاج گل ترحیم و گل تسلیت با گل‌های تازه و قیمت رقابتی. ارسال فوری گل ختم به مساجد و تالارها. تنها در مجلس یار: تسویه بخشی از مبلغ، پس از رویت و تحویل گل!",
+      "خرید گل از مرجع تخصصی انواع گل‌ها شامل تاج گل ترحیم و تبریک، انواع گل برای خواستگاری و تولد و سفارش آنلاین خدمات گل‌آرایی مراسم با ارسال در تهران و کرج.",
     seoKeywords: [
       "گل مراسم",
       "گل ترحیم",
@@ -126,6 +275,36 @@ export const eventTypes: EventType[] = [
       "سفارش گل",
       "گل مناسب مراسم",
     ],
+    benefits: [
+      {
+        title: "گل تازه از گلخانه",
+        description: "گل پس از ثبت سفارش تامین می‌شود تا شادابی و طراوت چندروزه حفظ شود.",
+      },
+      {
+        title: "تطابق با تصویر",
+        description: "تصاویر سایت نمونه‌کار واقعی هستند و عکس محصول پیش از ارسال قابل هماهنگی است.",
+      },
+      {
+        title: "پرداخت پس از رویت کالا",
+        description: "۸۰ درصد مبلغ سفارش پس از تحویل و تایید کیفیت پرداخت می‌شود.",
+      },
+      {
+        title: "خدمات تشریفات یکپارچه",
+        description: "امکان ارسال گل همراه با حلوا، فینگر فود یا پک پذیرایی وجود دارد.",
+      },
+    ],
+    contentBlocks: pdfPageContentBlocks.flower,
+    internalLinks: [
+      internalPageLinks.memorialWreaths,
+      internalPageLinks.bouquets,
+      internalPageLinks.flowerBox,
+      internalPageLinks.halvaKhorma,
+      internalPageLinks.fingerFood,
+      internalPageLinks.home,
+    ],
+    introTitle: "معرفی بخش گل در مجلس",
+    introDescription:
+      "بخش گل مجلس‌یار مرجع سفارش گل‌آرایی، باکس گل، دسته گل و تاج گل تبریک یا تسلیت در تهران و کرج است؛ طراحی‌ها با گل تازه و تامین مستقیم انجام می‌شوند.",
     faqs: [
       {
         question: "آیا امکان سفارش دسته گل با طرح مشابه تصاویر وجود دارد؟",
@@ -144,7 +323,263 @@ export const eventTypes: EventType[] = [
     color: "bg-primary/20",
     available: true,
   },
-];
+  {
+    id: "pack",
+    name: "پک میوه و پذیرایی",
+    slug: "pack",
+    routePath: "/pack",
+    description: "سفارش پک میوه و پذیرایی برای مراسمات شما با ارسال سریع تهران و البرز",
+    seoTitle: "خرید آنلاین پک پذیرایی و پک میوه + قیمت | مجلس یار",
+    seoDescription:
+      "خرید انواع پک پذیرایی و پک میوه همایش، پایان‌نامه و مجالس شما. باکس میوه همراه با ساندویچ برای تولد، جشن و شرکت با ارسال تهران و کرج. پرداخت در محل جهت اطمینان کیفیت.",
+    seoKeywords: ["پک میوه", "پک پذیرایی", "پک دفاعیه", "پک همایش", "پذیرایی شرکتی"],
+    benefits: sharedServiceBenefits,
+    contentBlocks: pdfPageContentBlocks.pack,
+    internalLinks: [
+      internalPageLinks.memorial,
+      internalPageLinks.halvaKhorma,
+      internalPageLinks.khormaGerdoo,
+      internalPageLinks.flower,
+      internalPageLinks.home,
+    ],
+    introTitle: "معرفی بخش پک میوه و پذیرایی مجلس",
+    introDescription:
+      "منوی پک پذیرایی مجلس‌یار کاملا منعطف است؛ می‌توانید میوه دست‌چین، آجیل، شیرینی، مینی ساندویچ و اقلام دلخواه را برای روز رویداد انتخاب کنید.",
+    faqs: [
+      {
+        question: "چه زمانی باید برای سفارش پک دفاعیه یا همایش اقدام کنیم؟",
+        answer: "برای هماهنگی و تامین اقلام تازه، بهتر است حداقل یک روز پیش از برگزاری جلسه دفاع یا همایش سفارش نهایی شود.",
+      },
+      {
+        question: "چه اقلامی برای داخل پک پذیرایی مناسب هستند؟",
+        answer: "میوه، آجیل، شیرینی، فینگر فود، مینی ساندویچ و اقلام بهداشتی قابل انتخاب هستند و در بخش ساخت پک اختصاصی قابل چیدمان‌اند.",
+      },
+      {
+        question: "آیا امکان لغو سفارش سازمانی وجود دارد؟",
+        answer: "برای سفارش‌های زیر ۲۰۰ عدد، در صورت باقی‌ماندن بیش از ۲۴ ساعت تا شروع رویداد امکان لغو و عودت وجه وجود دارد.",
+      },
+    ],
+    icon: "🍎",
+    color: "bg-secondary",
+    available: true,
+  },
+  {
+    id: "memorial-wreaths",
+    name: "تاج گل ترحیم",
+    slug: "memorial-wreaths",
+    routePath: "/flower/memorial-wreaths",
+    description: "سفارش تاج گل ترحیم و تسلیت با گل تازه، طراحی رسمی و ارسال راس ساعت به مسجد، تالار یا بهشت زهرا.",
+    seoTitle: "سفارش گل ترحیم، تسلیت و تاج گل ترحیم با ارسال فوری | مجلس یار",
+    seoDescription:
+      "خرید آنلاین گل ختم، ترحیم و تسلیت برای ابراز همدردی. انواع تاج گل ترحیم با گلایل تازه، ارسال فوری به تهران و کرج و پرداخت در محل.",
+    seoKeywords: ["تاج گل ترحیم", "گل تسلیت", "تاج گل ختم", "ارسال تاج گل", "گل یادبود"],
+    benefits: sharedServiceBenefits,
+    contentBlocks: pdfPageContentBlocks.memorialWreaths,
+    internalLinks: [internalPageLinks.home, internalPageLinks.halvaKhorma],
+    introTitle: "توضیحات بخش تاج گل ترحیم و تسلیت",
+    introDescription:
+      "برای ابراز همدردی، تاج گل و سبد گل تسلیت مجلس‌یار با گل روز و پایه چوبی یا فلزی آماده می‌شود و عکس محصول پیش از ارسال برای هماهنگی ارائه می‌گردد.",
+    faqs: [
+      { question: "تاج گل بزرگ ترحیم چطور حمل می‌شود؟", answer: "تاج و پایه با خودروی مناسب حمل گل ارسال می‌شوند تا در برابر باد، گرما و تکان مسیر محافظت شوند." },
+      { question: "آیا امکان چاپ متن تسلیت وجود دارد؟", answer: "بله، متن درخواستی به‌صورت رایگان روی استند یا کارت مخصوص چاپ و روی تاج نصب می‌شود." },
+      { question: "حداقل زمان ثبت سفارش تاج گل فوری چقدر است؟", answer: "برای تضمین کیفیت و زمان مراسم، حداقل ۱۲ ساعت قبل سفارش خود را ثبت کنید." },
+    ],
+    icon: "🖤",
+    color: "bg-muted",
+    available: true,
+  },
+  {
+    id: "bouquets",
+    name: "دسته گل",
+    slug: "bouquets",
+    routePath: "/flower/bouquets",
+    description: "سفارش دسته گل طبیعی، رز، لیلیوم و ارکیده با طراحی ژورنالی و ارسال در تهران و کرج.",
+    seoTitle: "خرید دسته گل آنلاین با انواع مدل و گل + قیمت | مجلس یار",
+    seoDescription: "سفارش دسته گل طبیعی برای خواستگاری، ولنتاین و تولد. گل رز، گل لیلیوم و گل عروس در طرح و گل مورد نظر شما با ارسال تهران و کرج و پرداخت در محل.",
+    seoKeywords: ["دسته گل", "دسته گل رز", "دسته گل طبیعی", "خرید دسته گل", "ارسال دسته گل"],
+    benefits: sharedServiceBenefits,
+    contentBlocks: pdfPageContentBlocks.bouquets,
+    internalLinks: [internalPageLinks.flowerBox, internalPageLinks.fingerFood, internalPageLinks.home],
+    introTitle: "توضیحات بخش دسته گل در مجلس",
+    introDescription: "دسته گل‌های مجلس‌یار با گل ممتاز روزانه تهیه می‌شوند و برای هدیه، مراسم رسمی و مناسبت‌های خاص قابل سفارش هستند.",
+    faqs: [
+      { question: "دسته گل طبیعی با چه وسیله‌ای ارسال می‌شود؟", answer: "دسته گل در بسته‌بندی مناسب و با پیک هماهنگ‌شده به آدرس شما در تهران و کرج ارسال می‌شود." },
+      { question: "آیا همراه دسته گل کارت پستال هم ارسال می‌شود؟", answer: "بله، کارت پستال با متن دلخواه شما قابل اضافه شدن است." },
+      { question: "چطور ماندگاری دسته گل را بیشتر کنیم؟", answer: "گل‌ها را در آب تمیز، دور از گرمای مستقیم نگه دارید و آب ظرف را روزانه تعویض کنید." },
+    ],
+    icon: "🌸",
+    color: "bg-primary/20",
+    available: true,
+  },
+  {
+    id: "congratulatory-wreaths",
+    name: "تاج گل تبریک و افتتاحیه",
+    slug: "congratulatory-wreaths",
+    routePath: "/flower/congratulation-wreaths",
+    description: "سفارش تاج گل تبریک برای افتتاحیه، نمایشگاه و مراسم رسمی با امکان درج متن و لوگوی شرکت.",
+    seoTitle: "خرید گل تبریک، نمایشگاه و افتتاحیه + قیمت | مجلس یار",
+    seoDescription: "خرید آنلاین انواع تاج گل تبریک، نمایشگاه و افتتاحیه با بالاترین کیفیت و نازل‌ترین قیمت. ارسال فوری به تهران و کرج و پرداخت در محل.",
+    seoKeywords: ["تاج گل تبریک", "تاج گل افتتاحیه", "گل نمایشگاه", "گل تبریک شرکت"],
+    benefits: sharedServiceBenefits,
+    contentBlocks: pdfPageContentBlocks.congratulatoryWreaths,
+    internalLinks: [internalPageLinks.fingerFood, internalPageLinks.home],
+    introTitle: "توضیحات بخش تاج گل تبریک و افتتاحیه",
+    introDescription: "تاج گل تبریک مجلس‌یار برای افتتاحیه فروشگاه، غرفه نمایشگاهی، رویداد شرکتی و مراسم رسمی طراحی می‌شود.",
+    faqs: [
+      { question: "هزینه ارسال تاج گل تبریک چقدر است؟", answer: "هزینه ارسال بر اساس مقصد، فاصله و شرایط روز محاسبه و پیش از نهایی‌سازی اعلام می‌شود." },
+      { question: "چند ساعت قبل باید سفارش داد؟", answer: "برای آماده‌سازی دقیق، بهتر است حداقل ۱۲ ساعت قبل از شروع مراسم سفارش ثبت شود." },
+      { question: "آیا امکان درج لوگوی شرکت وجود دارد؟", answer: "بله، متن و لوگوی شرکت می‌تواند روی کارت تاج گل درج شود." },
+    ],
+    icon: "🎉",
+    color: "bg-accent",
+    available: true,
+    hidden: true,
+  },
+  {
+    id: "flower-box",
+    name: "باکس گل",
+    slug: "flower-box",
+    routePath: "/flower/box",
+    description: "خرید باکس گل لوکس با گل تازه، جعبه قابل انتخاب و ارسال در تهران و کرج.",
+    seoTitle: "خرید باکس گل لوکس | ارسال فوری تهران و کرج | مجلس یار",
+    seoDescription: "باکس گل مجلس‌یار با گل روز، رنگ‌بندی قابل انتخاب و طراحی نزدیک به تصویر محصول آماده می‌شود.",
+    seoKeywords: ["باکس گل", "باکس گل لوکس", "خرید باکس گل", "ارسال باکس گل"],
+    benefits: sharedServiceBenefits,
+    contentBlocks: pdfPageContentBlocks.flowerBox,
+    internalLinks: [internalPageLinks.bouquets, internalPageLinks.fingerFood, internalPageLinks.home],
+    introTitle: "توضیحات بخش باکس گل مجلس",
+    introDescription: "باکس گل برای هدیه، مراسم رسمی و مناسبت‌های خاص با امکان انتخاب رنگ جعبه و نوع گل آماده می‌شود.",
+    faqs: [
+      { question: "چرا باکس گل مجلس ماندگاری بالاتری دارد؟", answer: "گل‌ها پس از ثبت سفارش تامین می‌شوند و با چیدمان تازه در باکس مناسب قرار می‌گیرند." },
+      { question: "شرایط ارسال باکس گل چیست؟", answer: "ارسال در تهران و کرج با هماهنگی زمان تحویل و هزینه بر اساس مسیر انجام می‌شود." },
+      { question: "آیا می‌توان رنگ جعبه یا نوع گل را تغییر داد؟", answer: "بله، رنگ جعبه و ترکیب گل‌ها تا حد امکان طبق درخواست شما هماهنگ می‌شود." },
+    ],
+    icon: "🌷",
+    color: "bg-primary/20",
+    available: true,
+    hidden: true,
+  },
+  {
+    id: "food",
+    name: "منوی غذا",
+    slug: "food",
+    routePath: "/food",
+    description: "منوی جامع غذا و پذیرایی مجلس‌یار شامل فینگر فود، مینی ساندویچ و شله زرد برای مراسم.",
+    seoTitle: "کاتالوگ جامع خدمات غذایی مجالس | مجلس یار",
+    seoDescription: "مشاهده و بررسی منوی کامل خدمات غذایی و تشریفات مجلس. ارائه پکیج پذیرایی متنوع سرد و گرم برای انواع مجالس، جشن و رویدادها در تهران و کرج.",
+    seoKeywords: ["غذای مراسم", "منوی پذیرایی", "فینگر فود", "شله زرد", "مینی ساندویچ"],
+    benefits: sharedServiceBenefits,
+    contentBlocks: pdfPageContentBlocks.food,
+    internalLinks: [internalPageLinks.fingerFood, internalPageLinks.shalehZard, internalPageLinks.home],
+    introTitle: "معرفی بخش فود در مجلس",
+    introDescription: "بخش فود مجلس‌یار برای پذیرایی رسمی، دورهمی، نذری و مراسم سازمانی طراحی شده و سفارش‌ها با زمان‌بندی مشخص آماده می‌شوند.",
+    faqs: [
+      { question: "آیا منوی غذا قابل شخصی‌سازی است؟", answer: "بله، بر اساس تعداد مهمان، نوع مراسم و بودجه، آیتم‌ها قابل انتخاب و تغییر هستند." },
+      { question: "ارسال غذا چگونه انجام می‌شود؟", answer: "ارسال با پیک یا خودروی مناسب و با هماهنگی زمان تحویل انجام می‌شود." },
+    ],
+    icon: "🍽️",
+    color: "bg-secondary",
+    available: true,
+    hidden: true,
+  },
+  {
+    id: "shaleh-zard",
+    name: "شله زرد",
+    slug: "shaleh-zard",
+    routePath: "/food/shaleh-zard",
+    description: "سفارش شله زرد مجلسی با زعفران قائنات، برنج ایرانی، گلاب، هل و تزیین اختصاصی.",
+    seoTitle: "خرید شله زرد آنلاین؛ sholezard تک نفره و کیلویی + قیمت | مجلس یار",
+    seoDescription: "سفارش انواع شله زرد به صورت تک نفره، کیلویی و مجلسی برای مراسم مختلف و نذری همراه با تزئین دلخواه شما با لیست مواد تشکیل دهنده مرغوب و ارسال تهران و کرج.",
+    seoKeywords: ["شله زرد", "شله زرد مجلسی", "سفارش شله زرد", "شله زرد نذری", "شله زرد کیلویی"],
+    benefits: sharedServiceBenefits,
+    contentBlocks: pdfPageContentBlocks.shalehZard,
+    internalLinks: [internalPageLinks.halvaKhorma, internalPageLinks.khormaGerdoo, internalPageLinks.home],
+    introTitle: "توضیحات بخش شله",
+    introDescription: "شله زرد مجلس‌یار با دستورپخت اصیل، زعفران اعلا، برنج ایرانی، گلاب و هل آماده می‌شود و در وزن‌ها و ظرف‌های متنوع قابل سفارش است.",
+    faqs: [
+      { question: "حداقل مقدار سفارش شله مجلسی چقدر است؟", answer: "حداقل میزان قابل سفارش برای این محصول ۴ کیلوگرم است." },
+      { question: "شله مجلسی با چه موادی طبخ می‌شود؟", answer: "زعفران اصل قائنات، برنج ایرانی اعلا، گلاب، عرق هل، کره و خلال بادام درختی استفاده می‌شود." },
+      { question: "آیا سفارش کیلویی یا با تزیین خاص ممکن است؟", answer: "بله، شله در وزن‌های مختلف و با تزیین دارچین، خلال و پودر نارگیل طبق طرح درخواستی آماده می‌شود." },
+      { question: "نحوه ارسال شله چگونه است؟", answer: "ارسال در تهران و کرج با تاکسی اینترنتی انجام می‌شود و امکان تحویل حضوری با هماهنگی قبلی نیز وجود دارد." },
+    ],
+    icon: "🍮",
+    color: "bg-accent",
+    available: true,
+  },
+  hiddenEventPage(
+    "pack-personal",
+    "پک پذیرایی شخصی",
+    "/pack/personal",
+    "پک پذیرایی شخصی برای مراسم، جلسات و مهمانی‌ها با امکان انتخاب اقلام، تعداد و نوع بسته‌بندی.",
+    "📦",
+    "bg-secondary",
+  ),
+  hiddenEventPage(
+    "pack-memorial-luxury",
+    "پک ترحیم لوکس",
+    "/pack/memorial/luxury",
+    "پک ترحیم لوکس با میوه ممتاز، بسته‌بندی رسمی و اقلام پذیرایی مناسب مراسم ختم و یادبود.",
+    "🕯️",
+    "bg-muted",
+  ),
+  hiddenEventPage(
+    "flower-congratulation-wreaths",
+    "تاج گل تبریک",
+    "/flower/congratulatory-wreaths",
+    "تاج گل تبریک برای افتتاحیه، نمایشگاه، موفقیت شغلی و مناسبت‌های رسمی با طراحی گل تازه.",
+    "🎉",
+    "bg-accent",
+    pdfPageContentBlocks.congratulatoryWreaths,
+  ),
+  hiddenEventPage(
+    "flower-funeral-bouquet",
+    "دسته گل ترحیم",
+    "/flower/funeral-bouquet",
+    "دسته گل ترحیم و تسلیت با چیدمان محترمانه، گل تازه و امکان ارسال هماهنگ‌شده به محل مراسم.",
+    "🖤",
+    "bg-muted",
+  ),
+  hiddenEventPage(
+    "halva-khorma-luxury",
+    "حلوا خرما لوکس",
+    "/halva-khorma/luxury",
+    "حلوا خرما لوکس برای پذیرایی مراسم ترحیم و مجالس رسمی با تزیین حرفه‌ای و مواد تازه.",
+    "🍯",
+    "bg-accent",
+  ),
+  hiddenEventPage(
+    "food-charcuterie-board",
+    "چاکوتری برد",
+    "/food/charcuterie-board",
+    "چاکوتری برد و سینی مزه برای پذیرایی رسمی، دورهمی، افتتاحیه و رویدادهای خاص.",
+    "🧀",
+    "bg-secondary",
+  ),
+  hiddenEventPage(
+    "food-ashe-rashteh",
+    "آش رشته",
+    "/food/ashe-rashteh",
+    "آش رشته مجلسی برای نذری، افطاری، مراسم و پذیرایی تعداد بالا با پخت تازه.",
+    "🍲",
+    "bg-secondary",
+  ),
+  hiddenEventPage(
+    "food-dessert",
+    "دسر",
+    "/food/dessert",
+    "دسرهای تک‌نفره و مجلسی برای جشن، مراسم، پذیرایی شرکتی و چیدمان کنار فینگر فود.",
+    "🍰",
+    "bg-accent",
+  ),
+  hiddenEventPage(
+    "food-juice",
+    "آبمیوه",
+    "/food/juice",
+    "آبمیوه و نوشیدنی پذیرایی برای پک‌های مراسم، جلسات، همایش و رویدادهای سازمانی.",
+    "🧃",
+    "bg-secondary",
+  ),
+].map(withPdfFaqs);
 
 export const defaultSettings: Settings = {
   minOrderQty: 40,
@@ -162,6 +597,9 @@ export const defaultSettings: Settings = {
   telegramUrl: "https://t.me/majlesyar",
   whatsappUrl: `https://wa.me/${CONTACT_PHONE_WHATSAPP}`,
   baleUrl: "https://ble.ir/majlesyar",
+  eitaaUrl: "https://eitaa.com/majlesyar",
+  soroushUrl: "https://splus.ir/majlesyar",
+  rubikaUrl: "https://rubika.ir/majlesyar",
   mapsUrl: "https://maps.google.com/?q=Tehran,Valiasr",
   mapsEmbedUrl:
     "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3239.9627430068!2d51.4066!3d35.7219!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMzXCsDQzJzE4LjgiTiA1McKwMjQnMjMuOCJF!5e0!3m2!1sen!2s!4v1699999999999!5m2!1sen!2s",
@@ -193,12 +631,12 @@ export const defaultSettings: Settings = {
     adminSiteSymbol: "inventory_2",
   },
   themePalette: {
-    primary: "#0C9FC7",
-    accent: "#D6A45B",
-    background: "#FDFBF7",
-    surface: "#FFFFFF",
-    foreground: "#24303A",
-    mutedForeground: "#5E6B78",
+    primary: "#00C2F2",
+    accent: "#00C2F2",
+    background: "#FAF8F2",
+    surface: "#F2ECE2",
+    foreground: "#20262F",
+    mutedForeground: "#566170",
     success: "#218A52",
     warning: "#C98A10",
   },
@@ -218,12 +656,6 @@ export const defaultSettings: Settings = {
         "سفارش خرما",
         "پذیرایی ترحیم",
       ],
-    },
-    shop: {
-      title: "فروشگاه حلوا، ترحیم و گل مراسم",
-      description:
-        "خرید و سفارش انواع حلوا، پک ترحیم، گل مراسم و دیگر محصولات پذیرایی با بهترین کیفیت و تحویل سریع در تهران و البرز.",
-      keywords: ["حلوا", "پک ترحیم", "گل مراسم", "گل ترحیم", "سفارش حلوا", "پذیرایی ترحیم"],
     },
     builder: {
       title: "ساخت پک اختصاصی",

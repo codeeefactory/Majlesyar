@@ -35,13 +35,6 @@ def get_page_preview_targets() -> list[PagePreviewTargetDefinition]:
             page_description="پیش‌نمایش بخش محصولات ویژه در صفحه اصلی.",
             route_path="/",
         ),
-        PagePreviewTargetDefinition(
-            page_type=PageProductPlacement.PageType.SHOP,
-            page_slug="listing",
-            page_title="فروشگاه",
-            page_description="ترتیب اصلی نمایش محصولات در صفحه فروشگاه.",
-            route_path="/shop",
-        ),
     ]
 
     for event_page in settings.event_pages or []:
@@ -54,7 +47,7 @@ def get_page_preview_targets() -> list[PagePreviewTargetDefinition]:
                 page_slug=slug,
                 page_title=str(event_page.get("name") or slug),
                 page_description=str(event_page.get("description") or ""),
-                route_path=f"/events/{slug}",
+                route_path=str(event_page.get("route_path") or f"/events/{slug}"),
             )
         )
 
@@ -100,15 +93,6 @@ def get_page_products(page_type: str, page_slug: str | None = None) -> tuple[Pag
         return target, _get_default_products_for_target(target), False
 
     ordered_products = [placement.product for placement in placements if placement.product]
-
-    if target.page_type == PageProductPlacement.PageType.SHOP:
-        placed_ids = {product.id for product in ordered_products}
-        remaining_products = [
-            product
-            for product in _get_default_products_for_target(target)
-            if product.id not in placed_ids
-        ]
-        ordered_products.extend(remaining_products)
 
     return target, ordered_products, True
 
@@ -183,4 +167,3 @@ def serialize_page_preview_target(target: PagePreviewTargetDefinition) -> dict:
     payload = asdict(target)
     payload["page_key"] = target.page_key
     return payload
-

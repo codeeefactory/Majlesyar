@@ -5,17 +5,15 @@ import re
 from pathlib import Path
 
 from django.core.validators import FileExtensionValidator
+from PIL import Image
 
 ALLOWED_IMAGE_EXTENSIONS = ("jpg", "jpeg", "png", "webp", "avif")
 image_extension_validator = FileExtensionValidator(allowed_extensions=ALLOWED_IMAGE_EXTENSIONS)
 
 
 def register_image_plugins() -> bool:
-    try:
-        import pillow_avif  # noqa: F401
-    except ImportError:
-        return False
-    return True
+    Image.init()
+    return "AVIF" in Image.OPEN or "AVIF" in Image.SAVE
 
 
 def image_supports_extension(file_name: str | None, extension: str) -> bool:

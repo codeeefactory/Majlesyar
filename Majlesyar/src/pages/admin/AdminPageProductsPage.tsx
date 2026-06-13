@@ -98,11 +98,11 @@ export default function AdminPageProductsPage() {
     return allProducts.filter((product) => !selectedIds.has(product.id));
   }, [allProducts, workingProducts]);
 
-  const supportsExplicitSelection = selectedTarget?.pageType !== "shop";
   const isDirty =
     placementState !== null &&
     JSON.stringify(workingProducts.map((product) => product.id)) !==
       JSON.stringify(placementState.previewProducts.map((product) => product.id));
+  const supportsExplicitSelection = true;
 
   const moveProduct = (index: number, direction: -1 | 1) => {
     const targetIndex = index + direction;
@@ -117,12 +117,10 @@ export default function AdminPageProductsPage() {
   };
 
   const addProduct = (product: Product) => {
-    if (!supportsExplicitSelection) return;
     setWorkingProducts((current) => [...current, product]);
   };
 
   const removeProduct = (productId: string) => {
-    if (!supportsExplicitSelection) return;
     setWorkingProducts((current) => current.filter((product) => product.id !== productId));
   };
 
@@ -335,44 +333,33 @@ export default function AdminPageProductsPage() {
                 </CardContent>
               </Card>
 
-              {supportsExplicitSelection ? (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>افزودن محصول به این صفحه</CardTitle>
-                    <CardDescription>
-                      محصولات دلخواه را برای صفحه اصلی یا صفحات رویداد انتخاب و به انتهای ترتیب اضافه کنید.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    {availableProducts.length === 0 ? (
-                      <div className="rounded-2xl border border-dashed border-border p-6 text-center text-muted-foreground">
-                        همه‌ی محصولات موجود همین حالا در چیدمان این صفحه قرار دارند.
-                      </div>
-                    ) : (
-                      availableProducts.map((product) => (
-                        <div key={`available-${product.id}`} className="flex items-center justify-between gap-3 rounded-2xl border border-border px-4 py-3">
-                          <div className="min-w-0">
-                            <div className="font-medium text-foreground">{product.name}</div>
-                            <div className="truncate text-xs text-muted-foreground">{product.urlSlug}</div>
-                          </div>
-                          <Button variant="secondary" size="sm" onClick={() => addProduct(product)}>
-                            افزودن
-                          </Button>
+              <Card>
+                <CardHeader>
+                  <CardTitle>افزودن محصول به این صفحه</CardTitle>
+                  <CardDescription>
+                    محصولات دلخواه را برای صفحه اصلی یا صفحات رویداد انتخاب و به انتهای ترتیب اضافه کنید.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {availableProducts.length === 0 ? (
+                    <div className="rounded-2xl border border-dashed border-border p-6 text-center text-muted-foreground">
+                      همه‌ی محصولات موجود همین حالا در چیدمان این صفحه قرار دارند.
+                    </div>
+                  ) : (
+                    availableProducts.map((product) => (
+                      <div key={`available-${product.id}`} className="flex items-center justify-between gap-3 rounded-2xl border border-border px-4 py-3">
+                        <div className="min-w-0">
+                          <div className="font-medium text-foreground">{product.name}</div>
+                          <div className="truncate text-xs text-muted-foreground">{product.urlSlug}</div>
                         </div>
-                      ))
-                    )}
-                  </CardContent>
-                </Card>
-              ) : (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>منطق صفحه فروشگاه</CardTitle>
-                    <CardDescription>
-                      در صفحه فروشگاه همه‌ی محصولات نمایش داده می‌شوند. اینجا فقط اولویت ردیف‌های ابتدایی را جابه‌جا می‌کنیم و backend بقیه‌ی محصولات را بعد از آن‌ها می‌چیند.
-                    </CardDescription>
-                  </CardHeader>
-                </Card>
-              )}
+                        <Button variant="secondary" size="sm" onClick={() => addProduct(product)}>
+                          افزودن
+                        </Button>
+                      </div>
+                    ))
+                  )}
+                </CardContent>
+              </Card>
             </div>
           </div>
         ) : null}

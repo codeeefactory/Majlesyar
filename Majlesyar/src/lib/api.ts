@@ -1,6 +1,7 @@
 import type {
   BuilderItem,
   Category,
+  CustomerReview,
   Order,
   OrderItem,
   PagePreviewTarget,
@@ -8,6 +9,8 @@ import type {
   PageProductPlacementState,
   PageProductPreview,
   Product,
+  ProductContent,
+  ProductContentItem,
   Settings,
 } from "@/types/domain";
 import { defaultSettings } from "@/data/siteConstants";
@@ -40,12 +43,47 @@ interface ApiProduct {
   price: number | null;
   category_ids: string[];
   event_types: string[];
-  contents: string[];
+  contents: ProductContent[];
   image: string | null;
+  image_responsive?: {
+    width?: number;
+    height?: number;
+    backup_url?: string | null;
+    formats?: {
+      avif?: Array<{ url: string; width: number; height: number; bytes?: number; mime_type?: string }>;
+      webp?: Array<{ url: string; width: number; height: number; bytes?: number; mime_type?: string }>;
+      jpeg?: Array<{ url: string; width: number; height: number; bytes?: number; mime_type?: string }>;
+    };
+    fallback?: {
+      src?: string | null;
+      width?: number | null;
+      height?: number | null;
+      format?: string | null;
+      sizes?: {
+        card?: string;
+        detail?: string;
+      };
+    };
+  };
   image_alt?: string;
   image_name?: string;
+  customer_reviews?: ApiCustomerReview[];
   featured: boolean;
   available: boolean;
+}
+
+interface ApiCustomerReview {
+  id: string;
+  product_id?: string | null;
+  product_name?: string | null;
+  customer_name: string;
+  customer_city?: string;
+  title?: string;
+  comment: string;
+  rating: number;
+  is_featured: boolean;
+  display_order: number;
+  created_at: string;
 }
 
 interface ApiBuilderItem {
@@ -70,6 +108,9 @@ interface ApiSettings {
   telegram_url: string;
   whatsapp_url: string;
   bale_url: string;
+  eitaa_url?: string;
+  soroush_url?: string;
+  rubika_url?: string;
   maps_url: string;
   maps_embed_url: string;
   site_logo?: string | null;
@@ -111,14 +152,21 @@ interface ApiSettings {
     id?: string;
     name?: string;
     slug?: string;
+    route_path?: string;
     description?: string;
     seo_title?: string;
     seo_description?: string;
     seo_keywords?: string[];
+    benefits?: { title?: string; description?: string }[];
+    internal_links?: { label?: string; url?: string }[];
+    intro_title?: string;
+    intro_description?: string;
+    content_blocks?: { tag?: string; text?: string }[];
     faqs?: { question?: string; answer?: string }[];
     icon?: string;
     color?: string;
     available?: boolean;
+    hidden?: boolean;
   }[];
   site_top_notice?: {
     title?: string;
@@ -174,7 +222,7 @@ interface ApiOrder {
 }
 
 interface ApiPageProductPreview {
-  page_type: "home" | "shop" | "event";
+  page_type: "home" | "event";
   page_slug: string;
   page_key: string;
   page_title: string;
@@ -185,7 +233,7 @@ interface ApiPageProductPreview {
 }
 
 interface ApiPagePreviewTarget {
-  page_type: "home" | "shop" | "event";
+  page_type: "home" | "event";
   page_slug: string;
   page_key: string;
   page_title: string;
@@ -195,7 +243,7 @@ interface ApiPagePreviewTarget {
 
 interface ApiPageProductPlacement {
   id: string;
-  page_type: "home" | "shop" | "event";
+  page_type: "home" | "event";
   page_slug: string;
   page_key: string;
   position: number;
@@ -204,7 +252,7 @@ interface ApiPageProductPlacement {
 }
 
 interface ApiPageProductPlacementState {
-  page_type: "home" | "shop" | "event";
+  page_type: "home" | "event";
   page_slug: string;
   page_key: string;
   page_title: string;
@@ -264,7 +312,50 @@ function mapCategory(apiCategory: ApiCategory): Category {
   };
 }
 
+function mapCustomerReview(apiReview: ApiCustomerReview): CustomerReview {
+  return {
+    id: apiReview.id,
+    productId: apiReview.product_id || undefined,
+    productName: apiReview.product_name || undefined,
+    customerName: apiReview.customer_name,
+    customerCity: apiReview.customer_city || undefined,
+    title: apiReview.title || undefined,
+    comment: apiReview.comment,
+    rating: apiReview.rating,
+    isFeatured: apiReview.is_featured,
+    displayOrder: apiReview.display_order,
+    createdAt: apiReview.created_at,
+  };
+}
+
+function normalizeProductContent(item: ProductContent): ProductContentItem {
+  if (typeof item === "string") {
+    return { name: item.trim(), price: null };
+  }
+  return {
+    name: String(item?.name || "").trim(),
+    price: item?.price ?? null,
+  };
+}
+
+function serializeProductContent(item: ProductContent): string {
+  const normalized = normalizeProductContent(item);
+  if (typeof item === "string") return normalized.name;
+  return JSON.stringify(normalized);
+}
+
 function mapProduct(apiProduct: ApiProduct): Product {
+  const responsive = apiProduct.image_responsive;
+  const mapVariantList = (
+    items?: Array<{ url: string; width: number; height: number; bytes?: number; mime_type?: string }>,
+  ) => (items || []).map((item) => ({
+    url: normalizeImageUrl(item.url),
+    width: item.width,
+    height: item.height,
+    bytes: item.bytes,
+    mimeType: item.mime_type,
+  }));
+
   return {
     id: apiProduct.id,
     name: apiProduct.name,
@@ -273,10 +364,30 @@ function mapProduct(apiProduct: ApiProduct): Product {
     price: apiProduct.price,
     categoryIds: apiProduct.category_ids || [],
     eventTypes: apiProduct.event_types || [],
-    contents: apiProduct.contents || [],
+    contents: (apiProduct.contents || []).map(normalizeProductContent).filter((item) => item.name),
     image: normalizeImageUrl(apiProduct.image),
+    imageResponsive: responsive
+      ? {
+          width: responsive.width || 0,
+          height: responsive.height || 0,
+          backupUrl: responsive.backup_url ? normalizeImageUrl(responsive.backup_url) : undefined,
+          formats: {
+            avif: mapVariantList(responsive.formats?.avif),
+            webp: mapVariantList(responsive.formats?.webp),
+            jpeg: mapVariantList(responsive.formats?.jpeg),
+          },
+          fallback: {
+            src: responsive.fallback?.src ? normalizeImageUrl(responsive.fallback.src) : undefined,
+            width: responsive.fallback?.width || undefined,
+            height: responsive.fallback?.height || undefined,
+            format: responsive.fallback?.format || undefined,
+            sizes: responsive.fallback?.sizes || undefined,
+          },
+        }
+      : undefined,
     imageAlt: apiProduct.image_alt || undefined,
     imageName: apiProduct.image_name || undefined,
+    customerReviews: (apiProduct.customer_reviews || []).map(mapCustomerReview),
     featured: apiProduct.featured,
     available: apiProduct.available,
   };
@@ -291,6 +402,25 @@ function mapBuilderItem(apiBuilderItem: ApiBuilderItem): BuilderItem {
     required: apiBuilderItem.required,
     image: apiBuilderItem.image || undefined,
   };
+}
+
+const legacyThemePalette: Record<string, string> = {
+  primary: "#0C9FC7",
+  accent: "#D6A45B",
+  background: "#FDFBF7",
+  surface: "#FFFFFF",
+  foreground: "#24303A",
+  muted_foreground: "#5E6B78",
+};
+
+function resolveThemeColor(
+  rawThemePalette: NonNullable<ApiSettings["theme_palette"]>,
+  key: keyof NonNullable<ApiSettings["theme_palette"]>,
+  fallback: string,
+) {
+  const value = rawThemePalette[key];
+  if (!value) return fallback;
+  return value.toUpperCase() === legacyThemePalette[key]?.toUpperCase() ? fallback : value;
 }
 
 function mapSettings(apiSettings: ApiSettings): Settings {
@@ -323,27 +453,103 @@ function mapSettings(apiSettings: ApiSettings): Settings {
       ]),
     ),
   };
-  const resolvedEventPages = rawEventPages.length
-    ? rawEventPages
+  const defaultPagesAsApi = defaultEventPages.map((page) => ({
+    id: page.id,
+    name: page.name,
+    slug: page.slug,
+    route_path: page.routePath,
+    description: page.description,
+    seo_title: page.seoTitle,
+    seo_description: page.seoDescription,
+    seo_keywords: page.seoKeywords,
+    benefits: page.benefits,
+    internal_links: page.internalLinks,
+    intro_title: page.introTitle,
+    intro_description: page.introDescription,
+    content_blocks: page.contentBlocks,
+    faqs: page.faqs,
+    icon: page.icon,
+    color: page.color,
+    available: page.available,
+    hidden: page.hidden,
+  }));
+  const mergedEventPages = rawEventPages.length
+    ? [
+        ...rawEventPages,
+        ...defaultPagesAsApi.filter(
+          (defaultPage) => !rawEventPages.some((page) => page?.slug === defaultPage.slug),
+        ),
+      ]
+    : defaultPagesAsApi;
+  const resolvedEventPages = mergedEventPages.length
+    ? mergedEventPages
         .map((page, index) => {
-          const fallback = defaultEventPages[index] || defaultEventPages.find((item) => item.slug === page.slug);
+          const fallback = defaultEventPages.find((item) => item.slug === page.slug) || defaultEventPages[index];
+          const useDefaultEventContent = Boolean(
+            fallback && defaultEventPages.some((item) => item.slug === page.slug),
+          );
           if (!page.slug && !fallback?.slug) {
             return null;
           }
           return {
             id: page.id || fallback?.id || page.slug || "",
-            name: page.name || fallback?.name || "",
+            name: useDefaultEventContent ? fallback?.name || page.name || "" : page.name || fallback?.name || "",
             slug: page.slug || fallback?.slug || "",
-            description: page.description || fallback?.description || "",
-            seoTitle: page.seo_title || fallback?.seoTitle || page.name || fallback?.name || "",
+            routePath: useDefaultEventContent
+              ? fallback?.routePath || page.route_path || `/events/${page.slug || fallback?.slug || ""}`
+              : page.route_path || fallback?.routePath || `/events/${page.slug || fallback?.slug || ""}`,
+            description: useDefaultEventContent
+              ? fallback?.description || page.description || ""
+              : page.description || fallback?.description || "",
+            seoTitle: useDefaultEventContent
+              ? fallback?.seoTitle || page.seo_title || page.name || fallback?.name || ""
+              : page.seo_title || fallback?.seoTitle || page.name || fallback?.name || "",
             seoDescription:
-              page.seo_description || fallback?.seoDescription || page.description || fallback?.description || "",
+              useDefaultEventContent
+                ? fallback?.seoDescription || page.seo_description || page.description || fallback?.description || ""
+                : page.seo_description || fallback?.seoDescription || page.description || fallback?.description || "",
             seoKeywords:
-              Array.isArray(page.seo_keywords) && page.seo_keywords.length
+              useDefaultEventContent && fallback?.seoKeywords?.length
+                ? fallback.seoKeywords
+                : Array.isArray(page.seo_keywords) && page.seo_keywords.length
                 ? page.seo_keywords.filter(Boolean)
                 : fallback?.seoKeywords || [],
+            benefits:
+              Array.isArray(page.benefits) && page.benefits.length
+                ? page.benefits
+                    .map((benefit) => ({
+                      title: benefit.title || "",
+                      description: benefit.description || "",
+                    }))
+                    .filter((benefit) => benefit.title || benefit.description)
+                : fallback?.benefits || [],
+            internalLinks:
+              Array.isArray(page.internal_links) && page.internal_links.length
+                ? page.internal_links
+                    .map((link) => ({
+                      label: link.label || "",
+                      url: link.url || "",
+                    }))
+                    .filter((link) => link.label && link.url)
+                : fallback?.internalLinks || [],
+            introTitle: page.intro_title || fallback?.introTitle || "",
+            introDescription: page.intro_description || fallback?.introDescription || "",
+            contentBlocks:
+              Array.isArray(page.content_blocks) && page.content_blocks.length
+                ? page.content_blocks
+                    .map((block) => {
+                      const tag = block.tag === "h2" || block.tag === "h3" || block.tag === "p" ? block.tag : undefined;
+                      return {
+                        tag,
+                        text: block.text || "",
+                      };
+                    })
+                    .filter((block) => block.text)
+                : fallback?.contentBlocks || [],
             faqs:
-              Array.isArray(page.faqs) && page.faqs.length
+              fallback?.contentBlocks?.length && fallback?.faqs?.length
+                ? fallback.faqs
+                : Array.isArray(page.faqs) && page.faqs.length
                 ? page.faqs
                     .map((faq) => ({
                       question: faq.question || "",
@@ -354,6 +560,7 @@ function mapSettings(apiSettings: ApiSettings): Settings {
             icon: page.icon || fallback?.icon || "📦",
             color: page.color || fallback?.color || "bg-muted",
             available: page.available ?? fallback?.available ?? true,
+            hidden: page.hidden ?? fallback?.hidden ?? false,
           };
         })
         .filter((page): page is NonNullable<typeof page> => Boolean(page && page.slug && page.name))
@@ -372,6 +579,9 @@ function mapSettings(apiSettings: ApiSettings): Settings {
     telegramUrl: apiSettings.telegram_url || "",
     whatsappUrl: apiSettings.whatsapp_url || "",
     baleUrl: apiSettings.bale_url || "",
+    eitaaUrl: apiSettings.eitaa_url || "",
+    soroushUrl: apiSettings.soroush_url || "",
+    rubikaUrl: apiSettings.rubika_url || "",
     mapsUrl: apiSettings.maps_url || "",
     mapsEmbedUrl: apiSettings.maps_embed_url || "",
     siteLogoUrl: apiSettings.site_logo ? normalizeImageUrl(apiSettings.site_logo) : undefined,
@@ -396,12 +606,12 @@ function mapSettings(apiSettings: ApiSettings): Settings {
       adminSiteSymbol: rawBranding.admin_site_symbol || defaultBranding.adminSiteSymbol,
     },
     themePalette: {
-      primary: rawThemePalette.primary || defaultThemePalette.primary,
-      accent: rawThemePalette.accent || defaultThemePalette.accent,
-      background: rawThemePalette.background || defaultThemePalette.background,
-      surface: rawThemePalette.surface || defaultThemePalette.surface,
-      foreground: rawThemePalette.foreground || defaultThemePalette.foreground,
-      mutedForeground: rawThemePalette.muted_foreground || defaultThemePalette.mutedForeground,
+      primary: resolveThemeColor(rawThemePalette, "primary", defaultThemePalette.primary),
+      accent: resolveThemeColor(rawThemePalette, "accent", defaultThemePalette.accent),
+      background: resolveThemeColor(rawThemePalette, "background", defaultThemePalette.background),
+      surface: resolveThemeColor(rawThemePalette, "surface", defaultThemePalette.surface),
+      foreground: resolveThemeColor(rawThemePalette, "foreground", defaultThemePalette.foreground),
+      mutedForeground: resolveThemeColor(rawThemePalette, "muted_foreground", defaultThemePalette.mutedForeground),
       success: rawThemePalette.success || defaultThemePalette.success,
       warning: rawThemePalette.warning || defaultThemePalette.warning,
     },
@@ -532,7 +742,7 @@ export async function listProducts(): Promise<Product[]> {
 }
 
 export async function getPageProductPreview(
-  pageType: "home" | "shop" | "event",
+  pageType: "home" | "event",
   pageSlug = "",
 ): Promise<PageProductPreview | null> {
   try {
@@ -554,7 +764,7 @@ export async function listAdminPagePreviewTargets(): Promise<PagePreviewTarget[]
 }
 
 export async function getAdminPageProductPlacementState(
-  pageType: "home" | "shop" | "event",
+  pageType: "home" | "event",
   pageSlug = "",
 ): Promise<PageProductPlacementState> {
   const params = new URLSearchParams({ page_type: pageType });
@@ -570,7 +780,7 @@ export async function getAdminPageProductPlacementState(
 }
 
 export async function saveAdminPageProductOrder(
-  pageType: "home" | "shop" | "event",
+  pageType: "home" | "event",
   pageSlug: string,
   productIds: string[],
 ): Promise<PageProductPlacementState> {
@@ -603,7 +813,7 @@ export async function createProduct(product: Omit<Product, "id"> & { imageFile?:
   formData.append("price", product.price?.toString() || "");
   product.categoryIds.forEach(id => formData.append("category_ids", id));
   product.eventTypes.forEach(type => formData.append("event_types", type));
-  product.contents.forEach(content => formData.append("contents", content));
+  product.contents.forEach(content => formData.append("contents", serializeProductContent(content)));
   formData.append("image_alt", product.imageAlt || "");
   formData.append("image_name", product.imageName || "");
   formData.append("featured", product.featured.toString());
@@ -644,7 +854,7 @@ export async function updateProduct(id: string, updates: Partial<Product> & { im
   if (updates.price !== undefined) formData.append("price", updates.price?.toString() || "");
   if (updates.categoryIds !== undefined) updates.categoryIds.forEach(id => formData.append("category_ids", id));
   if (updates.eventTypes !== undefined) updates.eventTypes.forEach(type => formData.append("event_types", type));
-  if (updates.contents !== undefined) updates.contents.forEach(content => formData.append("contents", content));
+  if (updates.contents !== undefined) updates.contents.forEach(content => formData.append("contents", serializeProductContent(content)));
   if (updates.image !== undefined) formData.append("image", updates.image || "");
   if (updates.imageAlt !== undefined) formData.append("image_alt", updates.imageAlt || "");
   if (updates.imageName !== undefined) formData.append("image_name", updates.imageName || "");
@@ -786,6 +996,15 @@ export async function addOrderNote(id: string, note: string): Promise<Order | nu
   } catch {
     return null;
   }
+}
+
+export async function listCustomerReviews(options: { featured?: boolean; limit?: number } = {}): Promise<CustomerReview[]> {
+  const params = new URLSearchParams();
+  if (options.featured !== undefined) params.set("featured", String(options.featured));
+  if (options.limit !== undefined) params.set("limit", String(options.limit));
+  const query = params.toString();
+  const reviews = await requestJson<ApiCustomerReview[]>(`/api/v1/reviews/${query ? `?${query}` : ""}`);
+  return reviews.map(mapCustomerReview);
 }
 
 export async function uploadOfflineSessionBundle(file: File): Promise<OfflineSessionImportResult> {

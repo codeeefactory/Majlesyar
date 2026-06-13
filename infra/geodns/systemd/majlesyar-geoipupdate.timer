@@ -1,0 +1,10 @@
+[Unit]
+Description=Refresh MaxMind GeoLite2 Country database daily
+
+[Timer]
+OnBootSec=5m
+OnCalendar=daily
+Persistent=true
+
+[Install]
+WantedBy=timers.target

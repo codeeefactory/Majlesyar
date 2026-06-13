@@ -5,8 +5,10 @@ import json
 from django.conf import settings
 from django.http import Http404
 from django.db.models import Q
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework import status
-from rest_framework import generics
+from rest_framework import generics, serializers
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -35,6 +37,13 @@ class TelegramWebhookAPIView(APIView):
     authentication_classes = []
     permission_classes = []
 
+    @extend_schema(
+        request=OpenApiTypes.OBJECT,
+        responses=inline_serializer(
+            name="TelegramWebhookResponse",
+            fields={"ok": serializers.BooleanField()},
+        ),
+    )
     def post(self, request):
         if not bot_enabled():
             raise Http404

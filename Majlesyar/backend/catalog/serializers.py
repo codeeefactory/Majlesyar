@@ -1,3 +1,4 @@
+import json
 import os
 
 from rest_framework import serializers
@@ -5,17 +6,33 @@ from PIL import Image, UnidentifiedImageError
 from django.utils.text import slugify
 
 from .image_utils import derive_image_label, image_extension_validator, image_supports_extension
+from .image_variants import build_product_image_payload
 from .models import (
     BuilderItem,
     Category,
+    CustomerReview,
     PageProductPlacement,
     Product,
     Tag,
     PRODUCT_INPUT_MODE_NORMAL,
     PRODUCT_INPUT_MODE_PHOTO_PROCESSING,
+    get_content_item_name,
+    get_content_item_price,
+    normalize_product_contents,
     sync_product_categories,
 )
 from .services import serialize_page_preview_target
+
+
+def _parse_content_item(item):
+    if isinstance(item, str) and item.strip().startswith("{"):
+        try:
+            parsed = json.loads(item)
+        except json.JSONDecodeError:
+            return item
+        if isinstance(parsed, dict):
+            return parsed
+    return item
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -60,13 +77,76 @@ class TagWriteSerializer(serializers.ModelSerializer):
         return slugify((value or "").strip())
 
 
+class CustomerReviewSerializer(serializers.ModelSerializer):
+    product_id = serializers.SerializerMethodField()
+    product_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CustomerReview
+        fields = (
+            "id",
+            "product_id",
+            "product_name",
+            "customer_name",
+            "customer_city",
+            "title",
+            "comment",
+            "rating",
+            "is_featured",
+            "display_order",
+            "created_at",
+        )
+
+    def get_product_id(self, obj: CustomerReview) -> str | None:
+        return str(obj.product_id) if obj.product_id else None
+
+    def get_product_name(self, obj: CustomerReview) -> str | None:
+        return obj.product.name if obj.product else None
+
+
+class CustomerReviewWriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomerReview
+        fields = (
+            "id",
+            "product",
+            "customer_name",
+            "customer_city",
+            "title",
+            "comment",
+            "rating",
+            "is_approved",
+            "is_featured",
+            "display_order",
+        )
+        read_only_fields = ("id",)
+
+    def validate_customer_name(self, value: str) -> str:
+        return (value or "").strip()
+
+    def validate_customer_city(self, value: str) -> str:
+        return (value or "").strip()
+
+    def validate_title(self, value: str) -> str:
+        return (value or "").strip()
+
+    def validate_comment(self, value: str) -> str:
+        cleaned = (value or "").strip()
+        if not cleaned:
+            raise serializers.ValidationError("متن نظر الزامی است.")
+        return cleaned
+
+
 class ProductSerializer(serializers.ModelSerializer):
     category_ids = serializers.SerializerMethodField()
     tag_ids = serializers.SerializerMethodField()
     image = serializers.SerializerMethodField()
+    image_responsive = serializers.SerializerMethodField()
     image_name = serializers.SerializerMethodField()
     image_alt = serializers.SerializerMethodField()
     uri = serializers.SerializerMethodField()
+    contents = serializers.SerializerMethodField()
+    customer_reviews = serializers.SerializerMethodField()
     photo_analysis = serializers.JSONField(read_only=True)
 
     class Meta:
@@ -82,7 +162,9 @@ class ProductSerializer(serializers.ModelSerializer):
             "tag_ids",
             "event_types",
             "contents",
+            "customer_reviews",
             "image",
+            "image_responsive",
             "image_name",
             "image_alt",
             "photo_analysis",
@@ -104,6 +186,9 @@ class ProductSerializer(serializers.ModelSerializer):
             return request.build_absolute_uri(obj.image.url)
         return obj.image.url
 
+    def get_image_responsive(self, obj: Product) -> dict:
+        return build_product_image_payload(obj, request=self.context.get("request"))
+
     def get_image_name(self, obj: Product) -> str:
         if obj.image_name:
             return obj.image_name
@@ -120,6 +205,13 @@ class ProductSerializer(serializers.ModelSerializer):
 
     def get_uri(self, obj: Product) -> str:
         return f"/product/{obj.url_slug}"
+
+    def get_contents(self, obj: Product) -> list[dict]:
+        return normalize_product_contents(obj.contents)
+
+    def get_customer_reviews(self, obj: Product) -> list[dict]:
+        reviews = obj.customer_reviews.filter(is_approved=True).order_by("display_order", "-is_featured", "-created_at")[:6]
+        return CustomerReviewSerializer(reviews, many=True, context=self.context).data
 
 
 class ProductWriteSerializer(serializers.ModelSerializer):
@@ -145,7 +237,7 @@ class ProductWriteSerializer(serializers.ModelSerializer):
         allow_empty=True,
     )
     contents = serializers.ListField(
-        child=serializers.CharField(max_length=255, allow_blank=False),
+        child=serializers.JSONField(),
         required=False,
         allow_empty=True,
     )
@@ -192,8 +284,17 @@ class ProductWriteSerializer(serializers.ModelSerializer):
     def validate_event_types(self, value: list[str]) -> list[str]:
         return [item.strip() for item in value if item.strip()]
 
-    def validate_contents(self, value: list[str]) -> list[str]:
-        return [item.strip() for item in value if item.strip()]
+    def validate_contents(self, value: list) -> list[dict]:
+        parsed_value = [_parse_content_item(item) for item in value]
+        for item in parsed_value:
+            name = get_content_item_name(item)
+            if not name:
+                raise serializers.ValidationError("Each pack content item needs a name.")
+            if isinstance(item, dict):
+                raw_price = item.get("price")
+                if raw_price not in (None, "") and get_content_item_price(item) is None:
+                    raise serializers.ValidationError("Each pack content price must be a non-negative number.")
+        return normalize_product_contents(parsed_value)
 
     def validate_tag_ids(self, value: list) -> list:
         if not value:

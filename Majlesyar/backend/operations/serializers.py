@@ -54,7 +54,7 @@ class StaffUserSerializer(serializers.ModelSerializer):
             "last_login",
         )
 
-    def get_full_name(self, obj):
+    def get_full_name(self, obj) -> str:
         return obj.get_full_name() or obj.username
 
 
@@ -121,10 +121,10 @@ class ClientProfileSerializer(serializers.ModelSerializer):
             "updated_at",
         )
 
-    def get_fortieth_date(self, obj):
+    def get_fortieth_date(self, obj) -> str | None:
         return obj.fortieth_date.isoformat() if obj.fortieth_date else None
 
-    def get_anniversary_date(self, obj):
+    def get_anniversary_date(self, obj) -> str | None:
         return obj.anniversary_date.isoformat() if obj.anniversary_date else None
 
     def validate(self, attrs):
@@ -274,19 +274,19 @@ class ReminderItemSerializer(serializers.ModelSerializer):
         due_candidates.sort(key=lambda item: item[1])
         return dates, due_candidates[0] if due_candidates else (None, None)
 
-    def get_fortieth_date(self, obj):
+    def get_fortieth_date(self, obj) -> str | None:
         dates, _ = self._reminder_context(obj)
         return dates["fortieth_date"].isoformat() if dates["fortieth_date"] else None
 
-    def get_anniversary_date(self, obj):
+    def get_anniversary_date(self, obj) -> str | None:
         dates, _ = self._reminder_context(obj)
         return dates["anniversary_date"].isoformat() if dates["anniversary_date"] else None
 
-    def get_next_due_type(self, obj):
+    def get_next_due_type(self, obj) -> str | None:
         _dates, next_due = self._reminder_context(obj)
         return next_due[0]
 
-    def get_next_due_date(self, obj):
+    def get_next_due_date(self, obj) -> str | None:
         _dates, next_due = self._reminder_context(obj)
         return next_due[1].isoformat() if next_due[1] else None
 

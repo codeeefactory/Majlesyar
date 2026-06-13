@@ -66,12 +66,12 @@ DEFAULT_SITE_BRANDING = {
 }
 
 DEFAULT_THEME_PALETTE = {
-    "primary": "#0C9FC7",
-    "accent": "#D6A45B",
-    "background": "#FDFBF7",
-    "surface": "#FFFFFF",
-    "foreground": "#24303A",
-    "muted_foreground": "#5E6B78",
+    "primary": "#00C2F2",
+    "accent": "#00C2F2",
+    "background": "#FAF8F2",
+    "surface": "#F2ECE2",
+    "foreground": "#20262F",
+    "muted_foreground": "#566170",
     "success": "#218A52",
     "warning": "#C98A10",
 }
@@ -146,6 +146,7 @@ DEFAULT_EVENT_PAGES = [
         "id": "conference",
         "name": "فینگر فود",
         "slug": "conference",
+        "route_path": "/food/finger_food",
         "description": "سفارش فینگر فود مراسم، همایش و پذیرایی شرکتی با چیدمان حرفه‌ای و آماده‌سازی سفارشی.",
         "seo_title": "سفارش فینگر فود و مزه برای تولد و جشن | تنوع مزه جذاب | مجلس یار",
         "seo_description": "سفارش فینگر فود، سینی مزه و ساندویچ سرد برای تولد و جشن‌ها. منوی متنوع با پایین‌ترین قیمت و ارسال فوری تهران، البرز. تضمین کیفیت و طعم عالی با امکان پرداخت بخشی از وجه زمان تحویل.",
@@ -176,6 +177,7 @@ DEFAULT_EVENT_PAGES = [
         "id": "memorial",
         "name": "ترحیم",
         "slug": "memorial",
+        "route_path": "/pack/memorial",
         "description": "سفارش پک ترحیم، حلوا و اقلام پذیرایی مراسم با بسته‌بندی محترمانه و تحویل سریع در تهران و البرز.",
         "seo_title": "پک میوه، سینی میوه و پک ترحیم | قیمت رقابتی | مجلس یار",
         "seo_description": "فروش انواع پک میوه ترحیم و سینی میوه مجلسی با میوه‌های دست‌چین و شسته شده. ارزان‌ترین قیمت بازار و ارسال فوری. پرداخت در محل جهت اطمینان شما از کیفیت میوه‌ها.",
@@ -212,6 +214,7 @@ DEFAULT_EVENT_PAGES = [
         "id": "halva-khorma",
         "name": "حلوا و خرما",
         "slug": "halva-khorma",
+        "route_path": "/halva-khorma",
         "description": "سفارش حلوا و خرما برای مراسم ترحیم، ختم، یادبود و پذیرایی رسمی با بسته‌بندی مرتب و تحویل سریع.",
         "seo_title": "خرما گردو و حلوا خرما مراسم ترحیم | انواع حلوا مجلسی | مجلس یار",
         "seo_description": "خرید آنلاین خرما گردو و حلوا خرما تازه برای مراسم ترحیم. انواع حلوا خرما شیک با تزیین حرفه‌ای و ارسال فوری تهران، البرز. تضمین کیفیت واقعی: بخشی از هزینه را پس از تحویل پرداخت کنید.",
@@ -243,6 +246,7 @@ DEFAULT_EVENT_PAGES = [
         "id": "party",
         "name": "گل",
         "slug": "party",
+        "route_path": "/flower",
         "description": "سفارش گل و گل‌آرایی برای مراسم، ترحیم، هدیه و مناسبت‌های ویژه با طراحی آماده و اختصاصی.",
         "seo_title": "تاج گل ترحیم و ختم | گل تسلیت با ارسال فوری و تضمین کیفیت | مجلس یار",
         "seo_description": "سفارش تاج گل ترحیم و گل تسلیت با گل‌های تازه و قیمت رقابتی. ارسال فوری گل ختم به مساجد و تالارها. تنها در مجلس یار: تسویه بخشی از مبلغ، پس از رویت و تحویل گل!",
@@ -493,11 +497,69 @@ def normalize_event_pages(value) -> list[dict]:
                 }
             )
 
+        raw_benefits = raw_page.get("benefits", default_entry.get("benefits", []))
+        if not isinstance(raw_benefits, list):
+            raw_benefits = default_entry.get("benefits", [])
+
+        normalized_benefits: list[dict[str, str]] = []
+        for raw_benefit in raw_benefits:
+            if not isinstance(raw_benefit, dict):
+                continue
+            title = _normalize_text(raw_benefit.get("title"))
+            description = _normalize_text(raw_benefit.get("description"))
+            if not title and not description:
+                continue
+            normalized_benefits.append(
+                {
+                    "title": title,
+                    "description": description,
+                }
+            )
+
+        raw_internal_links = raw_page.get("internal_links", default_entry.get("internal_links", []))
+        if not isinstance(raw_internal_links, list):
+            raw_internal_links = default_entry.get("internal_links", [])
+
+        normalized_internal_links: list[dict[str, str]] = []
+        for raw_link in raw_internal_links:
+            if not isinstance(raw_link, dict):
+                continue
+            label = _normalize_text(raw_link.get("label"))
+            url = _normalize_text(raw_link.get("url"))
+            if not label or not url:
+                continue
+            normalized_internal_links.append(
+                {
+                    "label": label,
+                    "url": url,
+                }
+            )
+
+        raw_content_blocks = raw_page.get("content_blocks", default_entry.get("content_blocks", []))
+        if not isinstance(raw_content_blocks, list):
+            raw_content_blocks = default_entry.get("content_blocks", [])
+
+        normalized_content_blocks: list[dict[str, str]] = []
+        for raw_block in raw_content_blocks:
+            if not isinstance(raw_block, dict):
+                continue
+            text = _normalize_text(raw_block.get("text"))
+            if not text:
+                continue
+            tag = _normalize_text(raw_block.get("tag"))
+            block = {"text": text}
+            if tag in {"h2", "h3", "p"}:
+                block["tag"] = tag
+            normalized_content_blocks.append(block)
+
         normalized_pages.append(
             {
                 "id": page_id or slug,
                 "name": name,
                 "slug": slug,
+                "route_path": _normalize_text(
+                    raw_page.get("route_path", default_entry.get("route_path", f"/events/{slug}"))
+                ),
                 "description": _normalize_text(
                     raw_page.get("description", default_entry.get("description", ""))
                 ),
@@ -511,12 +573,25 @@ def normalize_event_pages(value) -> list[dict]:
                     raw_page.get("seo_keywords"),
                     list(default_entry.get("seo_keywords", [])),
                 ),
+                "benefits": normalized_benefits,
+                "internal_links": normalized_internal_links,
+                "intro_title": _normalize_text(
+                    raw_page.get("intro_title", default_entry.get("intro_title", ""))
+                ),
+                "intro_description": _normalize_text(
+                    raw_page.get("intro_description", default_entry.get("intro_description", ""))
+                ),
+                "content_blocks": normalized_content_blocks,
                 "faqs": normalized_faqs,
                 "icon": _normalize_text(raw_page.get("icon", default_entry.get("icon", "📦"))),
                 "color": _normalize_text(raw_page.get("color", default_entry.get("color", "bg-muted"))),
                 "available": _normalize_bool(
                     raw_page.get("available"),
                     bool(default_entry.get("available", True)),
+                ),
+                "hidden": _normalize_bool(
+                    raw_page.get("hidden"),
+                    bool(default_entry.get("hidden", False)),
                 ),
             }
         )
@@ -536,7 +611,7 @@ class SiteSetting(models.Model):
     allowed_provinces = models.JSONField(default=list, blank=True)
     delivery_windows = models.JSONField(default=list, blank=True)
     payment_methods = models.JSONField(default=list, blank=True)
-    contact_phone = models.CharField(max_length=32, default="+989915505141", blank=True)
+    contact_phone = models.CharField(max_length=32, default="09122148354", blank=True)
     contact_address = models.TextField(
         default="تهران، امیرآباد، خیابان کارگر شمالی، خیابان فرشی مقدم(شانزدهم)، پلاک ۹۱، واحد۶.",
         blank=True,
@@ -548,8 +623,11 @@ class SiteSetting(models.Model):
     )
     instagram_url = models.URLField(max_length=500, default="https://instagram.com/majlesyar", blank=True)
     telegram_url = models.URLField(max_length=500, default="https://t.me/majlesyar", blank=True)
-    whatsapp_url = models.URLField(max_length=500, default="https://wa.me/989915505141", blank=True)
+    whatsapp_url = models.URLField(max_length=500, default="https://wa.me/989122148354", blank=True)
     bale_url = models.URLField(max_length=500, default="https://ble.ir/majlesyar", blank=True)
+    eitaa_url = models.URLField(max_length=500, default="https://eitaa.com/majlesyar", blank=True)
+    soroush_url = models.URLField(max_length=500, default="https://splus.ir/majlesyar", blank=True)
+    rubika_url = models.URLField(max_length=500, default="https://rubika.ir/majlesyar", blank=True)
     maps_url = models.URLField(max_length=500, default="https://maps.google.com/?q=Tehran,Valiasr", blank=True)
     maps_embed_url = models.URLField(
         max_length=1000,
@@ -597,9 +675,9 @@ class SiteSetting(models.Model):
         blank=True,
         help_text=(
             "ساختار پیشنهادی: "
-            '{"primary": "#0C9FC7", "accent": "#D6A45B", "background": "#FDFBF7", '
-            '"surface": "#FFFFFF", "foreground": "#24303A", '
-            '"muted_foreground": "#5E6B78", "success": "#218A52", "warning": "#C98A10"}'
+            '{"primary": "#00C2F2", "accent": "#00C2F2", "background": "#FAF8F2", '
+            '"surface": "#F2ECE2", "foreground": "#20262F", '
+            '"muted_foreground": "#566170", "success": "#218A52", "warning": "#C98A10"}'
         ),
     )
     page_seo = models.JSONField(
@@ -656,6 +734,10 @@ class SiteSetting(models.Model):
     @classmethod
     def load(cls) -> "SiteSetting":
         instance, _ = cls.objects.get_or_create(pk=1)
+        normalized_event_pages = normalize_event_pages(instance.event_pages)
+        if normalized_event_pages != instance.event_pages:
+            instance.event_pages = normalized_event_pages
+            instance.save(update_fields=["event_pages", "updated_at"])
         return instance
 
     def __str__(self) -> str:

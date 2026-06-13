@@ -93,7 +93,7 @@ class Migration(migrations.Migration):
             field=models.JSONField(
                 blank=True,
                 default=site_settings.models.default_theme_palette,
-                help_text='ساختار پیشنهادی: {"primary": "#0C9FC7", "accent": "#D6A45B", "background": "#FDFBF7", "surface": "#FFFFFF", "foreground": "#24303A", "muted_foreground": "#5E6B78", "success": "#218A52", "warning": "#C98A10"}',
+                help_text='ساختار پیشنهادی: {"primary": "#00C2F2", "accent": "#00C2F2", "background": "#FAF8F2", "surface": "#F2ECE2", "foreground": "#20262F", "muted_foreground": "#566170", "success": "#218A52", "warning": "#C98A10"}',
             ),
         ),
     ]

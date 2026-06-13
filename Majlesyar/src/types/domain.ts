@@ -5,6 +5,13 @@ export interface Category {
   icon: string;
 }
 
+export interface ProductContentItem {
+  name: string;
+  price: number | null;
+}
+
+export type ProductContent = string | ProductContentItem;
+
 export interface Product {
   id: string;
   name: string;
@@ -13,16 +20,61 @@ export interface Product {
   price: number | null;
   categoryIds: string[];
   eventTypes: string[];
-  contents: string[];
+  contents: ProductContent[];
   image: string;
+  imageResponsive?: ProductImageResponsive;
   imageAlt?: string;
   imageName?: string;
+  customerReviews?: CustomerReview[];
   featured: boolean;
   available: boolean;
 }
 
+export interface CustomerReview {
+  id: string;
+  productId?: string;
+  productName?: string;
+  customerName: string;
+  customerCity?: string;
+  title?: string;
+  comment: string;
+  rating: number;
+  isFeatured: boolean;
+  displayOrder: number;
+  createdAt: string;
+}
+
+export interface ProductImageVariant {
+  url: string;
+  width: number;
+  height: number;
+  bytes?: number;
+  mimeType?: string;
+}
+
+export interface ProductImageResponsive {
+  width: number;
+  height: number;
+  backupUrl?: string;
+  formats: {
+    avif: ProductImageVariant[];
+    webp: ProductImageVariant[];
+    jpeg: ProductImageVariant[];
+  };
+  fallback: {
+    src?: string;
+    width?: number;
+    height?: number;
+    format?: string;
+    sizes?: {
+      card?: string;
+      detail?: string;
+    };
+  };
+}
+
 export interface PageProductPreview {
-  pageType: "home" | "shop" | "event";
+  pageType: "home" | "event";
   pageSlug: string;
   pageKey: string;
   pageTitle: string;
@@ -33,7 +85,7 @@ export interface PageProductPreview {
 }
 
 export interface PagePreviewTarget {
-  pageType: "home" | "shop" | "event";
+  pageType: "home" | "event";
   pageSlug: string;
   pageKey: string;
   pageTitle: string;
@@ -43,7 +95,7 @@ export interface PagePreviewTarget {
 
 export interface PageProductPlacement {
   id: string;
-  pageType: "home" | "shop" | "event";
+  pageType: "home" | "event";
   pageSlug: string;
   pageKey: string;
   position: number;
@@ -52,7 +104,7 @@ export interface PageProductPlacement {
 }
 
 export interface PageProductPlacementState {
-  pageType: "home" | "shop" | "event";
+  pageType: "home" | "event";
   pageSlug: string;
   pageKey: string;
   pageTitle: string;
@@ -104,18 +156,35 @@ export interface PageSeoEntry {
   keywords: string[];
 }
 
+export interface InternalLink {
+  label: string;
+  url: string;
+}
+
+export interface EventContentBlock {
+  tag?: "h2" | "h3" | "p";
+  text: string;
+}
+
 export interface EventPage {
   id: string;
   name: string;
   slug: string;
+  routePath?: string;
   description: string;
   seoTitle?: string;
   seoDescription?: string;
   seoKeywords?: string[];
+  benefits?: { title: string; description: string }[];
+  internalLinks?: InternalLink[];
+  introTitle?: string;
+  introDescription?: string;
+  contentBlocks?: EventContentBlock[];
   faqs?: { question: string; answer: string }[];
   icon: string;
   color: string;
   available?: boolean;
+  hidden?: boolean;
 }
 
 export interface SiteTopNotice {
@@ -149,6 +218,9 @@ export interface Settings {
   telegramUrl: string;
   whatsappUrl: string;
   baleUrl: string;
+  eitaaUrl: string;
+  soroushUrl: string;
+  rubikaUrl: string;
   mapsUrl: string;
   mapsEmbedUrl: string;
   siteLogoUrl?: string;

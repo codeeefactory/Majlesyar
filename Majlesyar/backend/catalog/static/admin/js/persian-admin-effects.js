@@ -145,6 +145,31 @@
     });
   }
 
+  function enhanceProductSpectrum() {
+    const panels = document.querySelectorAll(".unfold .admin-product-spectrum, .unfold .admin-top-spectrum");
+    if (!panels.length) return;
+
+    panels.forEach((panel) => {
+      if (panel.dataset.spectrumReady !== "1") {
+        panel.dataset.spectrumReady = "1";
+      }
+
+      if (panel.dataset.spectrumBound === "1" || prefersReducedMotion) return;
+      panel.dataset.spectrumBound = "1";
+
+      panel.addEventListener("pointermove", (event) => {
+        const rect = panel.getBoundingClientRect();
+        const offsetX = ((event.clientX - rect.left) / rect.width - 0.5) * 8;
+        const offsetY = ((event.clientY - rect.top) / rect.height - 0.5) * 6;
+        panel.style.transform = `translate3d(${offsetX * 0.15}px, ${offsetY * -0.18}px, 0)`;
+      });
+
+      panel.addEventListener("pointerleave", () => {
+        panel.style.transform = "";
+      });
+    });
+  }
+
   function initAdminEffects() {
     setViewportHeightVar();
     applyResponsiveClasses();
@@ -154,6 +179,7 @@
     enhanceActionButtons();
     markFocusedFields();
     animateListRows();
+    enhanceProductSpectrum();
   }
 
   if (document.readyState === "loading") {

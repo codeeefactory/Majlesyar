@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ShoppingCart, Eye, Phone } from 'lucide-react';
 import type { Product } from '@/types/domain';
 import { useCart } from '@/contexts/CartContext';
 import { Input } from '@/components/ui/input';
+import { ResponsiveProductImage } from '@/components/ResponsiveProductImage';
 import { notifyInfo, notifySuccess } from '@/lib/notify';
 import { useSettings } from '@/contexts/SettingsContext';
 
@@ -15,6 +16,7 @@ interface ProductCardProps {
 export function ProductCard({ product }: ProductCardProps) {
   const { addItem } = useCart();
   const { settings } = useSettings();
+  const navigate = useNavigate();
   const [quantity, setQuantity] = useState(1);
   const [imageFailed, setImageFailed] = useState(false);
 
@@ -58,12 +60,11 @@ export function ProductCard({ product }: ProductCardProps) {
       >
         <div className="aspect-[16/11] sm:aspect-[4/3] bg-muted relative overflow-hidden">
           {shouldShowImage ? (
-            <img
-              src={product.image}
+            <ResponsiveProductImage
+              product={product}
               alt={product.imageAlt || product.name}
               loading="lazy"
-              decoding="async"
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              sizes="50vw"
               className="w-full h-full object-cover object-center"
               onError={() => setImageFailed(true)}
             />
@@ -129,6 +130,11 @@ export function ProductCard({ product }: ProductCardProps) {
                 variant="outline"
                 size="sm"
                 className="flex-1 text-xs h-10 min-h-[40px] touch-manipulation transition-all duration-150 hover:bg-primary/5 hover:border-primary/50 active:scale-95 active:bg-primary/10"
+                onClick={(e) => {
+                  e.preventDefault();
+                  navigate(productPath);
+                  window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+                }}
               >
                 <Eye className="w-4 h-4 ml-1" aria-hidden="true" />
                 مشاهده

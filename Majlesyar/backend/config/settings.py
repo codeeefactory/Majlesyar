@@ -1,13 +1,20 @@
 from datetime import timedelta
+import mimetypes
 import os
 from pathlib import Path
 import re
 
+from django.core.exceptions import ImproperlyConfigured
 from django.templatetags.static import static as static_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 FRONTEND_DIST_DIR = BASE_DIR / "frontend_dist"
 VITE_ASSET_IMMUTABLE_RE = re.compile(r"^/static/assets/.+-[A-Za-z0-9_-]{8,}\.[A-Za-z0-9]+$")
+
+mimetypes.add_type("image/avif", ".avif", strict=True)
+mimetypes.add_type("image/webp", ".webp", strict=True)
+mimetypes.add_type("image/jpeg", ".jpg", strict=True)
+mimetypes.add_type("image/jpeg", ".jpeg", strict=True)
 
 
 def is_vite_immutable_file(path: str, url: str) -> bool:
@@ -44,8 +51,18 @@ def admin_overrides_script(_request) -> str:
     return static_url("admin/js/persian-admin-effects.js")
 
 
-SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev-insecure-secret-key-change-me")
+DEFAULT_SECRET_KEY = "dev-insecure-secret-key-change-me"
+
+
+def is_insecure_secret_key(value: str) -> bool:
+    return value == DEFAULT_SECRET_KEY or value.startswith("django-insecure-")
+
+
+SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", DEFAULT_SECRET_KEY)
 DEBUG = env_bool("DJANGO_DEBUG", True)
+if not DEBUG and is_insecure_secret_key(SECRET_KEY):
+    raise ImproperlyConfigured("Set DJANGO_SECRET_KEY to a long random value before running with DJANGO_DEBUG=0.")
+
 ALLOWED_HOSTS = env_list(
     "DJANGO_ALLOWED_HOSTS",
     "localhost,127.0.0.1,testserver,majlesyar.com,www.majlesyar.com",
@@ -79,6 +96,7 @@ MIDDLEWARE = [
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.middleware.gzip.GZipMiddleware",
     "config.middleware.StripCrawlerDirectivesMiddleware",
+    "config.middleware.OptimizedMediaCacheMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -127,7 +145,7 @@ else:
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / "db.sqlite3",
+            "NAME": Path(os.getenv("SQLITE_DB_PATH", str(BASE_DIR / "db.sqlite3"))),
         }
     }
 
@@ -208,9 +226,20 @@ CSRF_TRUSTED_ORIGINS = env_list(
 # Reverse-proxy aware security settings for hosted environments (e.g. Runflare).
 USE_X_FORWARDED_HOST = env_bool("USE_X_FORWARDED_HOST", True)
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+SECURE_SSL_REDIRECT = env_bool("SECURE_SSL_REDIRECT", not DEBUG)
+SECURE_HSTS_SECONDS = int(os.getenv("SECURE_HSTS_SECONDS", "31536000" if not DEBUG else "0"))
+SECURE_HSTS_INCLUDE_SUBDOMAINS = env_bool("SECURE_HSTS_INCLUDE_SUBDOMAINS", not DEBUG)
+SECURE_HSTS_PRELOAD = env_bool("SECURE_HSTS_PRELOAD", False)
+SECURE_CONTENT_TYPE_NOSNIFF = env_bool("SECURE_CONTENT_TYPE_NOSNIFF", True)
+SECURE_REFERRER_POLICY = os.getenv("SECURE_REFERRER_POLICY", "same-origin")
+X_FRAME_OPTIONS = os.getenv("X_FRAME_OPTIONS", "DENY")
 CSRF_COOKIE_SECURE = env_bool("CSRF_COOKIE_SECURE", not DEBUG)
 SESSION_COOKIE_SECURE = env_bool("SESSION_COOKIE_SECURE", not DEBUG)
 CSRF_PROXY_ALLOW_MISSING_REFERER = env_bool("CSRF_PROXY_ALLOW_MISSING_REFERER", True)
+
+# Django's built-in check only looks for the exact CsrfViewMiddleware path.
+# We use a subclass that preserves CSRF protection while adding proxy-aware fallback logic.
+SILENCED_SYSTEM_CHECKS = ["security.W003"]
 
 UNFOLD = {
     "SITE_TITLE": "config.admin_branding.get_admin_site_title",

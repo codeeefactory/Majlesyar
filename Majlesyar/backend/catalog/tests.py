@@ -2,8 +2,10 @@
 import tempfile
 import unittest
 from io import BytesIO
+from io import StringIO
 from unittest.mock import patch
 from django.contrib.auth import get_user_model
+from django.core.management import call_command
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 from django.test import override_settings
@@ -11,12 +13,66 @@ from PIL import Image
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+from config.admin_branding import get_admin_theme_manifest
 from .image_utils import register_image_plugins
-from .models import BuilderItem, Category, PageProductPlacement, Product, Tag
+from .models import BuilderItem, Category, CustomerReview, PageProductPlacement, Product, Tag
 from site_settings.models import SiteSetting
 
 
 AVIF_SUPPORTED = register_image_plugins()
+
+
+class AdminThemeManifestTests(APITestCase):
+    def test_manifest_reflects_available_product_type_mix(self):
+        settings = SiteSetting.load()
+        settings.event_pages = [
+            {"id": "conference", "name": "فینگر فود", "slug": "conference", "icon": "🍢", "available": True},
+            {"id": "memorial", "name": "ترحیم", "slug": "memorial", "icon": "🕯️", "available": True},
+            {"id": "party", "name": "گل", "slug": "party", "icon": "💐", "available": True},
+        ]
+        settings.save()
+
+        Product.objects.create(
+            name="فینگرفود ویژه",
+            url_slug="fingerfood-special",
+            description="desc",
+            price=100000,
+            event_types=["conference"],
+            contents=[],
+            available=True,
+            featured=True,
+        )
+        Product.objects.create(
+            name="گل تشریفات",
+            url_slug="flowers-special",
+            description="desc",
+            price=100000,
+            event_types=["party"],
+            contents=[],
+            available=True,
+            featured=False,
+        )
+        Product.objects.create(
+            name="پک ترحیم",
+            url_slug="memorial-pack",
+            description="desc",
+            price=100000,
+            event_types=["memorial"],
+            contents=[],
+            available=False,
+            featured=False,
+        )
+
+        manifest = get_admin_theme_manifest()
+
+        self.assertEqual(len(manifest["events"]), 3)
+        event_by_slug = {event["slug"]: event for event in manifest["events"]}
+        self.assertEqual(event_by_slug["conference"]["count"], 1)
+        self.assertTrue(event_by_slug["conference"]["is_active"])
+        self.assertEqual(event_by_slug["party"]["available_count"], 1)
+        self.assertEqual(event_by_slug["memorial"]["available_count"], 0)
+        self.assertIn("فینگر فود", manifest["summary"]["line"])
+        self.assertIn("گل", manifest["summary"]["description"])
 
 
 class AdminProductApiTests(APITestCase):
@@ -49,7 +105,7 @@ class AdminProductApiTests(APITestCase):
     def _staff_auth(self):
         self.client.force_authenticate(user=self.staff_user)
 
-    def _make_uploaded_image(self, name: str, image_format: str) -> SimpleUploadedFile:
+    def _make_uploaded_image(self, name: str, image_format: str, size: tuple[int, int] = (10, 10)) -> SimpleUploadedFile:
         content_type_map = {
             "JPEG": "image/jpeg",
             "PNG": "image/png",
@@ -57,7 +113,7 @@ class AdminProductApiTests(APITestCase):
             "AVIF": "image/avif",
         }
         buffer = BytesIO()
-        Image.new("RGB", (10, 10), (255, 0, 0)).save(buffer, format=image_format)
+        Image.new("RGB", size, (255, 0, 0)).save(buffer, format=image_format)
         buffer.seek(0)
         return SimpleUploadedFile(name, buffer.getvalue(), content_type=content_type_map[image_format])
 
@@ -88,6 +144,10 @@ class AdminProductApiTests(APITestCase):
 
         created = Product.objects.get(id=response.data["id"])
         self.assertEqual(created.price, payload["price"])
+        self.assertEqual(
+            response.data["contents"],
+            [{"name": "آیتم 1", "price": None}, {"name": "آیتم 2", "price": None}],
+        )
         self.assertCountEqual(
             list(created.categories.values_list("id", flat=True)),
             [self.category_one.id, self.category_two.id],
@@ -96,6 +156,30 @@ class AdminProductApiTests(APITestCase):
             list(created.tags.values_list("id", flat=True)),
             [self.tag_one.id, self.tag_two.id],
         )
+
+    def test_staff_can_create_product_contents_with_item_prices(self):
+        self._staff_auth()
+        payload = {
+            "name": "پک قیمت‌دار",
+            "url_slug": "priced-pack",
+            "description": "توضیحات",
+            "price": 200000,
+            "category_ids": [str(self.category_one.id)],
+            "event_types": ["conference"],
+            "contents": [
+                {"name": "آبمیوه", "price": 25000},
+                {"name": "کیک", "price": None},
+            ],
+            "featured": False,
+            "available": True,
+        }
+
+        response = self.client.post(reverse("admin-product-list-create"), payload, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["contents"], payload["contents"])
+        created = Product.objects.get(id=response.data["id"])
+        self.assertEqual(created.contents, payload["contents"])
 
     def test_staff_can_patch_product_categories_and_flags(self):
         self._staff_auth()
@@ -184,6 +268,103 @@ class AdminProductApiTests(APITestCase):
         self.assertEqual(by_uuid.data["id"], str(product.id))
         self.assertEqual(by_uuid.data["url_slug"], "public-product")
 
+    def test_public_product_detail_includes_approved_customer_reviews(self):
+        product = Product.objects.create(
+            name="Reviewed Product",
+            url_slug="reviewed-product",
+            description="desc",
+            price=10000,
+            event_types=["conference"],
+            contents=["item"],
+        )
+        CustomerReview.objects.create(
+            product=product,
+            customer_name="سارا",
+            customer_city="تهران",
+            title="کیفیت عالی",
+            comment="همه چیز مرتب و تازه بود.",
+            rating=5,
+            is_approved=True,
+            is_featured=True,
+        )
+        CustomerReview.objects.create(
+            product=product,
+            customer_name="مخفی",
+            comment="نمایش داده نشود",
+            rating=3,
+            is_approved=False,
+        )
+
+        response = self.client.get(reverse("product-detail", kwargs={"lookup": "reviewed-product"}))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data["customer_reviews"]), 1)
+        self.assertEqual(response.data["customer_reviews"][0]["customer_name"], "سارا")
+        self.assertEqual(response.data["customer_reviews"][0]["rating"], 5)
+
+    def test_public_reviews_endpoint_filters_unapproved_reviews(self):
+        product = Product.objects.create(
+            name="Public Review Product",
+            description="desc",
+            price=10000,
+            event_types=["conference"],
+            contents=[],
+        )
+        CustomerReview.objects.create(
+            product=product,
+            customer_name="علی",
+            comment="تحویل دقیق بود.",
+            rating=4,
+            is_approved=True,
+            is_featured=True,
+        )
+        CustomerReview.objects.create(
+            product=product,
+            customer_name="رد شده",
+            comment="نباید بیاید",
+            rating=1,
+            is_approved=False,
+            is_featured=True,
+        )
+
+        response = self.client.get(reverse("customer-review-list"), {"featured": "true", "limit": "6"})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["customer_name"], "علی")
+
+    def test_staff_can_create_customer_review(self):
+        self._staff_auth()
+        product = Product.objects.create(
+            name="Admin Review Product",
+            description="desc",
+            price=10000,
+            event_types=["conference"],
+            contents=[],
+        )
+
+        response = self.client.post(
+            reverse("admin-customer-review-list-create"),
+            {
+                "product": str(product.id),
+                "customer_name": "مینا",
+                "customer_city": "کرج",
+                "title": "پیشنهاد می‌کنم",
+                "comment": "برای مراسم ما بسیار خوب بود.",
+                "rating": 5,
+                "is_approved": True,
+                "is_featured": True,
+                "display_order": 1,
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(CustomerReview.objects.count(), 1)
+        created = CustomerReview.objects.get()
+        self.assertEqual(created.product, product)
+        self.assertEqual(created.rating, 5)
+
     def test_staff_can_create_product_with_png_and_derived_image_metadata(self):
         self._staff_auth()
         payload = {
@@ -232,6 +413,61 @@ class AdminProductApiTests(APITestCase):
         self.assertEqual(created.image_alt, "funeral pack")
 
         self.assertTrue(created.image.storage.exists(created.image.name))
+
+    def test_product_upload_generates_responsive_variants_and_backup(self):
+        self._staff_auth()
+        payload = {
+            "name": "دسته گل بهینه",
+            "description": "توضیحات",
+            "price": "456000",
+            "event_types": ["party"],
+            "contents": ["گل"],
+            "featured": "false",
+            "available": "true",
+            "image_file": self._make_uploaded_image("daste-gol-optimized.jpg", "JPEG", size=(1400, 1400)),
+        }
+
+        response = self.client.post(reverse("admin-product-list-create"), payload, format="multipart")
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        created = Product.objects.get(id=response.data["id"])
+        metadata = created.image_variants
+        self.assertTrue(metadata)
+        self.assertEqual(metadata["original"]["width"], 1400)
+        self.assertEqual(metadata["original"]["height"], 1400)
+        self.assertTrue(created.image.storage.exists(metadata["original"]["backup_path"]))
+        self.assertEqual(
+            [item["width"] for item in metadata["variants"]["jpeg"]],
+            [320, 480, 640, 768, 960, 1280],
+        )
+        self.assertTrue(all(created.image.storage.exists(item["path"]) for item in metadata["variants"]["webp"]))
+        self.assertTrue(response.data["image_responsive"]["fallback"]["src"])
+        self.assertEqual(response.data["image_responsive"]["width"], 1400)
+        self.assertEqual(response.data["image_alt"], created.image_alt)
+
+    def test_regenerate_product_image_variants_command_processes_existing_images(self):
+        product = Product.objects.create(
+            name="گل تازه",
+            url_slug="fresh-flowers",
+            description="محصول تصویری",
+            price=150000,
+            event_types=["party"],
+            contents=["گل"],
+            image=self._make_uploaded_image("fresh-flowers.jpg", "JPEG", size=(1400, 1400)),
+        )
+        Product.objects.filter(pk=product.pk).update(image_variants={})
+
+        output = StringIO()
+        call_command(
+            "regenerate_product_image_variants",
+            "--product",
+            product.url_slug,
+            stdout=output,
+        )
+
+        product.refresh_from_db()
+        self.assertTrue(product.image_variants["variants"]["jpeg"])
+        self.assertIn("Image optimization summary", output.getvalue())
 
     @unittest.skipUnless(AVIF_SUPPORTED, "AVIF plugin is not installed in this environment.")
     def test_staff_can_create_product_with_avif_image(self):
@@ -356,7 +592,7 @@ class AdminProductApiTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         created = Product.objects.get(id=response.data["id"])
-        self.assertEqual(created.contents, ["خرما", "حلوا"])
+        self.assertEqual(created.contents, [{"name": "خرما", "price": None}, {"name": "حلوا", "price": None}])
         self.assertEqual(created.photo_analysis["top_label"], "خرما")
         mocked_analyze.assert_called_once()
 
@@ -640,13 +876,13 @@ class PageProductOrderingApiTests(APITestCase):
             contents=[],
         )
 
-    def test_admin_targets_include_home_shop_and_event_pages(self):
+    def test_admin_targets_include_home_and_event_pages(self):
         response = self.client.get(reverse("admin-page-product-targets"))
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         page_keys = {item["page_key"] for item in response.data}
         self.assertIn("home", page_keys)
-        self.assertIn("shop", page_keys)
+        self.assertNotIn("shop", page_keys)
         self.assertIn("event:memorial", page_keys)
 
     def test_admin_state_returns_preview_products_for_selected_page(self):
@@ -700,7 +936,7 @@ class PageProductOrderingApiTests(APITestCase):
             [str(self.home_c.id), str(self.home_a.id)],
         )
 
-    def test_shop_preview_keeps_remaining_products_after_custom_priority(self):
+    def test_shop_preview_target_is_removed(self):
         reorder_response = self.client.post(
             reverse("admin-page-product-placements-reorder"),
             {
@@ -711,7 +947,4 @@ class PageProductOrderingApiTests(APITestCase):
             format="json",
         )
 
-        self.assertEqual(reorder_response.status_code, status.HTTP_200_OK)
-        preview_ids = [item["id"] for item in reorder_response.data["preview_products"]]
-        self.assertEqual(preview_ids[0], str(self.home_b.id))
-        self.assertCountEqual(preview_ids, [str(self.home_a.id), str(self.home_b.id), str(self.home_c.id)])
+        self.assertEqual(reorder_response.status_code, status.HTTP_400_BAD_REQUEST)

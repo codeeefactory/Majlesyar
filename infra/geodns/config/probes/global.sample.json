@@ -1,0 +1,36 @@
+{
+  "region": "global",
+  "timestamp": "2026-05-03T16:30:00Z",
+  "dns": {
+    "authoritative": {
+      "overall_ok": true
+    },
+    "public_answer": {
+      "correct_overall": true
+    },
+    "serial": {
+      "consistent": true,
+      "servers": {
+        "ns1.majlesyar.com": 2026050301,
+        "ns2.majlesyar.com": 2026050301
+      }
+    }
+  },
+  "origins": {
+    "iran": {
+      "overall_ok": true
+    },
+    "global": {
+      "overall_ok": true
+    },
+    "maintenance": {
+      "overall_ok": true
+    }
+  },
+  "tls": {
+    "majlesyar.com": {
+      "valid": true,
+      "days_remaining": 39
+    }
+  }
+}

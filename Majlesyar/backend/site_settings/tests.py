@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
+from unittest.mock import patch
 from rest_framework import status
 from rest_framework.test import APITestCase
 
@@ -141,6 +142,33 @@ class PingAPIViewTests(TestCase):
         )
         self.assertEqual(response.headers["Pragma"], "no-cache")
         self.assertEqual(response.headers["Expires"], "0")
+
+
+class HealthAPIViewTests(TestCase):
+    def test_health_endpoint_returns_database_status(self):
+        response = self.client.get("/api/v1/health/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["ok"], True)
+        self.assertEqual(response.json()["checks"]["database"]["ok"], True)
+        self.assertIn("server_time", response.json())
+        self.assertEqual(
+            response.headers["Cache-Control"],
+            "no-store, no-cache, must-revalidate, max-age=0",
+        )
+        self.assertEqual(response.headers["Pragma"], "no-cache")
+        self.assertEqual(response.headers["Expires"], "0")
+
+    @patch("site_settings.views.connection.ensure_connection")
+    def test_health_endpoint_returns_503_when_database_check_fails(self, ensure_connection_mock):
+        ensure_connection_mock.side_effect = RuntimeError("database unavailable")
+
+        response = self.client.get("/api/v1/health/")
+
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(response.json()["ok"], False)
+        self.assertEqual(response.json()["checks"]["database"]["ok"], False)
+        self.assertEqual(response.json()["checks"]["database"]["error"], "RuntimeError")
 
 
 class AdminSiteSettingApiTests(APITestCase):

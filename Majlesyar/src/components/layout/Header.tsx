@@ -1,34 +1,35 @@
 import { Link, useLocation } from 'react-router-dom';
-import { ShoppingCart, Menu, X, Package, Home, Store, Wrench, Search, Info } from 'lucide-react';
+import { ShoppingCart, Menu, X, Package, Home, Wrench, Search, Info, UserRound } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/contexts/CartContext';
+import { useCustomerAuth } from '@/contexts/CustomerAuthContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { Badge } from '@/components/ui/badge';
-import { PaymentNoticeBar } from './PaymentNoticeBar';
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { totalItems, totalQuantity, isMinQuantityMet } = useCart();
+  const { customer, isAuthenticated } = useCustomerAuth();
   const { settings } = useSettings();
   const location = useLocation();
 
   const navLinks = [
     { href: '/', label: 'خانه', icon: Home, hidden: false },
-    { href: '/shop', label: 'فروشگاه', icon: Store, hidden: false },
+    { href: '/pack', label: 'محصولات', icon: Package, hidden: false },
     { href: '/about', label: 'درباره ما', icon: Info, hidden: false },
     { href: '/builder', label: 'ساخت پک', icon: Wrench, hidden: false },
     { href: '/track', label: 'پیگیری سفارش', icon: Search, hidden: true },
   ];
 
   const visibleNavLinks = navLinks.filter(link => !link.hidden);
+  const accountHref = isAuthenticated ? '/dashboard' : '/login';
+  const accountLabel = isAuthenticated ? customer?.fullName || 'حساب من' : 'ورود';
 
   const isActive = (path: string) => location.pathname === path;
 
   return (
     <header className="relative sticky top-0 z-50 w-full bg-card shadow-soft" role="banner">
-      <PaymentNoticeBar />
-
       <div className="border-b border-border">
         <nav className="container flex h-16 items-center justify-between" aria-label="منوی اصلی">
           {/* Logo */}
@@ -69,6 +70,27 @@ export function Header() {
 
           {/* Cart & Mobile Menu */}
           <div className="flex items-center gap-2">
+            <Link to={accountHref} aria-label={accountLabel} className="hidden md:inline-flex">
+              <Button
+                variant={isActive('/dashboard') || isActive('/profile') || isActive('/login') || isActive('/signup') ? 'default' : 'ghost'}
+                size="sm"
+                className="gap-2 min-h-[44px]"
+              >
+                <UserRound className="w-4 h-4" aria-hidden="true" />
+                <span className="max-w-24 truncate">{accountLabel}</span>
+              </Button>
+            </Link>
+            <Link to={accountHref} aria-label={accountLabel} className="md:hidden">
+              <Button
+                variant="outline"
+                size="icon"
+                className="min-h-[44px] min-w-[44px] touch-manipulation"
+                aria-label={accountLabel}
+              >
+                <UserRound className="w-5 h-5" aria-hidden="true" />
+              </Button>
+            </Link>
+
             <Link to="/cart" aria-label={`سبد خرید - ${totalQuantity} محصول`}>
               <Button
                 variant="outline"
@@ -129,6 +151,19 @@ export function Header() {
                 </Button>
               </Link>
             ))}
+            <Link
+              to={accountHref}
+              onClick={() => setMobileMenuOpen(false)}
+              role="menuitem"
+            >
+              <Button
+                variant={isActive(accountHref) ? 'default' : 'ghost'}
+                className="w-full justify-start gap-3 min-h-[48px] touch-manipulation"
+              >
+                <UserRound className="w-5 h-5" aria-hidden="true" />
+                {accountLabel}
+              </Button>
+            </Link>
           </div>
         </div>
       )}

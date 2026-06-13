@@ -1,20 +1,152 @@
-import { lazy, Suspense, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { AppShell } from '@/components/layout';
 import { Button } from '@/components/ui/button';
 import { QuantityStepper } from '@/components/QuantityStepper';
+import { CustomerFeedbackSection } from '@/components/CustomerFeedbackSection';
+import { InternalLinkCards } from '@/components/InternalLinkCards';
 import { RuleAlert } from '@/components/RuleAlert';
+import { ResponsiveProductImage } from '@/components/ResponsiveProductImage';
 import { SEO } from '@/components/SEO';
 import { getProduct } from '@/lib/api';
+import { isHiddenEventRoutePath } from '@/data/siteConstants';
 import { notifySuccess } from '@/lib/notify';
 import { useCart } from '@/contexts/CartContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import type { Product } from '@/types/domain';
 import { ShoppingCart, ArrowRight, Check, Phone, Package } from 'lucide-react';
+import type { EventPage } from '@/types/domain';
 
-const LazyProductFeedbackSection = lazy(() =>
-  import('@/components/ProductFeedbackSection').then((m) => ({ default: m.ProductFeedbackSection })),
-);
+const relatedProductLinks = [
+  {
+    patterns: ['شله زرد', 'شله‌زرد'],
+    links: [
+      { label: 'حلوا خرما', url: '/halva-khorma' },
+      { label: 'خرما گردو', url: '/halva-khorma' },
+      { label: 'خانه', url: '/' },
+    ],
+  },
+  {
+    patterns: ['پک میوه', 'پک پذیرایی'],
+    links: [
+      { label: 'پک ترحیم', url: '/pack/memorial' },
+      { label: 'حلوا خرما', url: '/halva-khorma' },
+      { label: 'خرما گردو', url: '/halva-khorma' },
+      { label: 'گل ترحیم و تسلیت', url: '/flower/memorial-wreaths' },
+      { label: 'خانه', url: '/' },
+    ],
+  },
+  {
+    patterns: ['پک ترحیم'],
+    links: [
+      { label: 'حلوا خرما', url: '/halva-khorma' },
+      { label: 'شله زرد', url: '/food/shaleh-zard' },
+      { label: 'گل ترحیم', url: '/flower/memorial-wreaths' },
+      { label: 'فینگر فود', url: '/food/finger_food' },
+      { label: 'خانه', url: '/' },
+    ],
+  },
+  {
+    patterns: ['تاج گل ترحیم', 'گل ترحیم', 'گل تسلیت'],
+    links: [
+      { label: 'خانه', url: '/' },
+      { label: 'حلوا خرما', url: '/halva-khorma' },
+    ],
+  },
+  {
+    patterns: ['دسته گل'],
+    links: [
+      { label: 'گل ترحیم', url: '/flower/memorial-wreaths' },
+      { label: 'فینگر فود', url: '/food/finger_food' },
+      { label: 'خانه', url: '/' },
+    ],
+  },
+  {
+    patterns: ['باکس گل'],
+    links: [
+      { label: 'دسته گل', url: '/flower/bouquets' },
+      { label: 'فینگر فود', url: '/food/finger_food' },
+      { label: 'خانه', url: '/' },
+    ],
+  },
+  {
+    patterns: ['تاج گل تبریک', 'افتتاحیه'],
+    links: [
+      { label: 'فینگر فود', url: '/food/finger_food' },
+      { label: 'خانه', url: '/' },
+    ],
+  },
+  {
+    patterns: ['حلوا', 'خرما'],
+    links: [
+      { label: 'شله زرد', url: '/food/shaleh-zard' },
+      { label: 'دسته گل تسلیت', url: '/flower/bouquets' },
+      { label: 'خانه', url: '/' },
+    ],
+  },
+];
+
+function normalizeRoutePath(path?: string) {
+  if (!path) return '';
+  return path === '/' ? path : path.replace(/\/+$/, '');
+}
+
+function getRouteDepth(path: string) {
+  return normalizeRoutePath(path).split('/').filter(Boolean).length;
+}
+
+function getBestProductEvent(product: Product, eventPages: EventPage[]) {
+  const productEventSlugs = new Set(product.eventTypes);
+  const candidates = eventPages
+    .filter(
+      (event) =>
+        productEventSlugs.has(event.slug) &&
+        event.routePath &&
+        event.available !== false &&
+        !event.hidden &&
+        !isHiddenEventRoutePath(event.routePath),
+    )
+    .sort((a, b) => getRouteDepth(b.routePath || '') - getRouteDepth(a.routePath || ''));
+
+  return candidates[0];
+}
+
+function buildProductBreadcrumbs(product: Product, eventPages: EventPage[]) {
+  const productPath = `/product/${encodeURIComponent(product.urlSlug || product.id)}`;
+  const bestEvent = getBestProductEvent(product, eventPages);
+
+  if (!bestEvent?.routePath) {
+    return [
+      { name: 'خانه', url: '/' },
+      { name: 'پک میوه و پذیرایی', url: '/pack' },
+      { name: product.name, url: productPath },
+    ];
+  }
+
+  const targetPath = normalizeRoutePath(bestEvent.routePath);
+  const routeCrumbs = eventPages
+    .filter((event) => {
+      const routePath = normalizeRoutePath(event.routePath);
+      return (
+        routePath &&
+        event.available !== false &&
+        !event.hidden &&
+        !isHiddenEventRoutePath(event.routePath) &&
+        (targetPath === routePath || targetPath.startsWith(`${routePath}/`))
+      );
+    })
+    .sort((a, b) => getRouteDepth(a.routePath || '') - getRouteDepth(b.routePath || ''))
+    .map((event) => ({
+      name: event.name,
+      url: normalizeRoutePath(event.routePath) || `/events/${event.slug}`,
+    }));
+
+  return [
+    { name: 'خانه', url: '/' },
+    ...routeCrumbs,
+    { name: product.name, url: productPath },
+  ];
+}
 
 export default function ProductPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -55,6 +187,10 @@ export default function ProductPage() {
     if (price === null) return 'تماس بگیرید';
     return `${price.toLocaleString('fa-IR')} تومان`;
   };
+  const getContentName = (item: Product['contents'][number]) =>
+    typeof item === 'string' ? item : item.name;
+  const getContentPrice = (item: Product['contents'][number]) =>
+    typeof item === 'string' ? null : item.price;
 
   const shouldShowImage = product?.image && product.image !== '/placeholder.svg' && !imageFailed;
 
@@ -105,10 +241,10 @@ export default function ProductPage() {
         <div className="container py-16 text-center">
           <div className="text-6xl mb-4">😕</div>
           <h1 className="text-2xl font-bold text-foreground mb-4">محصول یافت نشد</h1>
-          <Link to="/shop">
+          <Link to="/pack">
             <Button variant="outline" className="gap-2">
               <ArrowRight className="w-4 h-4" />
-              بازگشت به فروشگاه
+              بازگشت به محصولات
             </Button>
           </Link>
         </div>
@@ -117,10 +253,18 @@ export default function ProductPage() {
   }
 
   const productPath = `/product/${encodeURIComponent(product.urlSlug || product.id)}`;
-  const breadcrumbs = [
-    { name: 'خانه', url: '/' },
-    { name: 'فروشگاه', url: '/shop' },
-    { name: product.name, url: productPath },
+  const breadcrumbs = buildProductBreadcrumbs(product, settings.eventPages);
+  const productSearchText = [
+    product.name,
+    product.description,
+    ...product.contents.map(getContentName),
+  ].join(' ');
+  const productInternalLinks = relatedProductLinks.find((group) =>
+    group.patterns.some((pattern) => productSearchText.includes(pattern)),
+  )?.links || [];
+  const productInternalLinkCards = [
+    ...productInternalLinks.filter((link) => link.url !== '/'),
+    { label: 'صفحه اصلی', url: '/' },
   ];
 
   return (
@@ -133,32 +277,41 @@ export default function ProductPage() {
           name: product.name,
           description: product.description,
           price: product.price,
+          image: product.image,
           category: product.categoryIds?.[0],
+          reviews: product.customerReviews || [],
         }}
         breadcrumbs={breadcrumbs}
-        keywords={['پک پذیرایی', product.name, ...product.contents.slice(0, 3)]}
+        keywords={['پک پذیرایی', product.name, ...product.contents.slice(0, 3).map(getContentName)]}
       />
       <div className="container py-8">
-        <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-8">
-          <Link to="/" className="hover:text-foreground transition-colors">خانه</Link>
-          <span>/</span>
-          <Link to="/shop" className="hover:text-foreground transition-colors">فروشگاه</Link>
-          <span>/</span>
-          <span className="text-foreground">{product.name}</span>
+        <nav className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground mb-8">
+          {breadcrumbs.map((item, index) => (
+            <span key={`${item.url}-${item.name}`} className="inline-flex items-center gap-2">
+              {index > 0 ? <span>/</span> : null}
+              {index < breadcrumbs.length - 1 ? (
+                <Link to={item.url} className="hover:text-foreground transition-colors">
+                  {item.name}
+                </Link>
+              ) : (
+                <span className="text-foreground">{item.name}</span>
+              )}
+            </span>
+          ))}
         </nav>
 
         <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
           <div className="space-y-4">
             <div className="aspect-[4/3] sm:aspect-square bg-muted rounded-2xl border border-border relative overflow-hidden">
               {shouldShowImage ? (
-                <img
-                  src={product.image}
+                <ResponsiveProductImage
+                  product={product}
                   alt={product.imageAlt || product.name}
                   loading="eager"
                   fetchPriority="high"
-                  decoding="async"
+                  sizesKey="detail"
                   sizes="(max-width: 640px) 100vw, 50vw"
-                  className="w-full h-full object-cover object-center"
+                  className="w-full h-full object-contain object-center"
                   onError={() => setImageFailed(true)}
                 />
               ) : (
@@ -184,9 +337,16 @@ export default function ProductPage() {
               <h2 className="font-semibold text-foreground mb-3">محتویات پک:</h2>
               <ul className="space-y-2">
                 {product.contents.map((item, index) => (
-                  <li key={index} className="flex items-center gap-2 text-muted-foreground">
-                    <Check className="w-4 h-4 text-success" />
-                    {item}
+                  <li key={index} className="flex items-center justify-between gap-3 text-muted-foreground">
+                    <span className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-success" />
+                      {getContentName(item)}
+                    </span>
+                    {getContentPrice(item) !== null && (
+                      <span className="text-sm text-foreground whitespace-nowrap">
+                        {formatPrice(getContentPrice(item))}
+                      </span>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -232,11 +392,17 @@ export default function ProductPage() {
             )}
           </div>
         </div>
-
-        <Suspense fallback={<section className="mt-12 rounded-2xl border border-border bg-muted/30 min-h-[20rem]" aria-hidden="true" />}>
-          <LazyProductFeedbackSection productName={product.name} />
-        </Suspense>
       </div>
+      <CustomerFeedbackSection
+        reviews={product.customerReviews || []}
+        title="نظر مشتریان درباره این محصول"
+        description="تجربه مشتریانی که این محصول را برای مراسم خود سفارش داده‌اند"
+      />
+      <InternalLinkCards
+        links={productInternalLinkCards}
+        imageProduct={product}
+        title="صفحات مرتبط"
+      />
     </AppShell>
   );
 }

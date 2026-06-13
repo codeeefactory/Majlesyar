@@ -1,0 +1,78 @@
+{% load unfold majlesyar_admin %}
+
+{% admin_theme_manifest as admin_theme %}
+
+<div class="admin-navigation-shell">
+    <div class="border-b border-base-200 flex gap-3 items-center h-[65px] mb-4 dark:border-base-800 px-3 {% element_classes 'navigation_header' %}" {% if site_dropdown %}x-data="{ openDropdown: false }"{% endif %}>
+        <div class="bg-transparent flex font-semibold gap-3 grow min-w-0 h-[64px] items-center px-3 {% if site_dropdown %}cursor-pointer transition-all -mx-3 px-6 hover:bg-base-100 dark:hover:bg-white/[.06]{% endif %}"
+             {% if site_dropdown %}
+                 x-on:click="openDropdown = !openDropdown"
+                 x-bind:class="{'bg-base-100 dark:bg-white/[.06]': openDropdown, 'bg-transparent': !openDropdown}"
+             {% endif %}
+        >
+            {% if site_logo %}
+                {% include "unfold/helpers/site_logo.html" %}
+            {% elif branding %}
+                {% include "unfold/helpers/site_icon.html" %}
+            {% endif %}
+
+            {% if site_dropdown %}
+                <span class="material-symbols-outlined ml-auto select-none text-font-default-light dark:text-font-default-dark">
+                    unfold_more
+                </span>
+            {% endif %}
+        </div>
+
+        <span class="material-symbols-outlined block cursor-pointer h-[18px] xl:hidden! hover:text-base-700 dark:hover:text-base-200" x-on:click="sidebarMobileOpen = !sidebarMobileOpen">
+            close
+        </span>
+
+        {% include "unfold/helpers/site_dropdown.html" %}
+    </div>
+
+    {% if admin_theme.events %}
+        <section class="admin-product-spectrum" style="{{ admin_theme.blend_style }}" aria-label="ترکیب خدمات مجلس‌یار">
+            <div class="admin-product-spectrum__mesh" aria-hidden="true"></div>
+            <div class="admin-product-spectrum__orb admin-product-spectrum__orb--a" aria-hidden="true"></div>
+            <div class="admin-product-spectrum__orb admin-product-spectrum__orb--b" aria-hidden="true"></div>
+
+            <div class="admin-product-spectrum__inner">
+                <div class="admin-product-spectrum__copy">
+                    <span class="admin-product-spectrum__eyebrow">طیف خدمات مجلس‌یار</span>
+                    <h2 class="admin-product-spectrum__title">{{ admin_theme.summary.title }}</h2>
+                    <p class="admin-product-spectrum__description">{{ admin_theme.summary.description }}</p>
+                </div>
+
+                <div class="admin-product-spectrum__metrics" role="list" aria-label="خلاصه محصولات">
+                    {% for metric in admin_theme.metrics %}
+                        <div class="admin-spectrum-metric" role="listitem">
+                            <span class="admin-spectrum-metric__value">{{ metric.value }}</span>
+                            <span class="admin-spectrum-metric__label">{{ metric.label }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <div class="admin-product-spectrum__chips" role="list" aria-label="انواع خدمات">
+                    {% for event in admin_theme.events %}
+                        <article class="admin-event-chip{% if event.is_active %} is-active{% endif %}" role="listitem" style="{{ event.style }}">
+                            <div class="admin-event-chip__icon" aria-hidden="true">{{ event.icon }}</div>
+                            <div class="admin-event-chip__body">
+                                <div class="admin-event-chip__heading">
+                                    <h3 class="admin-event-chip__title">{{ event.name }}</h3>
+                                    <span class="admin-event-chip__count">{{ event.count_label }}</span>
+                                </div>
+                                <p class="admin-event-chip__note">{{ event.note }}</p>
+                                <div class="admin-event-chip__meta">
+                                    <span>{{ event.available_label }}</span>
+                                    {% if event.featured_label %}
+                                        <span>{{ event.featured_label }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </article>
+                    {% endfor %}
+                </div>
+            </div>
+        </section>
+    {% endif %}
+</div>

@@ -1,5 +1,6 @@
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
+from drf_spectacular.utils import extend_schema
 from rest_framework import generics, status
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
@@ -126,6 +127,9 @@ class AdminOrderNoteCreateAPIView(generics.GenericAPIView):
 class AdminProductSalesReportAPIView(APIView):
     permission_classes = [IsStaffUser]
 
+    @extend_schema(
+        responses=ProductSalesReportSerializer,
+    )
     def get(self, request):
         query_serializer = ProductSalesReportQuerySerializer(data=request.query_params)
         query_serializer.is_valid(raise_exception=True)

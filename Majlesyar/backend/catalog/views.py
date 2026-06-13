@@ -2,17 +2,20 @@ import uuid
 
 from django.db.models import Q
 from django.http import Http404
+from drf_spectacular.utils import extend_schema
 from rest_framework import generics
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import BuilderItem, Category, Product, Tag
+from .models import BuilderItem, Category, CustomerReview, Product, Tag
 from .serializers import (
     BuilderItemSerializer,
     BuilderItemWriteSerializer,
     CategorySerializer,
     CategoryWriteSerializer,
+    CustomerReviewSerializer,
+    CustomerReviewWriteSerializer,
     PagePreviewTargetSerializer,
     PageProductPlacementSerializer,
     PageProductPlacementStateSerializer,
@@ -43,11 +46,40 @@ class TagListAPIView(generics.ListAPIView):
     serializer_class = TagSerializer
 
 
+class CustomerReviewListAPIView(generics.ListAPIView):
+    serializer_class = CustomerReviewSerializer
+
+    def get_queryset(self):
+        queryset = CustomerReview.objects.select_related("product").filter(is_approved=True)
+
+        product = self.request.query_params.get("product")
+        if product:
+            try:
+                product_id = uuid.UUID(str(product))
+            except (TypeError, ValueError):
+                queryset = queryset.filter(product__url_slug=str(product).strip())
+            else:
+                queryset = queryset.filter(product_id=product_id)
+
+        featured = self.request.query_params.get("featured")
+        if featured is not None:
+            queryset = queryset.filter(is_featured=featured.lower() == "true")
+
+        limit = self.request.query_params.get("limit")
+        if limit:
+            try:
+                return queryset[: max(1, min(int(limit), 24))]
+            except (TypeError, ValueError):
+                return queryset
+
+        return queryset
+
+
 class ProductListAPIView(generics.ListAPIView):
     serializer_class = ProductSerializer
 
     def get_queryset(self):
-        queryset = Product.objects.prefetch_related("categories", "tags").all()
+        queryset = Product.objects.prefetch_related("categories", "tags", "customer_reviews").all()
 
         category_id = self.request.query_params.get("category")
         if category_id:
@@ -87,7 +119,7 @@ class ProductListAPIView(generics.ListAPIView):
 
 
 class ProductDetailAPIView(generics.RetrieveAPIView):
-    queryset = Product.objects.prefetch_related("categories", "tags").all()
+    queryset = Product.objects.prefetch_related("categories", "tags", "customer_reviews").all()
     serializer_class = ProductSerializer
     lookup_url_kwarg = "lookup"
 
@@ -122,6 +154,9 @@ class PageProductPreviewAPIView(APIView):
     authentication_classes = []
     permission_classes = []
 
+    @extend_schema(
+        responses=PageProductPreviewSerializer,
+    )
     def get(self, request):
         page_type = str(request.query_params.get("page_type") or "").strip()
         page_slug = str(request.query_params.get("page_slug") or "").strip()
@@ -219,6 +254,45 @@ class AdminProductDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
         return Response(response_serializer.data)
 
 
+class AdminCustomerReviewListCreateAPIView(generics.ListCreateAPIView):
+    permission_classes = [IsStaffUser]
+    parser_classes = [JSONParser, MultiPartParser, FormParser]
+
+    def get_queryset(self):
+        queryset = CustomerReview.objects.select_related("product").all()
+
+        product = self.request.query_params.get("product")
+        if product:
+            queryset = queryset.filter(product_id=product)
+
+        approved = self.request.query_params.get("approved")
+        if approved is not None:
+            queryset = queryset.filter(is_approved=approved.lower() == "true")
+
+        featured = self.request.query_params.get("featured")
+        if featured is not None:
+            queryset = queryset.filter(is_featured=featured.lower() == "true")
+
+        return queryset
+
+    def get_serializer_class(self):
+        if self.request.method == "POST":
+            return CustomerReviewWriteSerializer
+        return CustomerReviewSerializer
+
+
+class AdminCustomerReviewDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsStaffUser]
+    parser_classes = [JSONParser, MultiPartParser, FormParser]
+    queryset = CustomerReview.objects.select_related("product").all()
+    lookup_field = "id"
+
+    def get_serializer_class(self):
+        if self.request.method in ("PATCH", "PUT"):
+            return CustomerReviewWriteSerializer
+        return CustomerReviewSerializer
+
+
 class AdminCategoryListCreateAPIView(generics.ListCreateAPIView):
     permission_classes = [IsStaffUser]
     parser_classes = [JSONParser, MultiPartParser, FormParser]
@@ -300,6 +374,9 @@ class AdminBuilderItemListCreateAPIView(generics.ListCreateAPIView):
 class AdminPagePreviewTargetListAPIView(APIView):
     permission_classes = [IsStaffUser]
 
+    @extend_schema(
+        responses=PagePreviewTargetSerializer(many=True),
+    )
     def get(self, request):
         serializer = PagePreviewTargetSerializer(get_page_preview_targets(), many=True)
         return Response(serializer.data)
@@ -308,6 +385,9 @@ class AdminPagePreviewTargetListAPIView(APIView):
 class AdminPageProductPlacementListAPIView(APIView):
     permission_classes = [IsStaffUser]
 
+    @extend_schema(
+        responses=PageProductPlacementStateSerializer,
+    )
     def get(self, request):
         page_type = str(request.query_params.get("page_type") or "").strip()
         page_slug = str(request.query_params.get("page_slug") or "").strip()
@@ -334,6 +414,10 @@ class AdminPageProductPlacementListAPIView(APIView):
 class AdminPageProductPlacementReorderAPIView(APIView):
     permission_classes = [IsStaffUser]
 
+    @extend_schema(
+        request=PageProductReorderSerializer,
+        responses=PageProductPlacementStateSerializer,
+    )
     def post(self, request):
         serializer = PageProductReorderSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)

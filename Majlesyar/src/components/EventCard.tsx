@@ -4,13 +4,14 @@ interface EventCardProps {
   id: string;
   name: string;
   slug: string;
+  routePath?: string;
   description: string;
   icon: string;
   color: string;
   available?: boolean;
 }
 
-export function EventCard({ id, name, slug, description, icon, color, available = true }: EventCardProps) {
+export function EventCard({ id, name, slug, routePath, description, icon, color, available = true }: EventCardProps) {
   if (!available) {
     return (
       <article>
@@ -37,7 +38,7 @@ export function EventCard({ id, name, slug, description, icon, color, available 
   return (
     <article>
       <Link
-        to={`/events/${slug}`}
+        to={routePath || `/events/${slug}`}
         className={`group block p-6 rounded-2xl border border-border ${color} card-hover relative overflow-hidden focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2`}
         aria-label={`مشاهده محصولات ${name}`}
       >

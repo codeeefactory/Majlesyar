@@ -72,6 +72,13 @@ export const storage = {
   // Orders
   getOrders: () => getItem('orders', []),
   setOrders: (orders: unknown) => setItem('orders', orders),
+
+  // Customer Auth
+  getCustomerAccounts: () => getItem('customerAccounts', []),
+  setCustomerAccounts: (accounts: unknown) => setItem('customerAccounts', accounts),
+  getCustomerSession: () => getItem('customerSession', null),
+  setCustomerSession: (session: unknown) => setItem('customerSession', session),
+  clearCustomerSession: () => removeItem('customerSession'),
   
   // Cart
   getCart: () => getItem('cart', []),

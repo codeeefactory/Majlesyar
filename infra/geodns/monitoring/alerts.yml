@@ -1,0 +1,66 @@
+groups:
+  - name: majlesyar-geodns
+    rules:
+      - alert: MajlesyarAuthoritativeDnsDown
+        expr: majlesyar_dns_authoritative_ok == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: Authoritative DNS unavailable from a probe
+
+      - alert: MajlesyarGeoDnsIncorrect
+        expr: majlesyar_dns_response_correct == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: GeoDNS answer mismatch from a probe
+
+      - alert: MajlesyarOriginDown
+        expr: majlesyar_origin_check_ok == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: An origin check is failing
+
+      - alert: MajlesyarTlsExpiringSoon
+        expr: majlesyar_tls_days_remaining < 21
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: TLS certificate expires in less than 21 days
+
+      - alert: MajlesyarPowerDnsServiceDown
+        expr: majlesyar_powerdns_service_up == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: PowerDNS service is down
+
+      - alert: MajlesyarMaxMindDbStale
+        expr: majlesyar_maxmind_db_age_seconds > 604800
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: MaxMind database is older than 7 days
+
+      - alert: MajlesyarNginxDown
+        expr: majlesyar_nginx_service_up == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: Nginx service is down
+
+      - alert: MajlesyarAppDown
+        expr: majlesyar_local_app_health_ok == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: Local application health check failed

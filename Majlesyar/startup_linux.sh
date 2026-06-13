@@ -4,6 +4,7 @@ set -Eeuo pipefail
 APP_NAME="${APP_NAME:-majlesyar}"
 IMAGE_NAME="${IMAGE_NAME:-${APP_NAME}:latest}"
 CONTAINER_NAME="${CONTAINER_NAME:-${APP_NAME}}"
+BOT_CONTAINER_NAME="${BOT_CONTAINER_NAME:-${APP_NAME}-telegram-bot}"
 HOST_PORT="${HOST_PORT:-80}"
 APP_PORT="${APP_PORT:-8000}"
 CPU_LIMIT="${CPU_LIMIT:-2.0}"
@@ -13,13 +14,25 @@ DOMAIN="${DOMAIN:-}"
 PUBLIC_URL="${PUBLIC_URL:-}"
 APT_USE_IRAN_MIRROR="${APT_USE_IRAN_MIRROR:-0}"
 REPO_URL="${REPO_URL:-https://github.com/codeeefactory/Majlesyar.git}"
-REPO_REF="${REPO_REF:-main}"
+REPO_REF="${REPO_REF:-master}"
+SKIP_GIT_PULL="${SKIP_GIT_PULL:-0}"
 BOOTSTRAP_DIR="${BOOTSTRAP_DIR:-/opt/majlesyar-src}"
 PROJECT_SUBDIR="${PROJECT_SUBDIR:-Majlesyar}"
 
 ADMIN_USERNAME="${ADMIN_USERNAME:-}"
 ADMIN_EMAIL="${ADMIN_EMAIL:-admin@example.com}"
 ADMIN_PASSWORD="${ADMIN_PASSWORD:-}"
+TELEGRAM_BOT_ENABLED="${TELEGRAM_BOT_ENABLED:-0}"
+TELEGRAM_BOT_TOKEN="${TELEGRAM_BOT_TOKEN:-}"
+TELEGRAM_BOT_USE_WEBHOOK="${TELEGRAM_BOT_USE_WEBHOOK:-1}"
+TELEGRAM_BOT_WEBHOOK_SECRET="${TELEGRAM_BOT_WEBHOOK_SECRET:-}"
+TELEGRAM_BOT_WEBHOOK_PATH="${TELEGRAM_BOT_WEBHOOK_PATH:-api/v1/telegram/webhook/}"
+TELEGRAM_BOT_ALLOWED_USER_IDS="${TELEGRAM_BOT_ALLOWED_USER_IDS:-}"
+TELEGRAM_BOT_ALLOWED_CHAT_IDS="${TELEGRAM_BOT_ALLOWED_CHAT_IDS:-}"
+TELEGRAM_BOT_ADMIN_ONLY="${TELEGRAM_BOT_ADMIN_ONLY:-1}"
+TELEGRAM_BOT_NOTIFICATIONS_ENABLED="${TELEGRAM_BOT_NOTIFICATIONS_ENABLED:-0}"
+BOT_POLL_TIMEOUT="${BOT_POLL_TIMEOUT:-5}"
+BOT_SLEEP_SECONDS="${BOT_SLEEP_SECONDS:-5}"
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DEPLOY_DIR=""
@@ -73,6 +86,22 @@ ensure_git() {
   run_root apt-get install -y git ca-certificates
 }
 
+ensure_runtime_tools() {
+  local packages=()
+  command -v curl >/dev/null 2>&1 || packages+=(curl)
+  command -v openssl >/dev/null 2>&1 || packages+=(openssl)
+
+  if [[ ${#packages[@]} -eq 0 ]]; then
+    return
+  fi
+  if ! command -v apt-get >/dev/null 2>&1; then
+    fail "Missing required tools: ${packages[*]}."
+  fi
+
+  run_root apt-get update
+  run_root apt-get install -y "${packages[@]}"
+}
+
 is_repo_layout() {
   [[ -f "${ROOT_DIR}/Dockerfile" && -d "${ROOT_DIR}/backend" ]]
 }
@@ -115,6 +144,23 @@ ensure_repo_layout() {
   bootstrap_repo_if_needed
   [[ -f "${ROOT_DIR}/Dockerfile" ]] || fail "Dockerfile not found in ${ROOT_DIR}."
   [[ -d "${ROOT_DIR}/backend" ]] || fail "backend/ not found in ${ROOT_DIR}."
+}
+
+pull_latest_if_repo() {
+  [[ "${SKIP_GIT_PULL}" != "1" ]] || {
+    log "Skipping git update (SKIP_GIT_PULL=1)."
+    return
+  }
+  [[ -d "${ROOT_DIR}/.git" ]] || return
+
+  if [[ -n "$(git -C "${ROOT_DIR}" status --porcelain --untracked-files=no)" ]]; then
+    fail "Tracked local changes found in ${ROOT_DIR}; refusing to pull. Commit/stash them or set SKIP_GIT_PULL=1."
+  fi
+
+  log "Pulling latest source for ${REPO_REF} ..."
+  git -C "${ROOT_DIR}" fetch origin "${REPO_REF}"
+  git -C "${ROOT_DIR}" checkout "${REPO_REF}"
+  git -C "${ROOT_DIR}" pull --ff-only origin "${REPO_REF}"
 }
 
 configure_apt_iran_mirrors() {
@@ -172,6 +218,32 @@ PY
   fail "Cannot generate DJANGO_SECRET_KEY automatically (need openssl or python3)."
 }
 
+env_is_truthy() {
+  local value="${1:-}"
+  value="$(printf '%s' "${value}" | tr '[:upper:]' '[:lower:]')"
+  [[ "${value}" == "1" || "${value}" == "true" || "${value}" == "yes" || "${value}" == "on" ]]
+}
+
+env_file_get() {
+  local key="$1"
+  [[ -f "${ENV_FILE}" ]] || return 0
+  awk -F= -v key="${key}" '$1 == key { sub(/^[^=]*=/, "", $0); print $0; exit }' "${ENV_FILE}"
+}
+
+env_file_set() {
+  local key="$1"
+  local value="$2"
+  if [[ -f "${ENV_FILE}" ]] && grep -q "^${key}=" "${ENV_FILE}"; then
+    local tmp_file
+    tmp_file="$(mktemp)"
+    awk -F= -v key="${key}" -v value="${value}" 'BEGIN { written = 0 } $1 == key { print key "=" value; written = 1; next } { print } END { if (!written) print key "=" value }' "${ENV_FILE}" > "${tmp_file}"
+    cat "${tmp_file}" > "${ENV_FILE}"
+    rm -f "${tmp_file}"
+  else
+    printf '%s=%s\n' "${key}" "${value}" >> "${ENV_FILE}"
+  fi
+}
+
 build_allowed_hosts() {
   local ip host_list
   ip="$(hostname -I 2>/dev/null | awk '{print $1}')"
@@ -210,20 +282,32 @@ write_env_file() {
   touch "${DB_FILE}"
 
   local secret_key allowed_hosts public_url
-  secret_key="${DJANGO_SECRET_KEY:-$(generate_secret_key)}"
+  secret_key="${DJANGO_SECRET_KEY:-$(env_file_get DJANGO_SECRET_KEY)}"
+  if [[ -z "${secret_key}" ]]; then
+    secret_key="$(generate_secret_key)"
+  fi
   allowed_hosts="$(build_allowed_hosts)"
   public_url="$(build_public_url)"
 
   umask 077
-  cat > "${ENV_FILE}" <<EOF
-PORT=${APP_PORT}
-DJANGO_DEBUG=0
-DJANGO_SECRET_KEY=${secret_key}
-DJANGO_ALLOWED_HOSTS=${allowed_hosts}
-DJANGO_MEDIA_ROOT=/app/media
-CORS_ALLOWED_ORIGINS=${public_url}
-CSRF_TRUSTED_ORIGINS=${public_url}
-EOF
+  touch "${ENV_FILE}"
+  env_file_set "PORT" "${APP_PORT}"
+  env_file_set "DJANGO_DEBUG" "0"
+  env_file_set "DJANGO_SECRET_KEY" "${secret_key}"
+  env_file_set "DJANGO_ALLOWED_HOSTS" "${allowed_hosts}"
+  env_file_set "DJANGO_MEDIA_ROOT" "/app/media"
+  env_file_set "CORS_ALLOWED_ORIGINS" "${public_url}"
+  env_file_set "CSRF_TRUSTED_ORIGINS" "${public_url}"
+  env_file_set "TELEGRAM_BOT_ENABLED" "${TELEGRAM_BOT_ENABLED}"
+  env_file_set "TELEGRAM_BOT_TOKEN" "${TELEGRAM_BOT_TOKEN}"
+  env_file_set "TELEGRAM_BOT_USE_WEBHOOK" "${TELEGRAM_BOT_USE_WEBHOOK}"
+  env_file_set "TELEGRAM_BOT_WEBHOOK_SECRET" "${TELEGRAM_BOT_WEBHOOK_SECRET}"
+  env_file_set "TELEGRAM_BOT_WEBHOOK_PATH" "${TELEGRAM_BOT_WEBHOOK_PATH}"
+  env_file_set "TELEGRAM_BOT_BASE_URL" "${public_url}"
+  env_file_set "TELEGRAM_BOT_ALLOWED_USER_IDS" "${TELEGRAM_BOT_ALLOWED_USER_IDS}"
+  env_file_set "TELEGRAM_BOT_ALLOWED_CHAT_IDS" "${TELEGRAM_BOT_ALLOWED_CHAT_IDS}"
+  env_file_set "TELEGRAM_BOT_ADMIN_ONLY" "${TELEGRAM_BOT_ADMIN_ONLY}"
+  env_file_set "TELEGRAM_BOT_NOTIFICATIONS_ENABLED" "${TELEGRAM_BOT_NOTIFICATIONS_ENABLED}"
   umask 022
 }
 
@@ -249,6 +333,30 @@ start_container() {
     "${IMAGE_NAME}" >/dev/null
 }
 
+wait_for_container() {
+  local health_url="http://127.0.0.1:${HOST_PORT}/api/v1/health/"
+  if [[ "${HOST_PORT}" == *:* ]]; then
+    local bind_host="${HOST_PORT%:*}"
+    local bind_port="${HOST_PORT##*:}"
+    if [[ "${bind_host}" == "0.0.0.0" || "${bind_host}" == "::" || "${bind_host}" == "[::]" ]]; then
+      bind_host="127.0.0.1"
+    fi
+    health_url="http://${bind_host}:${bind_port}/api/v1/health/"
+  fi
+
+  log "Waiting for application health at ${health_url} ..."
+  for _ in $(seq 1 60); do
+    if curl --fail --silent --show-error --max-time 3 "${health_url}" >/dev/null 2>&1; then
+      log "Application is healthy."
+      return
+    fi
+    sleep 2
+  done
+
+  docker logs --tail 100 "${CONTAINER_NAME}" || true
+  fail "Application did not become healthy in time."
+}
+
 create_superuser_if_requested() {
   if [[ -z "${ADMIN_USERNAME}" || -z "${ADMIN_PASSWORD}" ]]; then
     log "Skipping superuser creation (set ADMIN_USERNAME and ADMIN_PASSWORD to enable)."
@@ -261,7 +369,64 @@ create_superuser_if_requested() {
     -e DJANGO_SUPERUSER_EMAIL="${ADMIN_EMAIL}" \
     -e DJANGO_SUPERUSER_PASSWORD="${ADMIN_PASSWORD}" \
     "${CONTAINER_NAME}" \
-    python manage.py createsuperuser --noinput || true
+    python manage.py shell -c "exec(\"\"\"from django.contrib.auth import get_user_model
+import os
+
+User = get_user_model()
+username = os.environ['DJANGO_SUPERUSER_USERNAME']
+email = os.environ['DJANGO_SUPERUSER_EMAIL']
+password = os.environ['DJANGO_SUPERUSER_PASSWORD']
+user, created = User.objects.get_or_create(
+    username=username,
+    defaults={'email': email, 'is_staff': True, 'is_superuser': True},
+)
+changed = False
+if user.email != email:
+    user.email = email
+    changed = True
+if not user.is_staff:
+    user.is_staff = True
+    changed = True
+if not user.is_superuser:
+    user.is_superuser = True
+    changed = True
+if created or not user.check_password(password):
+    user.set_password(password)
+    changed = True
+if changed:
+    user.save()
+print('superuser ready')
+\"\"\")"
+}
+
+configure_telegram_bot_if_requested() {
+  docker rm -f "${BOT_CONTAINER_NAME}" >/dev/null 2>&1 || true
+
+  if ! env_is_truthy "$(env_file_get TELEGRAM_BOT_ENABLED)"; then
+    log "Telegram bot disabled."
+    return
+  fi
+  if [[ -z "$(env_file_get TELEGRAM_BOT_TOKEN)" ]]; then
+    log "Telegram bot enabled but TELEGRAM_BOT_TOKEN is empty; skipping bot startup."
+    return
+  fi
+
+  if env_is_truthy "$(env_file_get TELEGRAM_BOT_USE_WEBHOOK)"; then
+    log "Configuring Telegram webhook ..."
+    docker exec "${CONTAINER_NAME}" python manage.py configure_telegram_webhook
+    return
+  fi
+
+  log "Starting Telegram polling container ${BOT_CONTAINER_NAME} ..."
+  docker exec "${CONTAINER_NAME}" python manage.py configure_telegram_webhook --delete >/dev/null 2>&1 || true
+  docker run -d \
+    --name "${BOT_CONTAINER_NAME}" \
+    --restart unless-stopped \
+    --env-file "${ENV_FILE}" \
+    -v "${DB_FILE}:/app/db.sqlite3" \
+    -v "${MEDIA_DIR}:/app/media" \
+    "${IMAGE_NAME}" \
+    sh -c "python manage.py migrate --noinput && python manage.py run_telegram_bot --poll-timeout ${BOT_POLL_TIMEOUT} --sleep-seconds ${BOT_SLEEP_SECONDS}" >/dev/null
 }
 
 print_result() {
@@ -270,6 +435,9 @@ print_result() {
 
   log "Deployment complete."
   log "Container: ${CONTAINER_NAME}"
+  if env_is_truthy "$(env_file_get TELEGRAM_BOT_ENABLED)"; then
+    log "Telegram bot: enabled"
+  fi
   log "URL: ${public_url}"
   log "Admin: ${public_url}/majmanage/"
   log "Swagger: ${public_url}/api/docs/"
@@ -280,12 +448,16 @@ main() {
   require_linux
   configure_apt_iran_mirrors
   ensure_repo_layout
+  pull_latest_if_repo
   set_runtime_paths
+  ensure_runtime_tools
   ensure_docker
   write_env_file
   build_image
   start_container
+  wait_for_container
   create_superuser_if_requested
+  configure_telegram_bot_if_requested
   print_result
 }
 

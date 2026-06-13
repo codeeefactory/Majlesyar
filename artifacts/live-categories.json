@@ -1,0 +1,66 @@
+[
+  {
+    "id": "2164187b-e6ab-48ae-b3e1-fc438e384e75",
+    "name": "اقتصادی",
+    "slug": "economic",
+    "icon": "💰",
+    "color": "",
+    "logo": null
+  },
+  {
+    "id": "492562a8-aceb-498a-9f05-92ecdde13d68",
+    "name": "ترحیم",
+    "slug": "memorial",
+    "icon": "🕯️",
+    "color": "",
+    "logo": null
+  },
+  {
+    "id": "637895c0-404f-4eb3-95fd-684483c718bf",
+    "name": "حلوا و خرما",
+    "slug": "hlo-o-khrm",
+    "icon": "",
+    "color": "",
+    "logo": null
+  },
+  {
+    "id": "1104d813-2569-473c-94a6-40c4d7979ed3",
+    "name": "حلوا و خرما",
+    "slug": "halva-khorma",
+    "icon": "🍯",
+    "color": "",
+    "logo": null
+  },
+  {
+    "id": "d16d11bc-6272-46c4-9545-9a066084daa6",
+    "name": "فینگر فود",
+    "slug": "conference",
+    "icon": "🍢",
+    "color": "",
+    "logo": null
+  },
+  {
+    "id": "78a660e2-9682-41d0-88f2-e232b7d6d543",
+    "name": "لوکس",
+    "slug": "luxury",
+    "icon": "✨",
+    "color": "",
+    "logo": null
+  },
+  {
+    "id": "fb07d636-1134-4884-94ff-099dec4f63d9",
+    "name": "پک خالی",
+    "slug": "empty",
+    "icon": "📦",
+    "color": "",
+    "logo": null
+  },
+  {
+    "id": "55bb5c6a-287d-475f-b733-d31e5bff5819",
+    "name": "گل",
+    "slug": "party",
+    "icon": "💐",
+    "color": "",
+    "logo": null
+  }
+]
