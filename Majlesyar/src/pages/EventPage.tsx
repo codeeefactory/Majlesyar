@@ -276,6 +276,7 @@ export default function EventPage() {
         <InternalLinkCards
           links={visibleInternalLinks || []}
           imageProduct={products[0]}
+          title=""
           className="mt-10"
           withContainer={false}
         />

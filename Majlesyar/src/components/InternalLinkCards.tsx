@@ -31,12 +31,15 @@ export function InternalLinkCards({
   const shouldShowImage = imageProduct?.image && imageProduct.image !== "/placeholder.svg";
 
   const sectionClassName = [withContainer ? "container pb-12" : "", className].filter(Boolean).join(" ");
+  const headingId = title?.trim() ? "internal-links-heading" : undefined;
 
   return (
-    <section className={sectionClassName} aria-labelledby="internal-links-heading">
-      <h2 id="internal-links-heading" className="mb-6 text-2xl font-bold text-foreground">
-        {title}
-      </h2>
+    <section className={sectionClassName} aria-labelledby={headingId} aria-label={headingId ? undefined : "لینک‌های مرتبط"}>
+      {headingId ? (
+        <h2 id={headingId} className="mb-6 text-2xl font-bold text-foreground">
+          {title}
+        </h2>
+      ) : null}
       <nav className="grid grid-cols-2 gap-px md:grid-cols-3 lg:grid-cols-4" aria-label="لینک‌های مرتبط">
         {uniqueLinks.map((link) => (
           <Link
