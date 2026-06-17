@@ -7,7 +7,7 @@ import { CustomerAuthProvider } from "@/contexts/CustomerAuthContext";
 import { SiteThemeSync } from "@/components/SiteThemeSync";
 import { PageLoader } from "@/components/PageLoader";
 import { RouteChangeLoader } from "@/components/RouteChangeLoader";
-import { measureAndStoreClientPing } from "@/lib/network";
+import { getStoredClientPingMs, measureAndStoreClientPing } from "@/lib/network";
 import ProductPage from "./pages/ProductPage";
 
 // Keep product route eager; defer homepage code on non-home routes.
@@ -79,7 +79,34 @@ function DeferredFloatingContactButton() {
 
 const App = () => {
   useEffect(() => {
-    void measureAndStoreClientPing();
+    if (getStoredClientPingMs() !== null) return;
+
+    let timeoutId: number | undefined;
+    let idleId: number | undefined;
+
+    const runPing = () => {
+      if ("requestIdleCallback" in window) {
+        idleId = window.requestIdleCallback(() => void measureAndStoreClientPing(), { timeout: 5000 });
+        return;
+      }
+      timeoutId = window.setTimeout(() => void measureAndStoreClientPing(), 2500);
+    };
+
+    if (document.readyState === "complete") {
+      runPing();
+    } else {
+      window.addEventListener("load", runPing, { once: true });
+    }
+
+    return () => {
+      window.removeEventListener("load", runPing);
+      if (idleId !== undefined && "cancelIdleCallback" in window) {
+        window.cancelIdleCallback(idleId);
+      }
+      if (timeoutId !== undefined) {
+        window.clearTimeout(timeoutId);
+      }
+    };
   }, []);
 
   return (

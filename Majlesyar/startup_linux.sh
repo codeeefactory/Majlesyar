@@ -3,6 +3,8 @@ set -Eeuo pipefail
 
 APP_NAME="${APP_NAME:-majlesyar}"
 IMAGE_NAME="${IMAGE_NAME:-${APP_NAME}:latest}"
+DOCKERFILE_PATH="${DOCKERFILE_PATH:-Dockerfile}"
+DOCKER_BUILD_PULL="${DOCKER_BUILD_PULL:-false}"
 CONTAINER_NAME="${CONTAINER_NAME:-${APP_NAME}}"
 BOT_CONTAINER_NAME="${BOT_CONTAINER_NAME:-${APP_NAME}-telegram-bot}"
 HOST_PORT="${HOST_PORT:-80}"
@@ -18,6 +20,7 @@ REPO_REF="${REPO_REF:-master}"
 SKIP_GIT_PULL="${SKIP_GIT_PULL:-0}"
 BOOTSTRAP_DIR="${BOOTSTRAP_DIR:-/opt/majlesyar-src}"
 PROJECT_SUBDIR="${PROJECT_SUBDIR:-Majlesyar}"
+DATA_DIR="${DATA_DIR:-}"
 
 ADMIN_USERNAME="${ADMIN_USERNAME:-}"
 ADMIN_EMAIL="${ADMIN_EMAIL:-admin@example.com}"
@@ -66,7 +69,11 @@ require_linux() {
 }
 
 set_runtime_paths() {
-  DEPLOY_DIR="${ROOT_DIR}/.deploy"
+  if [[ -n "${DATA_DIR}" ]]; then
+    DEPLOY_DIR="${DATA_DIR}"
+  else
+    DEPLOY_DIR="${ROOT_DIR}/.deploy"
+  fi
   ENV_FILE="${DEPLOY_DIR}/.env.production"
   DB_FILE="${DEPLOY_DIR}/db.sqlite3"
   MEDIA_DIR="${DEPLOY_DIR}/media"
@@ -245,16 +252,29 @@ env_file_set() {
 }
 
 build_allowed_hosts() {
-  local ip host_list
+  local ip host_list public_host domain_host
   ip="$(hostname -I 2>/dev/null | awk '{print $1}')"
   host_list="localhost,127.0.0.1"
   if [[ -n "${ip}" ]]; then
     host_list="${host_list},${ip}"
   fi
   if [[ -n "${DOMAIN}" ]]; then
-    host_list="${host_list},${DOMAIN}"
+    domain_host="${DOMAIN#http://}"
+    domain_host="${domain_host#https://}"
+    domain_host="${domain_host%%/*}"
+    domain_host="${domain_host%%:*}"
+    host_list="${host_list},${domain_host},www.${domain_host}"
   fi
-  printf '%s' "${host_list}"
+  if [[ -n "${PUBLIC_URL}" ]]; then
+    public_host="${PUBLIC_URL#http://}"
+    public_host="${public_host#https://}"
+    public_host="${public_host%%/*}"
+    public_host="${public_host%%:*}"
+    if [[ -n "${public_host}" ]]; then
+      host_list="${host_list},${public_host},www.${public_host}"
+    fi
+  fi
+  printf '%s' "${host_list}" | tr ',' '\n' | awk 'NF && !seen[$0]++' | paste -sd, -
 }
 
 build_public_url() {
@@ -312,8 +332,14 @@ write_env_file() {
 }
 
 build_image() {
+  local dockerfile="${DOCKERFILE_PATH}"
+  if [[ "${dockerfile}" != /* ]]; then
+    dockerfile="${ROOT_DIR}/${dockerfile}"
+  fi
+  [[ -f "${dockerfile}" ]] || fail "Dockerfile not found: ${dockerfile}"
+
   log "Building image ${IMAGE_NAME} ..."
-  docker build -t "${IMAGE_NAME}" "${ROOT_DIR}"
+  docker build --pull="${DOCKER_BUILD_PULL}" -f "${dockerfile}" -t "${IMAGE_NAME}" "${ROOT_DIR}"
 }
 
 start_container() {

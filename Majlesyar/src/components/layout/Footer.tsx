@@ -2,6 +2,8 @@ import { useState, type ComponentProps } from 'react';
 import { Link } from 'react-router-dom';
 import { Phone, MapPin, Instagram, Store, Send, ShoppingBag, Scale } from 'lucide-react';
 import baleLogo from '@/assets/social/bale.webp';
+import eitaaLogo from '@/assets/social/eitaa.webp';
+import soroushLogo from '@/assets/social/soroush.webp';
 import { useSettings } from '@/contexts/SettingsContext';
 import { getInstagramHandle } from '@/lib/contact';
 
@@ -14,19 +16,44 @@ const WhatsAppIcon = ({ className, ...props }: SocialIconProps) => (
   </svg>
 );
 
-const BaleIcon = ({ className, ...props }: SocialLogoProps) => (
+const RubikaIcon = ({ className, ...props }: SocialIconProps) => (
+  <svg viewBox="0 0 64 64" fill="none" className={className} {...props}>
+    <path d="M32 4 56 18v28L32 60 8 46V18L32 4Z" fill="#fff" />
+    <path d="M32 4 44 11 32 18 20 11 32 4Z" fill="#b8d800" />
+    <path d="M44 11 56 18 44 25 32 18 44 11Z" fill="#27c6b9" />
+    <path d="M56 18v14L44 39V25l12-7Z" fill="#7a4a8f" />
+    <path d="M56 32v14L44 53V39l12-7Z" fill="#ef4444" />
+    <path d="M44 53 32 60 20 53 32 46l12 7Z" fill="#b8d800" />
+    <path d="M20 53 8 46V32l12 7v14Z" fill="#32cdbf" />
+    <path d="M8 32V18l12 7v14L8 32Z" fill="#57408f" />
+    <path d="M20 11 32 18 20 25 8 18l12-7Z" fill="#f97316" />
+    <path d="M20 25v14L8 32V18l12 7Z" fill="#ef4b5a" opacity=".95" />
+    <path d="M44 25v14l-12-7V18l12 7Z" fill="#36b3a4" />
+    <path d="M20 39 32 46 20 53V39Z" fill="#57408f" />
+    <path d="M44 39v14L32 46l12-7Z" fill="#f59e0b" />
+    <path d="M32 18 44 25 32 32 20 25 32 18Z" fill="#ffffff" />
+    <path d="M20 25 32 32v14L20 39V25Z" fill="#f3f4f6" />
+    <path d="M44 25 32 32v14l12-7V25Z" fill="#e5e7eb" />
+  </svg>
+);
+
+const SocialLogo = ({ src, className, ...props }: SocialLogoProps & { src: string }) => (
   <img
-    src={baleLogo}
+    src={src}
     alt=""
     width={96}
     height={96}
     loading="lazy"
     decoding="async"
     draggable={false}
-    className={`object-contain rounded-md ${className ?? ''}`}
+    className={`object-contain ${className ?? ''}`}
     {...props}
   />
 );
+
+const BaleIcon = (props: SocialLogoProps) => <SocialLogo src={baleLogo} {...props} />;
+const EitaaIcon = (props: SocialLogoProps) => <SocialLogo src={eitaaLogo} {...props} />;
+const SoroushIcon = (props: SocialLogoProps) => <SocialLogo src={soroushLogo} {...props} />;
 
 const footerProductLinks = [
   { label: 'حلوا خرما، خرما گردو', to: '/halva-khorma' },
@@ -73,30 +100,33 @@ export function Footer() {
       url: settings.baleUrl,
       bgColor: 'bg-[#00A884]',
       hoverColor: 'hover:bg-[#008866]',
+      logoClassName: 'w-12 h-12 md:w-10 md:h-10',
     },
     {
       name: 'ایتا',
       label: 'ایتا',
-      icon: Send,
+      icon: EitaaIcon,
       url: settings.eitaaUrl,
       bgColor: 'bg-[#f58220]',
       hoverColor: 'hover:bg-[#d96f12]',
+      logoClassName: 'w-12 h-12 md:w-10 md:h-10',
     },
     {
       name: 'سروش',
       label: 'سروش',
-      icon: Send,
+      icon: SoroushIcon,
       url: settings.soroushUrl,
       bgColor: 'bg-[#1d9bf0]',
       hoverColor: 'hover:bg-[#0b7fc8]',
+      logoClassName: 'w-12 h-12 md:w-11 md:h-11',
     },
     {
       name: 'روبیکا',
       label: 'روبیکا',
-      icon: Send,
+      icon: RubikaIcon,
       url: settings.rubikaUrl,
-      bgColor: 'bg-[#7b3ff2]',
-      hoverColor: 'hover:bg-[#6330c8]',
+      bgColor: 'bg-gradient-to-br from-[#7c3aed] via-[#ec4899] to-[#f97316]',
+      hoverColor: 'hover:opacity-90',
     },
   ].filter((link) => Boolean(link.url));
 
@@ -231,9 +261,9 @@ export function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={link.name}
-                  className={`w-28 h-24 md:w-24 md:h-20 rounded-xl ${link.bgColor} ${link.hoverColor} text-white flex flex-col items-center justify-center gap-2 md:gap-1 transition-all duration-200 active:scale-95 shadow-md hover:shadow-lg`}
+                  className={`w-28 h-24 md:w-24 md:h-20 rounded-xl ${link.bgColor} ${link.hoverColor} ${link.textColor ?? 'text-white'} border border-white/10 flex flex-col items-center justify-center gap-2 md:gap-1 transition-all duration-200 active:scale-95 shadow-[0_6px_14px_rgba(15,23,42,0.16)] hover:shadow-lg`}
                 >
-                  <link.icon className="w-12 h-12 md:w-10 md:h-10" aria-hidden="true" />
+                  <link.icon className={link.logoClassName ?? 'w-12 h-12 md:w-10 md:h-10'} aria-hidden="true" />
                   <span className="text-sm md:text-xs font-medium">{link.label}</span>
                 </a>
               ))}

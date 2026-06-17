@@ -29,7 +29,7 @@ if (settings.BASE_DIR / "frontend_dist" / "index.html").exists():
     urlpatterns += [
         path("favicon.ico", favicon_redirect, name="favicon-redirect"),
         re_path(
-            r"^(?!api/|admin/|media/|static/).*$",
+            r"^(?!api/|majmanage/|media/|static/).*$",
             TemplateView.as_view(template_name="index.html"),
             name="frontend-app",
         ),

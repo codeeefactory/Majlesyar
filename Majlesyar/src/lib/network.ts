@@ -3,7 +3,7 @@ import { buildUrl } from "@/lib/http";
 const CLIENT_PING_STORAGE_KEY = "majlesyar_client_ping_ms";
 const PING_ENDPOINT = "/api/v1/ping/";
 const MAX_MEASUREMENT_WINDOW_MS = 900;
-const MAX_ATTEMPTS = 3;
+const MAX_ATTEMPTS = 1;
 
 type NavigatorWithConnection = Navigator & {
   connection?: {
@@ -43,6 +43,7 @@ export function getStoredClientPingMs(): number | null {
 
 export async function measureAndStoreClientPing(): Promise<number | null> {
   if (typeof window === "undefined") return null;
+  if (getStoredClientPingMs() !== null) return getStoredClientPingMs();
 
   const deadline = performance.now() + MAX_MEASUREMENT_WINDOW_MS;
   let bestPingMs = Number.POSITIVE_INFINITY;
