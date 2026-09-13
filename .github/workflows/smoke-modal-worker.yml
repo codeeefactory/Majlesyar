@@ -18,6 +18,8 @@ jobs:
     env:
       WORKER_URL: https://sajjad-rgz--majlesyar-product-3d-worker-api.modal.run/generate
       PRODUCT_3D_GENERATOR_TOKEN: ${{ secrets.PRODUCT_3D_GENERATOR_TOKEN }}
+      MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
+      MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
       IMAGE_URL: ${{ inputs.image_url }}
     steps:
       - name: Download source image
@@ -46,3 +48,9 @@ jobs:
           name: modal-3d-smoke-${{ github.run_id }}
           path: product.glb
           retention-days: 7
+
+      - name: Print worker logs after failure
+        if: failure()
+        run: |
+          python -m pip install --quiet modal
+          modal app logs majlesyar-product-3d --since 15m --tail 500 --timestamps
