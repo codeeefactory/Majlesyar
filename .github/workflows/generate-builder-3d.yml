@@ -39,6 +39,12 @@ jobs:
             --output-dir generated-3d \
             --limit "${{ inputs.limit }}"
 
+      - name: Verify GLB structure, geometry, sizes, and hashes
+        id: verify
+        if: always() && hashFiles('generated-3d/manifest.json') != ''
+        continue-on-error: true
+        run: python .github/scripts/verify_builder_3d.py generated-3d
+
       - name: Publish batch summary
         if: always()
         run: |
@@ -81,4 +87,6 @@ jobs:
 
       - name: Fail if any product failed
         if: always()
-        run: test "${{ steps.generate.outcome }}" = "success"
+        run: |
+          test "${{ steps.generate.outcome }}" = "success"
+          test "${{ steps.verify.outcome }}" = "success"

@@ -8,6 +8,7 @@ import hashlib
 import io
 import json
 import os
+import struct
 import sys
 import time
 from pathlib import Path
@@ -45,12 +46,45 @@ def write_manifest(path: Path, records: list[dict[str, Any]]) -> None:
 
 
 def validate_glb(payload: bytes) -> None:
-    if payload[:4] != GLB_MAGIC:
+    if len(payload) < 20:
+        raise ValueError("GLB is too short")
+    magic, version, declared_length = struct.unpack_from("<4sII", payload)
+    if magic != GLB_MAGIC:
         raise ValueError("worker response is not a GLB file")
+    if version != 2:
+        raise ValueError(f"unsupported GLB version {version}")
+    if declared_length != len(payload):
+        raise ValueError(f"GLB header length {declared_length} != payload length {len(payload)}")
     if len(payload) <= MIN_GLB_BYTES:
         raise ValueError(f"GLB is unexpectedly small ({len(payload)} bytes)")
     if len(payload) > MAX_GLB_BYTES:
         raise ValueError(f"GLB exceeds {MAX_GLB_BYTES} bytes")
+
+    chunks: dict[int, bytes] = {}
+    offset = 12
+    while offset < len(payload):
+        if offset + 8 > len(payload):
+            raise ValueError("GLB has a truncated chunk header")
+        chunk_length, chunk_type = struct.unpack_from("<II", payload, offset)
+        offset += 8
+        chunk_end = offset + chunk_length
+        if chunk_end > len(payload):
+            raise ValueError("GLB has a truncated chunk")
+        chunks[chunk_type] = payload[offset:chunk_end]
+        offset = chunk_end
+    if offset != len(payload):
+        raise ValueError("GLB chunk lengths do not match file length")
+
+    json_chunk = chunks.get(0x4E4F534A)
+    binary_chunk = chunks.get(0x004E4942)
+    if not json_chunk or not binary_chunk:
+        raise ValueError("GLB must contain JSON and binary chunks")
+    document = json.loads(json_chunk.rstrip(b" \t\r\n\0").decode("utf-8"))
+    meshes = document.get("meshes") or []
+    if not any(mesh.get("primitives") for mesh in meshes):
+        raise ValueError("GLB contains no mesh primitives")
+    if not document.get("accessors") or not document.get("bufferViews"):
+        raise ValueError("GLB mesh contains no geometry accessors")
 
 
 def generate_one(
