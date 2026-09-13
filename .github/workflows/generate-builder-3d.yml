@@ -1,0 +1,84 @@
+name: Generate builder product 3D models
+
+on:
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: Maximum products to process (0 means all)
+        required: false
+        default: "0"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: builder-3d-production-batch
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      BUILDER_API_URL: https://majlesyar.com/api/v1/products/?builder=true
+      WORKER_URL: https://sajjad-rgz--majlesyar-product-3d-worker-api.modal.run/generate
+      PRODUCT_3D_GENERATOR_TOKEN: ${{ secrets.PRODUCT_3D_GENERATOR_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install client dependency
+        run: python -m pip install --quiet requests
+
+      - name: Generate every builder product on GPU
+        id: generate
+        continue-on-error: true
+        run: |
+          python .github/scripts/generate_builder_3d.py \
+            --api-url "$BUILDER_API_URL" \
+            --worker-url "$WORKER_URL" \
+            --output-dir generated-3d \
+            --limit "${{ inputs.limit }}"
+
+      - name: Publish batch summary
+        if: always()
+        run: |
+          if test -f generated-3d/manifest.json; then
+            python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          manifest = json.loads(Path("generated-3d/manifest.json").read_text(encoding="utf-8"))
+          summary = Path(os.environ["GITHUB_STEP_SUMMARY"])
+          rows = [
+              "# Builder 3D batch",
+              "",
+              f"- Total: {manifest['total']}",
+              f"- Ready: {manifest['ready']}",
+              f"- Failed: {manifest['failed']}",
+              "",
+              "| Product | Status | Bytes |",
+              "|---|---:|---:|",
+          ]
+          rows.extend(
+              f"| {item['name']} | {item['status']} | {item.get('bytes', '-')} |"
+              for item in manifest["products"]
+          )
+          summary.write_text("\n".join(rows), encoding="utf-8")
+          PY
+          else
+            echo "No manifest was produced." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload generated GLBs and manifest
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: builder-product-3d-${{ github.run_id }}
+          path: generated-3d/
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Fail if any product failed
+        if: always()
+        run: test "${{ steps.generate.outcome }}" = "success"
