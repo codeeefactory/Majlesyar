@@ -1,7 +1,7 @@
 FROM pytorch/pytorch:2.2.2-cuda12.1-cudnn8-devel
 
 ARG TRIPOSR_REF=107cefdc244c39106fa830359024f6a2f1c78871
-ENV PYTHONUNBUFFERED=1 PYTHONPATH=/opt/triposr
+ENV PYTHONUNBUFFERED=1 PYTHONPATH=/opt/triposr TORCH_CUDA_ARCH_LIST=7.5
 WORKDIR /worker
 
 RUN apt-get update \
@@ -13,9 +13,8 @@ RUN apt-get update \
 
 COPY requirements.txt ./
 RUN python -m pip install --no-cache-dir -r requirements.txt \
-    && python -m pip install --no-cache-dir scikit-build-core pybind11 \
     && python -m pip install --no-cache-dir --no-build-isolation \
-        git+https://github.com/tatsy/torchmcubes.git@879926d0ef58e6ce0ac2630fdecb5e53af7ed3ff
+        git+https://github.com/tatsy/torchmcubes.git@3aef8afa5f21b113afc4f4ea148baee850cbd472
 COPY triposr_api.py ./
 
 EXPOSE 8080
