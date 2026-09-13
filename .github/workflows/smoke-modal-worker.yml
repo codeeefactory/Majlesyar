@@ -1,0 +1,48 @@
+name: Smoke test Modal 3D worker
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_url:
+        description: Public product image URL to convert
+        required: false
+        default: https://majlesyar.com/media/products/%D8%AF%D8%B3%D8%AA%D9%87_%DA%AF%D9%84_1.jpg
+
+permissions:
+  contents: read
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      WORKER_URL: https://sajjad-rgz--majlesyar-product-3d-worker-api.modal.run/generate
+      PRODUCT_3D_GENERATOR_TOKEN: ${{ secrets.PRODUCT_3D_GENERATOR_TOKEN }}
+      IMAGE_URL: ${{ inputs.image_url }}
+    steps:
+      - name: Download source image
+        run: curl --fail --location --retry 3 --output input-image.jpg "$IMAGE_URL"
+
+      - name: Generate GLB on GPU worker
+        run: |
+          test -n "$PRODUCT_3D_GENERATOR_TOKEN"
+          curl --fail --location --retry 2 --max-time 900 \
+            -H "Authorization: Bearer $PRODUCT_3D_GENERATOR_TOKEN" \
+            -F "image=@input-image.jpg" \
+            -F "asset_id=github-smoke-${GITHUB_RUN_ID}" \
+            -F "model=triposr" \
+            -F "output_format=glb" \
+            "$WORKER_URL" --output product.glb
+
+      - name: Validate GLB output
+        run: |
+          test "$(head -c 4 product.glb)" = "glTF"
+          test "$(stat -c '%s' product.glb)" -gt 1024
+          file product.glb
+
+      - name: Upload generated model
+        uses: actions/upload-artifact@v4
+        with:
+          name: modal-3d-smoke-${{ github.run_id }}
+          path: product.glb
+          retention-days: 7
