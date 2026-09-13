@@ -10,4 +10,3 @@ rembg[gpu]>=2,<3
 huggingface-hub>=0.20,<1
 xatlas>=0.0.9,<1
 moderngl>=5.10,<6
-git+https://github.com/tatsy/torchmcubes.git@879926d0ef58e6ce0ac2630fdecb5e53af7ed3ff

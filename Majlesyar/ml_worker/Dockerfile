@@ -12,7 +12,9 @@ RUN apt-get update \
     && rm -rf /opt/triposr/.git
 
 COPY requirements.txt ./
-RUN python -m pip install --no-cache-dir -r requirements.txt
+RUN python -m pip install --no-cache-dir -r requirements.txt \
+    && python -m pip install --no-cache-dir --no-build-isolation \
+        git+https://github.com/tatsy/torchmcubes.git@879926d0ef58e6ce0ac2630fdecb5e53af7ed3ff
 COPY triposr_api.py ./
 
 EXPOSE 8080
