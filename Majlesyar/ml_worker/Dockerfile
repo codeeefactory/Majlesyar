@@ -5,7 +5,7 @@ ENV PYTHONUNBUFFERED=1 PYTHONPATH=/opt/triposr
 WORKDIR /worker
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends git build-essential \
+    && apt-get install -y --no-install-recommends git build-essential cmake ninja-build \
     && rm -rf /var/lib/apt/lists/* \
     && git clone https://github.com/VAST-AI-Research/TripoSR.git /opt/triposr \
     && git -C /opt/triposr checkout "${TRIPOSR_REF}" \
@@ -13,6 +13,7 @@ RUN apt-get update \
 
 COPY requirements.txt ./
 RUN python -m pip install --no-cache-dir -r requirements.txt \
+    && python -m pip install --no-cache-dir scikit-build-core pybind11 \
     && python -m pip install --no-cache-dir --no-build-isolation \
         git+https://github.com/tatsy/torchmcubes.git@879926d0ef58e6ce0ac2630fdecb5e53af7ed3ff
 COPY triposr_api.py ./
