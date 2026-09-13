@@ -1,4 +1,4 @@
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.utils import timezone
 
 from config.admin_mixins import PersianAdminFormMixin
@@ -19,28 +19,32 @@ class OrderNoteInline(PersianAdminFormMixin, admin.TabularInline):
 
 @admin.action(description="سفارش های انتخاب شده را تایید کن")
 def mark_confirmed(modeladmin, request, queryset):
-    queryset.update(status=Order.Status.CONFIRMED)
+    updated = queryset.update(status=Order.Status.CONFIRMED)
+    modeladmin.message_user(request, f"{updated} سفارش تایید شد.", level=messages.SUCCESS)
 
 
 @admin.action(description="سفارش های انتخاب شده را در حال آماده سازی کن")
 def mark_preparing(modeladmin, request, queryset):
-    queryset.update(status=Order.Status.PREPARING)
+    updated = queryset.update(status=Order.Status.PREPARING)
+    modeladmin.message_user(request, f"{updated} سفارش در حال آماده‌سازی شد.", level=messages.SUCCESS)
 
 
 @admin.action(description="سفارش های انتخاب شده را ارسال شده کن")
 def mark_shipped(modeladmin, request, queryset):
-    queryset.update(status=Order.Status.SHIPPED)
+    updated = queryset.update(status=Order.Status.SHIPPED)
+    modeladmin.message_user(request, f"{updated} سفارش ارسال‌شده شد.", level=messages.SUCCESS)
 
 
 @admin.action(description="سفارش های انتخاب شده را تحویل شده کن")
 def mark_delivered(modeladmin, request, queryset):
-    queryset.update(status=Order.Status.DELIVERED)
+    updated = queryset.update(status=Order.Status.DELIVERED)
+    modeladmin.message_user(request, f"{updated} سفارش تحویل‌شده شد.", level=messages.SUCCESS)
 
 
 @admin.register(Order)
 class OrderAdmin(PersianAdminFormMixin, admin.ModelAdmin):
     list_display = ("public_id", "customer_name", "status", "formatted_total", "created_local")
-    list_filter = ("status", "delivery_date", "customer_province")
+    list_filter = ()
     search_fields = ("public_id", "customer_name", "customer_phone")
     inlines = (OrderItemInline, OrderNoteInline)
     actions = (mark_confirmed, mark_preparing, mark_shipped, mark_delivered)
@@ -94,7 +98,7 @@ class OrderAdmin(PersianAdminFormMixin, admin.ModelAdmin):
 @admin.register(OrderItem)
 class OrderItemAdmin(PersianAdminFormMixin, admin.ModelAdmin):
     list_display = ("order", "name", "quantity", "price", "is_custom_pack")
-    list_filter = ("is_custom_pack",)
+    list_filter = ()
     search_fields = ("order__public_id", "name")
     fieldsets = (
         (

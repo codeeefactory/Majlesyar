@@ -12,28 +12,29 @@ User = get_user_model()
 
 
 class TelegramOperator(models.Model):
-    telegram_user_id = models.BigIntegerField(unique=True, db_index=True)
-    telegram_chat_id = models.BigIntegerField(blank=True, null=True, db_index=True)
-    username = models.CharField(max_length=255, blank=True)
-    first_name = models.CharField(max_length=255, blank=True)
-    last_name = models.CharField(max_length=255, blank=True)
+    telegram_user_id = models.BigIntegerField("شناسه کاربر تلگرام", unique=True, db_index=True)
+    telegram_chat_id = models.BigIntegerField("شناسه گفتگو تلگرام", blank=True, null=True, db_index=True)
+    username = models.CharField("نام کاربری", max_length=255, blank=True)
+    first_name = models.CharField("نام", max_length=255, blank=True)
+    last_name = models.CharField("نام خانوادگی", max_length=255, blank=True)
     django_user = models.ForeignKey(
         User,
+        verbose_name="کاربر پنل",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name="telegram_operators",
     )
-    is_active = models.BooleanField(default=True)
-    notifications_enabled = models.BooleanField(default=True)
-    last_seen_at = models.DateTimeField(blank=True, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    is_active = models.BooleanField("فعال", default=True)
+    notifications_enabled = models.BooleanField("دریافت اعلان", default=True)
+    last_seen_at = models.DateTimeField("آخرین بازدید", blank=True, null=True)
+    created_at = models.DateTimeField("زمان ایجاد", auto_now_add=True)
+    updated_at = models.DateTimeField("آخرین بروزرسانی", auto_now=True)
 
     class Meta:
         ordering = ["telegram_user_id"]
-        verbose_name = "Telegram operator"
-        verbose_name_plural = "Telegram operators"
+        verbose_name = "اپراتور تلگرام"
+        verbose_name_plural = "اپراتورهای تلگرام"
 
     @property
     def display_name(self) -> str:
@@ -46,21 +47,21 @@ class TelegramOperator(models.Model):
 
 class TelegramUpdateReceipt(models.Model):
     class Status(models.TextChoices):
-        PROCESSED = "processed", "Processed"
-        FAILED = "failed", "Failed"
-        IGNORED = "ignored", "Ignored"
+        PROCESSED = "processed", "پردازش‌شده"
+        FAILED = "failed", "ناموفق"
+        IGNORED = "ignored", "نادیده‌گرفته‌شده"
 
-    update_id = models.BigIntegerField(unique=True, db_index=True)
-    source = models.CharField(max_length=32, default="webhook")
-    payload = models.JSONField(default=dict, blank=True)
-    status = models.CharField(max_length=16, choices=Status.choices, default=Status.PROCESSED)
-    error_message = models.TextField(blank=True)
-    processed_at = models.DateTimeField(auto_now_add=True)
+    update_id = models.BigIntegerField("شناسه آپدیت", unique=True, db_index=True)
+    source = models.CharField("منبع", max_length=32, default="webhook")
+    payload = models.JSONField("داده خام", default=dict, blank=True)
+    status = models.CharField("وضعیت", max_length=16, choices=Status.choices, default=Status.PROCESSED)
+    error_message = models.TextField("پیام خطا", blank=True)
+    processed_at = models.DateTimeField("زمان پردازش", auto_now_add=True)
 
     class Meta:
         ordering = ["-update_id"]
-        verbose_name = "Telegram update receipt"
-        verbose_name_plural = "Telegram update receipts"
+        verbose_name = "دریافت پیام تلگرام"
+        verbose_name_plural = "دریافت‌های پیام تلگرام"
 
     def __str__(self) -> str:
         return str(self.update_id)
@@ -68,16 +69,17 @@ class TelegramUpdateReceipt(models.Model):
 
 class TelegramBotAuditLog(models.Model):
     class Status(models.TextChoices):
-        SUCCESS = "success", "Success"
-        DENIED = "denied", "Denied"
-        FAILED = "failed", "Failed"
-        IGNORED = "ignored", "Ignored"
-        PENDING = "pending", "Pending"
+        SUCCESS = "success", "موفق"
+        DENIED = "denied", "ردشده"
+        FAILED = "failed", "ناموفق"
+        IGNORED = "ignored", "نادیده‌گرفته‌شده"
+        PENDING = "pending", "در انتظار"
 
-    telegram_user_id = models.BigIntegerField(blank=True, null=True, db_index=True)
-    telegram_chat_id = models.BigIntegerField(blank=True, null=True, db_index=True)
+    telegram_user_id = models.BigIntegerField("شناسه کاربر تلگرام", blank=True, null=True, db_index=True)
+    telegram_chat_id = models.BigIntegerField("شناسه گفتگو تلگرام", blank=True, null=True, db_index=True)
     operator = models.ForeignKey(
         TelegramOperator,
+        verbose_name="اپراتور",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -85,61 +87,64 @@ class TelegramBotAuditLog(models.Model):
     )
     django_user = models.ForeignKey(
         User,
+        verbose_name="کاربر پنل",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name="telegram_bot_audit_logs",
     )
-    command = models.CharField(max_length=128)
-    action = models.CharField(max_length=128, blank=True)
-    target_type = models.CharField(max_length=128, blank=True)
-    target_identifier = models.CharField(max_length=255, blank=True)
-    previous_state = models.JSONField(blank=True, null=True)
-    new_state = models.JSONField(blank=True, null=True)
-    metadata = models.JSONField(default=dict, blank=True)
-    status = models.CharField(max_length=16, choices=Status.choices, default=Status.SUCCESS)
-    error_message = models.TextField(blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    command = models.CharField("دستور", max_length=128)
+    action = models.CharField("عملیات", max_length=128, blank=True)
+    target_type = models.CharField("نوع هدف", max_length=128, blank=True)
+    target_identifier = models.CharField("شناسه هدف", max_length=255, blank=True)
+    previous_state = models.JSONField("وضعیت قبلی", blank=True, null=True)
+    new_state = models.JSONField("وضعیت جدید", blank=True, null=True)
+    metadata = models.JSONField("جزئیات", default=dict, blank=True)
+    status = models.CharField("وضعیت", max_length=16, choices=Status.choices, default=Status.SUCCESS)
+    error_message = models.TextField("پیام خطا", blank=True)
+    created_at = models.DateTimeField("زمان ایجاد", auto_now_add=True)
 
     class Meta:
         ordering = ["-created_at"]
-        verbose_name = "Telegram bot audit log"
-        verbose_name_plural = "Telegram bot audit logs"
+        verbose_name = "گزارش ربات تلگرام"
+        verbose_name_plural = "گزارش‌های ربات تلگرام"
 
     def __str__(self) -> str:
         return f"{self.command} ({self.status})"
 
 
 class TelegramConfirmation(models.Model):
-    token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False, db_index=True)
+    token = models.UUIDField("توکن تأیید", default=uuid.uuid4, unique=True, editable=False, db_index=True)
     operator = models.ForeignKey(
         TelegramOperator,
+        verbose_name="اپراتور",
         on_delete=models.CASCADE,
         related_name="confirmations",
     )
-    telegram_user_id = models.BigIntegerField(db_index=True)
-    telegram_chat_id = models.BigIntegerField(db_index=True)
-    action = models.CharField(max_length=128)
-    command = models.CharField(max_length=128, blank=True)
-    target_type = models.CharField(max_length=128, blank=True)
-    target_identifier = models.CharField(max_length=255, blank=True)
-    payload = models.JSONField(default=dict, blank=True)
+    telegram_user_id = models.BigIntegerField("شناسه کاربر تلگرام", db_index=True)
+    telegram_chat_id = models.BigIntegerField("شناسه گفتگو تلگرام", db_index=True)
+    action = models.CharField("عملیات", max_length=128)
+    command = models.CharField("دستور", max_length=128, blank=True)
+    target_type = models.CharField("نوع هدف", max_length=128, blank=True)
+    target_identifier = models.CharField("شناسه هدف", max_length=255, blank=True)
+    payload = models.JSONField("داده‌ها", default=dict, blank=True)
     audit_log = models.ForeignKey(
         TelegramBotAuditLog,
+        verbose_name="گزارش مرتبط",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name="confirmations",
     )
-    created_at = models.DateTimeField(auto_now_add=True)
-    expires_at = models.DateTimeField()
-    consumed_at = models.DateTimeField(blank=True, null=True)
-    cancelled_at = models.DateTimeField(blank=True, null=True)
+    created_at = models.DateTimeField("زمان ایجاد", auto_now_add=True)
+    expires_at = models.DateTimeField("زمان انقضا")
+    consumed_at = models.DateTimeField("زمان استفاده", blank=True, null=True)
+    cancelled_at = models.DateTimeField("زمان لغو", blank=True, null=True)
 
     class Meta:
         ordering = ["-created_at"]
-        verbose_name = "Telegram confirmation"
-        verbose_name_plural = "Telegram confirmations"
+        verbose_name = "تأیید تلگرام"
+        verbose_name_plural = "تأییدهای تلگرام"
 
     @classmethod
     def create_for_action(
@@ -190,15 +195,14 @@ class TelegramConfirmation(models.Model):
 
 
 class TelegramBotState(models.Model):
-    key = models.CharField(max_length=128, unique=True)
-    value = models.JSONField(default=dict, blank=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    key = models.CharField("کلید", max_length=128, unique=True)
+    value = models.JSONField("مقدار", default=dict, blank=True)
+    updated_at = models.DateTimeField("آخرین بروزرسانی", auto_now=True)
 
     class Meta:
         ordering = ["key"]
-        verbose_name = "Telegram bot state"
-        verbose_name_plural = "Telegram bot states"
+        verbose_name = "وضعیت ربات تلگرام"
+        verbose_name_plural = "وضعیت‌های ربات تلگرام"
 
     def __str__(self) -> str:
         return self.key
-

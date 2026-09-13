@@ -48,6 +48,7 @@ export interface OrderItem {
     drink: string[];
     snack: string[];
     addons: string[];
+    products?: string[];
   };
 }
 

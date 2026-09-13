@@ -1,10 +1,15 @@
+from io import BytesIO
+
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from unittest.mock import patch
+from PIL import Image
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+from catalog.models import Product
 from .models import (
     DEFAULT_EVENT_PAGES,
     DEFAULT_HOMEPAGE_BENEFITS_SECTION,
@@ -31,6 +36,69 @@ class SiteSettingRetrieveAPIViewTests(TestCase):
             payload["homepage_benefits_section"]["title"],
             DEFAULT_HOMEPAGE_BENEFITS_SECTION["title"],
         )
+
+    def test_settings_endpoint_adds_child_links_and_dynamic_link_images(self):
+        buffer = BytesIO()
+        Image.new("RGB", (20, 20), (255, 0, 0)).save(buffer, format="JPEG")
+        buffer.seek(0)
+        image_file = SimpleUploadedFile("subcategory.jpg", buffer.getvalue(), content_type="image/jpeg")
+
+        with override_settings(MEDIA_ROOT=self._get_temp_media_root(), MEDIA_URL="/media/"):
+            settings = SiteSetting.load()
+            settings.event_pages = [
+                {
+                    "id": "parent",
+                    "name": "Parent",
+                    "slug": "parent",
+                    "route_path": "/parent",
+                    "description": "Parent page",
+                    "available": True,
+                    "internal_links": [],
+                },
+                {
+                    "id": "child",
+                    "name": "Child",
+                    "slug": "child",
+                    "route_path": "/parent/child",
+                    "description": "Child page",
+                    "available": True,
+                    "internal_links": [],
+                },
+            ]
+            settings.save()
+            Product.objects.create(
+                name="Child Product",
+                url_slug="child-product",
+                description="Child image source",
+                price=1000,
+                event_types=["child"],
+                contents=[],
+                image=image_file,
+            )
+
+            response = self.client.get("/api/v1/settings/")
+
+        self.assertEqual(response.status_code, 200)
+        parent = next(page for page in response.json()["event_pages"] if page["slug"] == "parent")
+        self.assertEqual(parent["internal_links"][0]["url"], "/parent/child")
+        self.assertEqual(parent["internal_links"][0]["label"], "Child")
+        self.assertIn("/media/", parent["internal_links"][0]["image"])
+        self.assertEqual(parent["internal_links"][0]["image_alt"], "subcategory")
+
+    def _get_temp_media_root(self):
+        if not hasattr(self, "_temp_media_root"):
+            import tempfile
+
+            self._temp_media_root = tempfile.mkdtemp(prefix="majlesyar-settings-media-")
+        return self._temp_media_root
+
+    def tearDown(self):
+        temp_media_root = getattr(self, "_temp_media_root", None)
+        if temp_media_root:
+            import shutil
+
+            shutil.rmtree(temp_media_root, ignore_errors=True)
+        super().tearDown()
 
 
 class SiteSettingModelTests(TestCase):

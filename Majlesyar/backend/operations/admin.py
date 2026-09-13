@@ -1,8 +1,24 @@
 from django.contrib import admin
+from django.contrib.auth import get_user_model
+from django.contrib.auth.admin import UserAdmin
 
 from config.admin_mixins import PersianAdminFormMixin
 
 from .models import ClientProfile, Invoice, InvoiceLineItem, OperationsAuditLog, SmsLog, SmsTemplate
+
+
+User = get_user_model()
+
+
+class FilterlessUserAdmin(UserAdmin):
+    list_filter = ()
+
+
+try:
+    admin.site.unregister(User)
+except admin.sites.NotRegistered:
+    pass
+admin.site.register(User, FilterlessUserAdmin)
 
 
 class InvoiceLineItemInline(PersianAdminFormMixin, admin.TabularInline):
@@ -15,7 +31,7 @@ class InvoiceLineItemInline(PersianAdminFormMixin, admin.TabularInline):
 class ClientProfileAdmin(PersianAdminFormMixin, admin.ModelAdmin):
     list_display = ("full_name", "phone", "province", "memorial_date", "is_active")
     search_fields = ("full_name", "phone", "deceased_name")
-    list_filter = ("province", "is_active")
+    list_filter = ()
     readonly_fields = ("created_at", "updated_at")
     fieldsets = (
         (
@@ -52,7 +68,7 @@ class ClientProfileAdmin(PersianAdminFormMixin, admin.ModelAdmin):
 @admin.register(Invoice)
 class InvoiceAdmin(PersianAdminFormMixin, admin.ModelAdmin):
     list_display = ("invoice_number", "client", "status", "total_amount", "issue_date")
-    list_filter = ("status", "issue_date")
+    list_filter = ()
     search_fields = ("invoice_number", "client__full_name", "client__phone")
     inlines = [InvoiceLineItemInline]
     readonly_fields = ("invoice_number", "subtotal_amount", "total_amount", "created_at", "updated_at")
@@ -84,7 +100,7 @@ class InvoiceAdmin(PersianAdminFormMixin, admin.ModelAdmin):
 @admin.register(SmsTemplate)
 class SmsTemplateAdmin(PersianAdminFormMixin, admin.ModelAdmin):
     list_display = ("title", "code", "is_active", "updated_at")
-    list_filter = ("is_active", "code")
+    list_filter = ()
     readonly_fields = ("created_at", "updated_at")
     fieldsets = (
         (
@@ -107,7 +123,7 @@ class SmsTemplateAdmin(PersianAdminFormMixin, admin.ModelAdmin):
 @admin.register(SmsLog)
 class SmsLogAdmin(PersianAdminFormMixin, admin.ModelAdmin):
     list_display = ("client", "event_type", "status", "recipient", "created_at")
-    list_filter = ("status", "event_type")
+    list_filter = ()
     search_fields = ("client__full_name", "recipient", "body")
     readonly_fields = ("created_at",)
     fieldsets = (
@@ -131,7 +147,7 @@ class SmsLogAdmin(PersianAdminFormMixin, admin.ModelAdmin):
 @admin.register(OperationsAuditLog)
 class OperationsAuditLogAdmin(PersianAdminFormMixin, admin.ModelAdmin):
     list_display = ("action", "entity_type", "entity_id", "actor", "created_at")
-    list_filter = ("action", "entity_type")
+    list_filter = ()
     search_fields = ("entity_id", "action")
     readonly_fields = ("created_at",)
     fieldsets = (

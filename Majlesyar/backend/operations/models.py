@@ -21,32 +21,33 @@ iran_phone_validator = RegexValidator(r"^09\d{9}$", "شماره موبایل ب�
 
 
 class ClientProfile(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    full_name = models.CharField(max_length=255)
-    phone = models.CharField(max_length=32, validators=[iran_phone_validator], db_index=True)
-    email = models.EmailField(blank=True)
-    province = models.CharField(max_length=128, blank=True)
-    city = models.CharField(max_length=128, blank=True)
-    address = models.TextField(blank=True)
-    deceased_name = models.CharField(max_length=255, blank=True)
-    memorial_date = models.DateField(blank=True, null=True, db_index=True)
-    memorial_location = models.CharField(max_length=255, blank=True)
-    notes = models.TextField(blank=True)
-    is_active = models.BooleanField(default=True)
+    id = models.UUIDField("شناسه", primary_key=True, default=uuid.uuid4, editable=False)
+    full_name = models.CharField("نام کامل مشتری", max_length=255)
+    phone = models.CharField("شماره موبایل", max_length=32, validators=[iran_phone_validator], db_index=True)
+    email = models.EmailField("ایمیل", blank=True)
+    province = models.CharField("استان", max_length=128, blank=True)
+    city = models.CharField("شهر", max_length=128, blank=True)
+    address = models.TextField("آدرس", blank=True)
+    deceased_name = models.CharField("نام مرحوم/مرحومه", max_length=255, blank=True)
+    memorial_date = models.DateField("تاریخ مراسم", blank=True, null=True, db_index=True)
+    memorial_location = models.CharField("محل مراسم", max_length=255, blank=True)
+    notes = models.TextField("یادداشت داخلی", blank=True)
+    is_active = models.BooleanField("فعال", default=True)
     created_by = models.ForeignKey(
         User,
+        verbose_name="ثبت‌کننده",
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
         related_name="managed_clients",
     )
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField("زمان ایجاد", auto_now_add=True)
+    updated_at = models.DateTimeField("آخرین بروزرسانی", auto_now=True)
 
     class Meta:
         ordering = ["full_name"]
-        verbose_name = "Client profile"
-        verbose_name_plural = "Client profiles"
+        verbose_name = "پرونده مشتری"
+        verbose_name_plural = "پرونده‌های مشتریان"
 
     @property
     def fortieth_date(self):
@@ -81,37 +82,38 @@ def generate_invoice_number() -> str:
 
 class Invoice(models.Model):
     class Status(models.TextChoices):
-        DRAFT = "draft", "Draft"
-        SENT = "sent", "Sent"
-        PAID = "paid", "Paid"
-        CANCELLED = "cancelled", "Cancelled"
+        DRAFT = "draft", "پیش‌نویس"
+        SENT = "sent", "ارسال‌شده"
+        PAID = "paid", "پرداخت‌شده"
+        CANCELLED = "cancelled", "لغوشده"
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    invoice_number = models.CharField(max_length=32, unique=True, db_index=True, blank=True)
-    client = models.ForeignKey(ClientProfile, on_delete=models.CASCADE, related_name="invoices")
-    status = models.CharField(max_length=16, choices=Status.choices, default=Status.DRAFT)
-    issue_date = models.DateField(default=timezone.localdate)
-    due_date = models.DateField(blank=True, null=True)
-    notes = models.TextField(blank=True)
-    discount_amount = models.PositiveIntegerField(default=0, validators=[MinValueValidator(0)])
-    fee_amount = models.PositiveIntegerField(default=0, validators=[MinValueValidator(0)])
-    tax_amount = models.PositiveIntegerField(default=0, validators=[MinValueValidator(0)])
-    subtotal_amount = models.PositiveIntegerField(default=0, validators=[MinValueValidator(0)])
-    total_amount = models.PositiveIntegerField(default=0, validators=[MinValueValidator(0)])
+    id = models.UUIDField("شناسه", primary_key=True, default=uuid.uuid4, editable=False)
+    invoice_number = models.CharField("شماره فاکتور", max_length=32, unique=True, db_index=True, blank=True)
+    client = models.ForeignKey(ClientProfile, verbose_name="مشتری", on_delete=models.CASCADE, related_name="invoices")
+    status = models.CharField("وضعیت", max_length=16, choices=Status.choices, default=Status.DRAFT)
+    issue_date = models.DateField("تاریخ صدور", default=timezone.localdate)
+    due_date = models.DateField("مهلت پرداخت", blank=True, null=True)
+    notes = models.TextField("یادداشت", blank=True)
+    discount_amount = models.PositiveIntegerField("مبلغ تخفیف", default=0, validators=[MinValueValidator(0)])
+    fee_amount = models.PositiveIntegerField("هزینه اضافه", default=0, validators=[MinValueValidator(0)])
+    tax_amount = models.PositiveIntegerField("مالیات", default=0, validators=[MinValueValidator(0)])
+    subtotal_amount = models.PositiveIntegerField("جمع جزء", default=0, validators=[MinValueValidator(0)])
+    total_amount = models.PositiveIntegerField("مبلغ نهایی", default=0, validators=[MinValueValidator(0)])
     created_by = models.ForeignKey(
         User,
+        verbose_name="ثبت‌کننده",
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
         related_name="created_invoices",
     )
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField("زمان ایجاد", auto_now_add=True)
+    updated_at = models.DateTimeField("آخرین بروزرسانی", auto_now=True)
 
     class Meta:
         ordering = ["-issue_date", "-created_at"]
-        verbose_name = "Invoice"
-        verbose_name_plural = "Invoices"
+        verbose_name = "فاکتور"
+        verbose_name_plural = "فاکتورها"
 
     def save(self, *args, **kwargs):
         if not self.invoice_number:
@@ -151,19 +153,19 @@ class Invoice(models.Model):
 
 
 class InvoiceLineItem(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name="line_items")
-    description = models.CharField(max_length=255)
-    quantity = models.PositiveIntegerField(default=1, validators=[MinValueValidator(1)])
-    unit_price = models.PositiveIntegerField(default=0, validators=[MinValueValidator(0)])
-    discount_amount = models.PositiveIntegerField(default=0, validators=[MinValueValidator(0)])
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    id = models.UUIDField("شناسه", primary_key=True, default=uuid.uuid4, editable=False)
+    invoice = models.ForeignKey(Invoice, verbose_name="فاکتور", on_delete=models.CASCADE, related_name="line_items")
+    description = models.CharField("شرح", max_length=255)
+    quantity = models.PositiveIntegerField("تعداد", default=1, validators=[MinValueValidator(1)])
+    unit_price = models.PositiveIntegerField("قیمت واحد", default=0, validators=[MinValueValidator(0)])
+    discount_amount = models.PositiveIntegerField("تخفیف ردیف", default=0, validators=[MinValueValidator(0)])
+    created_at = models.DateTimeField("زمان ایجاد", auto_now_add=True)
+    updated_at = models.DateTimeField("آخرین بروزرسانی", auto_now=True)
 
     class Meta:
         ordering = ["created_at"]
-        verbose_name = "Invoice line item"
-        verbose_name_plural = "Invoice line items"
+        verbose_name = "ردیف فاکتور"
+        verbose_name_plural = "ردیف‌های فاکتور"
 
     @property
     def line_total(self) -> int:
@@ -183,24 +185,24 @@ class InvoiceLineItem(models.Model):
 
 
 class SmsTemplate(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.UUIDField("شناسه", primary_key=True, default=uuid.uuid4, editable=False)
 
     class Code(models.TextChoices):
-        FORTIETH_DAY = FORTIETH_TEMPLATE_CODE, "40th day reminder"
-        ANNIVERSARY_DAY = ANNIVERSARY_TEMPLATE_CODE, "365th day reminder"
-        MANUAL = "manual", "Manual"
+        FORTIETH_DAY = FORTIETH_TEMPLATE_CODE, "یادآوری چهلم"
+        ANNIVERSARY_DAY = ANNIVERSARY_TEMPLATE_CODE, "یادآوری سالگرد"
+        MANUAL = "manual", "دستی"
 
-    code = models.CharField(max_length=32, choices=Code.choices, unique=True)
-    title = models.CharField(max_length=255)
-    body = models.TextField()
-    is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    code = models.CharField("کد قالب", max_length=32, choices=Code.choices, unique=True)
+    title = models.CharField("عنوان", max_length=255)
+    body = models.TextField("متن پیامک")
+    is_active = models.BooleanField("فعال", default=True)
+    created_at = models.DateTimeField("زمان ایجاد", auto_now_add=True)
+    updated_at = models.DateTimeField("آخرین بروزرسانی", auto_now=True)
 
     class Meta:
         ordering = ["code"]
-        verbose_name = "SMS template"
-        verbose_name_plural = "SMS templates"
+        verbose_name = "قالب پیامک"
+        verbose_name_plural = "قالب‌های پیامک"
 
     def save(self, *args, **kwargs):
         if not self.body and self.code in DEFAULT_TEMPLATE_BODIES:
@@ -215,65 +217,68 @@ class SmsTemplate(models.Model):
 
 class SmsLog(models.Model):
     class Status(models.TextChoices):
-        PENDING = "pending", "Pending"
-        SENT = "sent", "Sent"
-        FAILED = "failed", "Failed"
+        PENDING = "pending", "در انتظار"
+        SENT = "sent", "ارسال‌شده"
+        FAILED = "failed", "ناموفق"
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    client = models.ForeignKey(ClientProfile, on_delete=models.CASCADE, related_name="sms_logs")
+    id = models.UUIDField("شناسه", primary_key=True, default=uuid.uuid4, editable=False)
+    client = models.ForeignKey(ClientProfile, verbose_name="مشتری", on_delete=models.CASCADE, related_name="sms_logs")
     template = models.ForeignKey(
         SmsTemplate,
+        verbose_name="قالب پیامک",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name="logs",
     )
-    event_type = models.CharField(max_length=32, blank=True)
-    recipient = models.CharField(max_length=32)
-    body = models.TextField()
-    status = models.CharField(max_length=16, choices=Status.choices, default=Status.PENDING)
-    provider = models.CharField(max_length=32, default="kavenegar")
-    provider_message_id = models.CharField(max_length=128, blank=True)
-    provider_response = models.JSONField(default=dict, blank=True)
-    error_message = models.TextField(blank=True)
+    event_type = models.CharField("نوع رویداد", max_length=32, blank=True)
+    recipient = models.CharField("گیرنده", max_length=32)
+    body = models.TextField("متن پیام")
+    status = models.CharField("وضعیت", max_length=16, choices=Status.choices, default=Status.PENDING)
+    provider = models.CharField("ارائه‌دهنده", max_length=32, default="kavenegar")
+    provider_message_id = models.CharField("شناسه پیام در سرویس‌دهنده", max_length=128, blank=True)
+    provider_response = models.JSONField("پاسخ سرویس‌دهنده", default=dict, blank=True)
+    error_message = models.TextField("پیام خطا", blank=True)
     sent_by = models.ForeignKey(
         User,
+        verbose_name="ارسال‌کننده",
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
         related_name="sent_sms_logs",
     )
-    sent_at = models.DateTimeField(blank=True, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    sent_at = models.DateTimeField("زمان ارسال", blank=True, null=True)
+    created_at = models.DateTimeField("زمان ایجاد", auto_now_add=True)
 
     class Meta:
         ordering = ["-created_at"]
-        verbose_name = "SMS log"
-        verbose_name_plural = "SMS logs"
+        verbose_name = "گزارش پیامک"
+        verbose_name_plural = "گزارش‌های پیامک"
 
     def __str__(self) -> str:
         return f"{self.client.full_name} - {self.status}"
 
 
 class OperationsAuditLog(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.UUIDField("شناسه", primary_key=True, default=uuid.uuid4, editable=False)
     actor = models.ForeignKey(
         User,
+        verbose_name="کاربر انجام‌دهنده",
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
         related_name="operations_audit_logs",
     )
-    action = models.CharField(max_length=64)
-    entity_type = models.CharField(max_length=64)
-    entity_id = models.CharField(max_length=64, blank=True)
-    metadata = models.JSONField(default=dict, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    action = models.CharField("عملیات", max_length=64)
+    entity_type = models.CharField("نوع رکورد", max_length=64)
+    entity_id = models.CharField("شناسه رکورد", max_length=64, blank=True)
+    metadata = models.JSONField("جزئیات", default=dict, blank=True)
+    created_at = models.DateTimeField("زمان ایجاد", auto_now_add=True)
 
     class Meta:
         ordering = ["-created_at"]
-        verbose_name = "Operations audit log"
-        verbose_name_plural = "Operations audit logs"
+        verbose_name = "گزارش عملیات"
+        verbose_name_plural = "گزارش‌های عملیات"
 
     def __str__(self) -> str:
         return f"{self.action} ({self.entity_type})"

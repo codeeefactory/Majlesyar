@@ -113,13 +113,20 @@ export default function CustomerAuthPage() {
                 </TabsList>
               </Tabs>
 
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form
+                onSubmit={handleSubmit}
+                className="space-y-4"
+                toolname={mode === 'login' ? 'customer_login' : 'customer_signup'}
+                tooldescription={mode === 'login' ? 'Sign in a Majlesyar customer account.' : 'Create a Majlesyar customer account.'}
+              >
                 {mode === 'signup' && (
                   <>
                     <div className="space-y-2">
                       <Label htmlFor="fullName">نام و نام خانوادگی</Label>
                       <Input
                         id="fullName"
+                        name="fullName"
+                        toolparamdescription="Customer full name for signup."
                         value={form.fullName}
                         onChange={(event) => setForm({ ...form, fullName: event.target.value })}
                         placeholder="مثال: سارا احمدی"
@@ -130,6 +137,8 @@ export default function CustomerAuthPage() {
                       <Label htmlFor="username">نام کاربری</Label>
                       <Input
                         id="username"
+                        name="username"
+                        toolparamdescription="Customer username for account signup."
                         value={form.username}
                         onChange={(event) => setForm({ ...form, username: event.target.value })}
                         placeholder="sara_ahmadi"
@@ -143,6 +152,8 @@ export default function CustomerAuthPage() {
                         <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
                           id="email"
+                          name="email"
+                          toolparamdescription="Customer email address for signup."
                           type="email"
                           value={form.email}
                           onChange={(event) => setForm({ ...form, email: event.target.value })}
@@ -161,6 +172,8 @@ export default function CustomerAuthPage() {
                     <Label htmlFor="identifier">ایمیل یا نام کاربری</Label>
                     <Input
                       id="identifier"
+                      name="identifier"
+                      toolparamdescription="Email address or username used to sign in."
                       value={form.identifier}
                       onChange={(event) => setForm({ ...form, identifier: event.target.value })}
                       placeholder="name@example.com"
@@ -176,6 +189,8 @@ export default function CustomerAuthPage() {
                     <LockKeyhole className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
                       id="password"
+                      name="password"
+                      toolparamdescription={mode === 'login' ? 'Account password for sign in.' : 'New account password, minimum six characters.'}
                       type="password"
                       value={form.password}
                       onChange={(event) => setForm({ ...form, password: event.target.value })}

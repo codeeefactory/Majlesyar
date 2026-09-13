@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import DatePicker, { DateObject } from 'react-multi-date-picker';
+import gregorian from 'react-date-object/calendars/gregorian';
 import persian from 'react-date-object/calendars/persian';
 import persian_fa from 'react-date-object/locales/persian_fa';
 import { CalendarDays } from 'lucide-react';
@@ -24,35 +25,40 @@ export function JalaliDatePicker({
 }: JalaliDatePickerProps) {
   const [dateValue, setDateValue] = useState<DateObject | null>(null);
   const [minDateObject, setMinDateObject] = useState<DateObject | null>(null);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
-  // Convert Gregorian string to DateObject
+  const toPersianDateObject = (dateString?: string) => {
+    if (!dateString || !/^\d{4}-\d{2}-\d{2}$/.test(dateString)) return null;
+    return new DateObject({
+      date: dateString,
+      format: 'YYYY-MM-DD',
+      calendar: gregorian,
+    }).convert(persian, persian_fa);
+  };
+
+  const toGregorianString = (date: DateObject) => {
+    const gregorianDate = new DateObject(date).convert(gregorian);
+    const year = gregorianDate.year;
+    const month = String(gregorianDate.month.number).padStart(2, '0');
+    const day = String(gregorianDate.day).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  // Convert stored Gregorian string to Persian display value.
   useEffect(() => {
-    if (value) {
-      const [year, month, day] = value.split('-').map(Number);
-      const dateObj = new DateObject({ year, month, day, calendar: persian });
-      setDateValue(dateObj);
-    } else {
-      setDateValue(null);
-    }
+    setDateValue(toPersianDateObject(value));
   }, [value]);
 
-  // Convert minDate to DateObject
+  // Convert minimum Gregorian date to Persian calendar for disabled days.
   useEffect(() => {
-    if (minDate) {
-      const [year, month, day] = minDate.split('-').map(Number);
-      const dateObj = new DateObject({ year, month, day, calendar: persian });
-      setMinDateObject(dateObj);
-    }
+    setMinDateObject(toPersianDateObject(minDate));
   }, [minDate]);
 
   const handleChange = (date: DateObject | null) => {
     if (date) {
-      // Convert Persian date to Gregorian for storage
-      const gregorian = date.convert(undefined, undefined);
-      const year = gregorian.year;
-      const month = String(gregorian.month.number).padStart(2, '0');
-      const day = String(gregorian.day).padStart(2, '0');
-      onChange(`${year}-${month}-${day}`);
+      onChange(toGregorianString(date));
+    } else {
+      onChange('');
     }
   };
 
@@ -65,6 +71,14 @@ export function JalaliDatePicker({
         locale={persian_fa}
         minDate={minDateObject}
         calendarPosition="bottom-right"
+        onOpen={() => {
+          setIsCalendarOpen(true);
+          return true;
+        }}
+        onClose={() => {
+          setIsCalendarOpen(false);
+          return true;
+        }}
         containerClassName="w-full"
         inputClass={cn(
           'w-full h-11 px-4 pr-11 rounded-lg border bg-background text-foreground',
@@ -86,6 +100,10 @@ export function JalaliDatePicker({
           <button
             type="button"
             onClick={openCalendar}
+            aria-invalid={hasError}
+            aria-label={placeholder}
+            aria-haspopup="dialog"
+            aria-expanded={isCalendarOpen}
             className={cn(
               'w-full h-11 px-4 rounded-lg border bg-background text-foreground text-right',
               'focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer flex items-center justify-between',

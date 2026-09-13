@@ -31,6 +31,86 @@
       "icon": "💐"
     },
     {
+      "name": "منوی فود",
+      "slug": "food",
+      "icon": "🍽️"
+    },
+    {
+      "name": "چاکوتری برد",
+      "slug": "food-charcuterie-board",
+      "icon": "🧀"
+    },
+    {
+      "name": "آش رشته",
+      "slug": "food-ashe-rashteh",
+      "icon": "🍲"
+    },
+    {
+      "name": "دسر",
+      "slug": "food-dessert",
+      "icon": "🍰"
+    },
+    {
+      "name": "آبمیوه",
+      "slug": "food-juice",
+      "icon": "🧃"
+    },
+    {
+      "name": "شله زرد",
+      "slug": "shaleh-zard",
+      "icon": "🍮"
+    },
+    {
+      "name": "پک پذیرایی",
+      "slug": "pack",
+      "icon": "📦"
+    },
+    {
+      "name": "پک پذیرایی شخصی",
+      "slug": "pack-personal",
+      "icon": "📦"
+    },
+    {
+      "name": "پک ترحیم لوکس",
+      "slug": "pack-memorial-luxury",
+      "icon": "🕯️"
+    },
+    {
+      "name": "حلوا و خرمای لوکس",
+      "slug": "halva-khorma-luxury",
+      "icon": "🍯"
+    },
+    {
+      "name": "تاج گل ترحیم",
+      "slug": "memorial-wreaths",
+      "icon": "🖤"
+    },
+    {
+      "name": "دسته گل",
+      "slug": "bouquets",
+      "icon": "💐"
+    },
+    {
+      "name": "تاج گل تبریک و افتتاحیه",
+      "slug": "congratulatory-wreaths",
+      "icon": "🎉"
+    },
+    {
+      "name": "تاج گل تبریک",
+      "slug": "flower-congratulation-wreaths",
+      "icon": "🎉"
+    },
+    {
+      "name": "دسته گل ترحیم",
+      "slug": "flower-funeral-bouquet",
+      "icon": "🖤"
+    },
+    {
+      "name": "باکس گل",
+      "slug": "flower-box",
+      "icon": "🌸"
+    },
+    {
       "name": "پک خالی",
       "slug": "empty",
       "icon": "📦"

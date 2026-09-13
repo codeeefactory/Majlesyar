@@ -302,6 +302,9 @@ def get_admin_theme_manifest(request=None) -> dict:
         blend_colors.append(blend_colors[-1])
 
     active_names = [event["name"] for event in events if event["is_active"]] or [event["name"] for event in events]
+    active_label = _join_fa(active_names[:4])
+    display_events = sorted(events, key=lambda event: (not event["is_active"], -event["count"], event["name"]))[:6]
+    hidden_event_count = max(0, len(events) - len(display_events))
     metrics = [
         {"label": "محصول", "value": _fa_number(mix_counts["total_products"])},
         {"label": "آماده", "value": _fa_number(mix_counts["available_products"])},
@@ -309,18 +312,22 @@ def get_admin_theme_manifest(request=None) -> dict:
         {"label": "طیف فعال", "value": _fa_number(sum(1 for event in events if event["is_active"]) or len(events))},
     ]
     summary = {
-        "title": "پنلی هم‌نفس با تمام طیف‌های محصولات مجلس‌یار",
+        "title": "مدیریت سریع محصولات مجلس‌یار",
         "description": (
-            "رنگ، حرکت و بافت این داشبورد از ترکیب واقعی "
-            f"{_join_fa(active_names)} الهام گرفته تا مدیریت سفارش‌ها نرم، سریع و متناسب با حال‌وهوای هر محصول باشد."
+            f"{_fa_number(mix_counts['total_products'])} محصول در دسته‌های {active_label} آماده مدیریت است."
+            if active_label
+            else f"{_fa_number(mix_counts['total_products'])} محصول آماده مدیریت است."
         ),
         "line": (
-            f"{_join_fa(active_names)} در این پنل با یک طیف زنده کنار هم نشسته‌اند؛ "
-            f"{_fa_number(mix_counts['total_products'])} محصول در این ترکیب دیده می‌شود."
+            f"{_fa_number(mix_counts['available_products'])} آماده سفارش: {active_label}"
+            if active_label
+            else f"{_fa_number(mix_counts['available_products'])} محصول آماده سفارش"
         ),
+        "hidden_event_label": f"+{_fa_number(hidden_event_count)} دسته دیگر" if hidden_event_count else "",
     }
     manifest = {
         "events": events,
+        "display_events": display_events,
         "metrics": metrics,
         "summary": summary,
         "blend_style": (

@@ -31,7 +31,7 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+    <main id="main-content" className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <div className="w-16 h-16 mx-auto mb-4 rounded-2xl gold-gradient flex items-center justify-center shadow-glow">
@@ -41,11 +41,18 @@ export default function AdminLoginPage() {
           <p className="text-muted-foreground text-sm mt-1">مجلس یار</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-card rounded-2xl border border-border p-6 space-y-4">
+        <form
+          onSubmit={handleSubmit}
+          className="bg-card rounded-2xl border border-border p-6 space-y-4"
+          toolname="admin_login"
+          tooldescription="Sign in to the Majlesyar admin panel."
+        >
           <div className="space-y-2">
             <Label htmlFor="username">نام کاربری</Label>
             <Input
               id="username"
+              name="username"
+              toolparamdescription="Admin username."
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               placeholder="admin"
@@ -55,6 +62,8 @@ export default function AdminLoginPage() {
             <Label htmlFor="password">رمز عبور</Label>
             <Input
               id="password"
+              name="password"
+              toolparamdescription="Admin password."
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -67,6 +76,6 @@ export default function AdminLoginPage() {
           </Button>
         </form>
       </div>
-    </div>
+    </main>
   );
 }

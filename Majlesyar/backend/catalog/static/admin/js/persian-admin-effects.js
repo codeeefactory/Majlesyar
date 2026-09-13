@@ -1,6 +1,22 @@
 (() => {
   const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   let resizeTimer = null;
+  let themeTimer = null;
+
+  function isNightByDeviceTime() {
+    const hour = new Date().getHours();
+    return hour >= 19 || hour < 7;
+  }
+
+  function applyTimeTheme() {
+    const isNight = isNightByDeviceTime();
+    const adminRoot = document.querySelector(".unfold");
+
+    document.documentElement.classList.toggle("admin-time-dark", isNight);
+    document.documentElement.dataset.adminTimeTheme = isNight ? "night" : "day";
+    document.body.classList.toggle("admin-time-dark", isNight);
+    if (adminRoot) adminRoot.classList.toggle("admin-time-dark", isNight);
+  }
 
   function setViewportHeightVar() {
     const vh = window.innerHeight * 0.01;
@@ -145,6 +161,12 @@
     });
   }
 
+  function bindTimeTheme() {
+    applyTimeTheme();
+    if (themeTimer) return;
+    themeTimer = window.setInterval(applyTimeTheme, 60_000);
+  }
+
   function enhanceProductSpectrum() {
     const panels = document.querySelectorAll(".unfold .admin-product-spectrum, .unfold .admin-top-spectrum");
     if (!panels.length) return;
@@ -170,7 +192,46 @@
     });
   }
 
+  function closeMobileFilters() {
+    const adminRoot = document.querySelector(".unfold");
+    const filterPanel = document.querySelector(".unfold #changelist-filter");
+    if (!adminRoot || !filterPanel || window.innerWidth > 768) return;
+
+    adminRoot.classList.add("admin-filters-closed");
+    filterPanel.setAttribute("aria-hidden", "true");
+  }
+
+  function bindMobileFilterClose() {
+    const adminRoot = document.querySelector(".unfold");
+    const filterPanel = document.querySelector(".unfold #changelist-filter");
+    if (!adminRoot || !filterPanel || filterPanel.dataset.mobileCloseBound === "1") return;
+
+    filterPanel.dataset.mobileCloseBound = "1";
+    closeMobileFilters();
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") closeMobileFilters();
+    });
+
+    document.addEventListener("click", (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      if (window.innerWidth > 768) return;
+      if (filterPanel.contains(target)) return;
+      closeMobileFilters();
+    });
+
+    filterPanel.addEventListener("click", (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      if (target.closest("a, button")) {
+        window.setTimeout(closeMobileFilters, 80);
+      }
+    });
+  }
+
   function initAdminEffects() {
+    bindTimeTheme();
     setViewportHeightVar();
     applyResponsiveClasses();
     enhanceScrollableResults();
@@ -180,6 +241,7 @@
     markFocusedFields();
     animateListRows();
     enhanceProductSpectrum();
+    bindMobileFilterClose();
   }
 
   if (document.readyState === "loading") {

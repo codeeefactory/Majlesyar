@@ -5,7 +5,7 @@ from django.core.files import File
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from catalog.models import BuilderItem, Category, Product, Tag
+from catalog.models import BuilderItem, Category, Product, Tag, ensure_event_categories
 from site_settings.models import SiteSetting
 
 
@@ -44,6 +44,11 @@ class Command(BaseCommand):
                 },
             )
             categories_by_slug[category.slug] = category
+
+        ensure_event_categories()
+        categories_by_slug.update(
+            {category.slug: category for category in Category.objects.filter(slug__isnull=False)}
+        )
 
         tags_by_slug: dict[str, Tag] = {}
         for item in payload.get("tags", []):

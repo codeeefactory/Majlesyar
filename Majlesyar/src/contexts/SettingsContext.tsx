@@ -13,9 +13,10 @@ const SettingsContext = createContext<SettingsContextType | undefined>(undefined
 
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const [settings, setSettings] = useState<Settings>(defaultSettings);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   const refreshSettings = async () => {
+    setLoading(true);
     try {
       const data = await getSettings();
       setSettings(data);
@@ -27,7 +28,15 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
-    refreshSettings();
+    const loadSettings = () => {
+      void refreshSettings();
+    };
+
+    const timeoutId = window.setTimeout(loadSettings, 4000);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
   }, []);
 
   return (

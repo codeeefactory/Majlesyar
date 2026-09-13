@@ -56,7 +56,14 @@ export default function CheckoutPage() {
   };
 
   const isProvinceAllowed = settings.allowedProvinces.includes(form.province);
-  const isDateValid = form.date >= getMinDeliveryDate();
+  const isDateValid = Boolean(form.date) && form.date >= getMinDeliveryDate();
+  const submitDisabledReason = !isMinQuantityMet
+    ? `حداقل تعداد سفارش ${minQuantityRequired.toLocaleString('fa-IR')} عدد است`
+    : !isProvinceAllowed
+      ? `در حال حاضر امکان ارسال فقط در ${settings.allowedProvinces.join(' و ')} فراهم است`
+      : !isDateValid
+        ? `تاریخ تحویل را انتخاب کنید؛ حداقل ${settings.leadTimeHours} ساعت بعد از ثبت سفارش`
+        : '';
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
@@ -117,8 +124,9 @@ export default function CheckoutPage() {
       clearCart();
       notifySuccess('سفارش شما با موفقیت ثبت شد');
       navigate(`/order/${order.id}`);
-    } catch {
-      notifyError('خطا در ثبت سفارش. لطفا دوباره تلاش کنید.');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'خطا در ثبت سفارش. لطفا دوباره تلاش کنید.';
+      notifyError(message);
     } finally {
       setLoading(false);
     }
@@ -157,7 +165,12 @@ export default function CheckoutPage() {
 
         <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-8">تکمیل سفارش</h1>
 
-        <form onSubmit={handleSubmit} className="grid lg:grid-cols-3 gap-8">
+        <form
+          onSubmit={handleSubmit}
+          className="grid lg:grid-cols-3 gap-8"
+          toolname="create_order"
+          tooldescription="Create a Majlesyar checkout order with customer, delivery, address, note, and payment details."
+        >
           {/* Form Fields */}
           <div className="lg:col-span-2 space-y-6">
             {/* Personal Info */}
@@ -169,6 +182,8 @@ export default function CheckoutPage() {
                   <Label htmlFor="name">نام و نام خانوادگی *</Label>
                   <Input
                     id="name"
+                    name="customerName"
+                    toolparamdescription="Required full name for order recipient."
                     value={form.name}
                     onChange={(e) => setForm({ ...form, name: e.target.value })}
                     placeholder="محمد محمدی"
@@ -181,6 +196,8 @@ export default function CheckoutPage() {
                   <Label htmlFor="phone">شماره موبایل *</Label>
                   <Input
                     id="phone"
+                    name="customerPhone"
+                    toolparamdescription="Required Iranian mobile number for delivery contact."
                     type="tel"
                     value={form.phone}
                     onChange={(e) => setForm({ ...form, phone: e.target.value })}
@@ -201,6 +218,8 @@ export default function CheckoutPage() {
                 <Label htmlFor="province">استان *</Label>
                 <select
                   id="province"
+                  name="deliveryProvince"
+                  toolparamdescription="Required delivery province; only supported provinces can submit."
                   value={form.province}
                   onChange={(e) => setForm({ ...form, province: e.target.value })}
                   className={`w-full h-11 px-4 rounded-lg border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring ${
@@ -227,6 +246,8 @@ export default function CheckoutPage() {
                 <Label htmlFor="address">آدرس کامل *</Label>
                 <Textarea
                   id="address"
+                  name="deliveryAddress"
+                  toolparamdescription="Required full delivery address including street, alley, plaque, and unit."
                   value={form.address}
                   onChange={(e) => setForm({ ...form, address: e.target.value })}
                   placeholder="خیابان، کوچه، پلاک، واحد..."
@@ -246,18 +267,32 @@ export default function CheckoutPage() {
                   <Label htmlFor="date">تاریخ تحویل *</Label>
                   <JalaliDatePicker
                     value={form.date}
-                    onChange={(date) => setForm({ ...form, date })}
+                    onChange={(date) => {
+                      setForm({ ...form, date });
+                      setErrors((current) => ({ ...current, date: '' }));
+                    }}
                     minDate={getMinDeliveryDate()}
                     placeholder="انتخاب تاریخ تحویل"
                     hasError={!!errors.date}
                   />
-                  {errors.date && <p className="text-xs text-destructive">{errors.date}</p>}
+                <input
+                  type="hidden"
+                  name="deliveryDate"
+                  value={form.date}
+                  toolparamdescription="Required delivery date stored as Gregorian YYYY-MM-DD after Jalali picker selection."
+                />
+                {errors.date && <p className="text-xs text-destructive">{errors.date}</p>}
+                <p className="text-xs text-muted-foreground">
+                  روزهای قبل از حداقل زمان تحویل غیرفعال هستند.
+                </p>
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="window">بازه زمانی *</Label>
                   <select
                     id="window"
+                    name="deliveryWindow"
+                    toolparamdescription="Required delivery time window."
                     value={form.window}
                     onChange={(e) => setForm({ ...form, window: e.target.value })}
                     className={`w-full h-11 px-4 rounded-lg border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring ${
@@ -287,6 +322,8 @@ export default function CheckoutPage() {
                 <Label htmlFor="notes">توضیحات (اختیاری)</Label>
                 <Textarea
                   id="notes"
+                  name="orderNotes"
+                  toolparamdescription="Optional order notes for ceremony details or delivery instructions."
                   value={form.notes}
                   onChange={(e) => setForm({ ...form, notes: e.target.value })}
                   placeholder="توضیحات اضافی برای سفارش..."
@@ -309,6 +346,7 @@ export default function CheckoutPage() {
                       <input
                         type="radio"
                         name="paymentMethod"
+                        toolparamdescription="Payment method selected for checkout."
                         value={method.id}
                         checked={form.paymentMethod === method.id}
                         onChange={(e) => setForm({ ...form, paymentMethod: e.target.value })}
@@ -363,13 +401,19 @@ export default function CheckoutPage() {
                   message={`\u062d\u062f\u0627\u0642\u0644 \u062a\u0639\u062f\u0627\u062f \u0633\u0641\u0627\u0631\u0634 ${minQuantityRequired.toLocaleString('fa-IR')} \u0639\u062f\u062f \u0627\u0633\u062a`}
                 />
               )}
+              {isMinQuantityMet && submitDisabledReason && (
+                <RuleAlert
+                  type="warning"
+                  message={submitDisabledReason}
+                />
+              )}
 
               <Button
                 type="submit"
                 variant="gold"
                 size="lg"
                 className="w-full gap-2"
-                disabled={loading || !isMinQuantityMet || !isProvinceAllowed || !isDateValid}
+                disabled={loading || Boolean(submitDisabledReason)}
               >
                 {loading ? (
                   <>

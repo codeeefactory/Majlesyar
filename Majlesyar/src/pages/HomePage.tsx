@@ -1,16 +1,23 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AppShell } from '@/components/layout';
 import { Button } from '@/components/ui/button';
 import { EventCard } from '@/components/EventCard';
-import { CustomerFeedbackSection } from '@/components/CustomerFeedbackSection';
-import { HomepageBenefitsSection } from '@/components/HomepageBenefitsSection';
-import { ProductCard } from '@/components/ProductCard';
 import { SEO } from '@/components/SEO';
 import { useSettings } from '@/contexts/SettingsContext';
 import { Sparkles, Clock, ArrowLeft, Truck, Shield, Star, Wrench } from 'lucide-react';
 import { getPageProductPreview, listCustomerReviews, listProducts } from '@/lib/api';
 import type { CustomerReview, Product } from '@/types/domain';
+
+const LazyProductCard = lazy(() =>
+  import('@/components/ProductCard').then((module) => ({ default: module.ProductCard })),
+);
+const LazyCustomerFeedbackSection = lazy(() =>
+  import('@/components/CustomerFeedbackSection').then((module) => ({ default: module.CustomerFeedbackSection })),
+);
+const LazyHomepageBenefitsSection = lazy(() =>
+  import('@/components/HomepageBenefitsSection').then((module) => ({ default: module.HomepageBenefitsSection })),
+);
 
 const HOME_EVENT_CARDS = [
   { routePath: '/halva-khorma', name: 'حلوا خرما، خرما گردو' },
@@ -27,6 +34,7 @@ export default function HomePage() {
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
   const [customerReviews, setCustomerReviews] = useState<CustomerReview[]>([]);
   const [productsLoading, setProductsLoading] = useState(true);
+  const [showBelowFold] = useState(true);
   const { settings } = useSettings();
   const visibleEventPages = HOME_EVENT_CARDS.map((homeCard) => {
     const event = settings.eventPages.find((item) => item.routePath === homeCard.routePath);
@@ -34,6 +42,8 @@ export default function HomePage() {
   }).filter(Boolean);
 
   useEffect(() => {
+    if (!showBelowFold) return;
+
     let isMounted = true;
     getPageProductPreview('home', 'featured')
       .then(async (preview) => {
@@ -58,9 +68,11 @@ export default function HomePage() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [showBelowFold]);
 
   useEffect(() => {
+    if (!showBelowFold) return;
+
     let isMounted = true;
     listCustomerReviews({ featured: true, limit: 6 })
       .then((reviews) => {
@@ -72,7 +84,7 @@ export default function HomePage() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [showBelowFold]);
 
   return (
     <AppShell>
@@ -87,9 +99,9 @@ export default function HomePage() {
           {/* Event Types */}
           <div className="mb-10">
             <header className="text-center mb-8">
-            <h2 id="events-heading" className="text-2xl md:text-3xl font-bold text-foreground mb-3">
-                نوع مراسم خود را انتخاب کنید
-              </h2>
+            <div id="events-heading" className="text-2xl md:text-3xl font-bold text-foreground mb-3">
+                نوع محصول خود را انتخاب کنید
+              </div>
               <p className="text-muted-foreground text-base md:text-lg">
                 پک‌های متناسب با هر نوع مراسم
               </p>
@@ -170,6 +182,8 @@ export default function HomePage() {
 
       {/* Rule Alert - Hidden */}
 
+      {showBelowFold ? (
+        <Suspense fallback={null}>
       {/* Featured Products */}
       <section className="container py-16" aria-labelledby="products-heading">
         <header className="flex items-center justify-between mb-10">
@@ -202,15 +216,15 @@ export default function HomePage() {
               ))
             : featuredProducts.map((product) => (
                 <div key={product.id}>
-                  <ProductCard product={product} />
+                  <LazyProductCard product={product} />
                 </div>
               ))}
         </div>
       </section>
 
-      <CustomerFeedbackSection reviews={customerReviews} />
+      <LazyCustomerFeedbackSection reviews={customerReviews} />
 
-      <HomepageBenefitsSection />
+      <LazyHomepageBenefitsSection />
 
       <section className="container py-16" aria-labelledby="cta-heading">
         <article className="bg-card rounded-3xl p-8 md:p-12 border border-border relative overflow-hidden">
@@ -235,6 +249,8 @@ export default function HomePage() {
           </div>
         </article>
       </section>
+        </Suspense>
+      ) : null}
 
       {/* FAQ Section - Hidden */}
     </AppShell>

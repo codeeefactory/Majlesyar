@@ -19,7 +19,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     GUNICORN_THREADS=2 \
     GUNICORN_TIMEOUT=120 \
     DJANGO_DEBUG=0 \
-    DJANGO_ALLOWED_HOSTS=*
+    DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,majlesyar.com,www.majlesyar.com \
+    ADMIN_EMAIL=admin@example.com
 
 WORKDIR /app
 
@@ -34,4 +35,4 @@ EXPOSE 8000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 CMD python -c "import json, os, sys, urllib.request; port = os.environ.get('PORT', '8000'); url = f'http://127.0.0.1:{port}/api/v1/health/'; response = urllib.request.urlopen(url, timeout=4); payload = json.load(response); sys.exit(0 if response.status == 200 and payload.get('ok') else 1)"
 
-CMD ["sh", "-c", "export DJANGO_SECRET_KEY=\"${DJANGO_SECRET_KEY:-$(python -c 'import secrets; print(secrets.token_urlsafe(64))')}\" && python manage.py migrate --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:${PORT:-8000} --worker-class gthread --workers ${WEB_CONCURRENCY:-2} --threads ${GUNICORN_THREADS:-2} --timeout ${GUNICORN_TIMEOUT:-120} --max-requests 1200 --max-requests-jitter 100"]
+CMD ["sh", "-c", "export DJANGO_SECRET_KEY=\"${DJANGO_SECRET_KEY:-$(python -c 'import secrets; print(secrets.token_urlsafe(64))')}\" && python manage.py migrate --noinput && if [ -n \"${ADMIN_USERNAME:-}\" ] && [ -n \"${ADMIN_PASSWORD:-}\" ]; then python manage.py ensure_admin_superuser; fi && gunicorn config.wsgi:application --bind 0.0.0.0:${PORT:-8000} --worker-class gthread --workers ${WEB_CONCURRENCY:-2} --threads ${GUNICORN_THREADS:-2} --timeout ${GUNICORN_TIMEOUT:-120} --max-requests 1200 --max-requests-jitter 100"]

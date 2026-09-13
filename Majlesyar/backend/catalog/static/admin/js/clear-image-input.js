@@ -38,14 +38,25 @@
     const card = document.createElement("div");
     card.className = "admin-image-preview-card admin-image-preview-card--empty";
     card.dataset.liveImagePreviewCard = previewKey;
-    card.innerHTML = `
-      <div class="admin-image-preview-card__eyebrow">پیش‌نمایش فایل</div>
-      <div class="admin-image-preview-card__title">${humanizeFieldName(previewKey)}</div>
-      <div class="admin-image-preview-card__media" data-live-image-preview-media="${previewKey}"></div>
-      <div class="admin-image-preview-card__caption" data-live-image-preview-caption="${previewKey}">
-        هنوز تصویری انتخاب نشده است.
-      </div>
-    `;
+
+    const eyebrow = document.createElement("div");
+    eyebrow.className = "admin-image-preview-card__eyebrow";
+    eyebrow.textContent = "پیش‌نمایش فایل";
+
+    const title = document.createElement("div");
+    title.className = "admin-image-preview-card__title";
+    title.textContent = humanizeFieldName(previewKey);
+
+    const media = document.createElement("div");
+    media.className = "admin-image-preview-card__media";
+    media.dataset.liveImagePreviewMedia = previewKey;
+
+    const caption = document.createElement("div");
+    caption.className = "admin-image-preview-card__caption";
+    caption.dataset.liveImagePreviewCaption = previewKey;
+    caption.textContent = "هنوز تصویری انتخاب نشده است.";
+
+    card.append(eyebrow, title, media, caption);
     fieldRow.appendChild(card);
     return card;
   }
@@ -69,7 +80,7 @@
   function clearPreview(cardParts, captionText) {
     if (!cardParts) return;
     if (cardParts.media) {
-      cardParts.media.innerHTML = "";
+      cardParts.media.replaceChildren();
     }
     if (cardParts.caption) {
       cardParts.caption.textContent = captionText;
@@ -109,7 +120,11 @@
     cardParts.card.classList.remove("admin-image-preview-card--empty");
 
     if (cardParts.media) {
-      cardParts.media.innerHTML = `<img src="${objectUrl}" alt="" class="admin-image-preview-card__image" />`;
+      const previewImage = document.createElement("img");
+      previewImage.src = objectUrl;
+      previewImage.alt = "";
+      previewImage.className = "admin-image-preview-card__image";
+      cardParts.media.replaceChildren(previewImage);
     }
     if (cardParts.caption) {
       const sizeInMegabytes = (selectedFile.size / (1024 * 1024)).toFixed(2);

@@ -32,6 +32,7 @@ class SiteSettingAdmin(PersianAdminFormMixin, admin.ModelAdmin):
         (
             "اطلاعات تماس و شبکه‌های اجتماعی",
             {
+                "description": "راهنما: لینک شبکه‌های اجتماعی و اطلاعات تماس را کامل وارد کنید. اگر شبکه‌ای ندارید، همان فیلد را خالی بگذارید.",
                 "fields": (
                     "contact_phone",
                     "contact_address",
@@ -74,6 +75,7 @@ class SiteSettingAdmin(PersianAdminFormMixin, admin.ModelAdmin):
         (
             "قوانین سفارش و ارسال",
             {
+                "description": "راهنما: حداقل تعداد سفارش، زمان آماده‌سازی، استان‌های مجاز، بازه‌های تحویل و روش‌های پرداخت از اینجا کنترل می‌شود.",
                 "fields": (
                     "min_order_qty",
                     "lead_time_hours",
@@ -86,6 +88,7 @@ class SiteSettingAdmin(PersianAdminFormMixin, admin.ModelAdmin):
         (
             "محتوای داینامیک صفحه اصلی",
             {
+                "description": "راهنما: متن‌های صفحه اصلی را ساده و کوتاه بنویسید. بعد از ذخیره، صفحه سایت را یک بار رفرش کنید.",
                 "fields": ("site_top_notice", "homepage_benefits_section", "updated_at"),
             },
         ),

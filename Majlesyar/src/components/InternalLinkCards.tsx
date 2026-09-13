@@ -54,6 +54,14 @@ export function InternalLinkCards({
                 <div className="absolute inset-0 flex items-center justify-center">
                   <Home className="h-14 w-14 text-primary/70" aria-hidden="true" />
                 </div>
+              ) : link.image ? (
+                <img
+                  src={link.image}
+                  alt={link.imageAlt || link.label}
+                  loading="lazy"
+                  decoding="async"
+                  className="h-full w-full object-cover object-center"
+                />
               ) : shouldShowImage && imageProduct ? (
                 <ResponsiveProductImage
                   product={imageProduct}

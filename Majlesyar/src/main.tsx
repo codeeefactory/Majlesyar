@@ -15,13 +15,3 @@ createRoot(rootElement).render(
     <App />
   </React.StrictMode>
 );
-
-function removeCriticalHomeFallback() {
-  document.documentElement.classList.remove("home-critical-ready");
-  const fallback = document.getElementById("home-critical-fallback");
-  fallback?.remove();
-}
-
-window.requestAnimationFrame(() => {
-  window.requestAnimationFrame(removeCriticalHomeFallback);
-});

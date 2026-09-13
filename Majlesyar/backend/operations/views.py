@@ -5,7 +5,7 @@ import json
 
 from django.contrib.auth import get_user_model
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
@@ -26,6 +26,13 @@ from catalog.serializers import (
     TagSerializer,
 )
 from catalog.services import get_page_preview_targets
+from blog.models import BlogCategory, BlogComment, BlogPost, BlogTag
+from blog.serializers import (
+    BlogCategorySerializer,
+    BlogCommentAdminSerializer,
+    BlogPostListSerializer,
+    BlogTagSerializer,
+)
 from orders.models import Order
 from orders.serializers import OrderSerializer
 from site_settings.models import SiteSetting
@@ -327,6 +334,23 @@ class DesktopBootstrapAPIView(APIView):
                 ).data,
                 "orders": OrderSerializer(Order.objects.prefetch_related("items", "notes").all(), many=True).data,
                 "site_settings": SiteSettingSerializer(SiteSetting.load(), context={"request": request}).data,
+                "blog_categories": BlogCategorySerializer(
+                    BlogCategory.objects.annotate(post_count=Count("posts")).order_by("display_order", "name"),
+                    many=True,
+                ).data,
+                "blog_tags": BlogTagSerializer(
+                    BlogTag.objects.annotate(post_count=Count("posts")).order_by("name"),
+                    many=True,
+                ).data,
+                "blog_posts": BlogPostListSerializer(
+                    BlogPost.objects.select_related("category", "author").prefetch_related("tags").all()[:100],
+                    many=True,
+                    context={"request": request},
+                ).data,
+                "blog_comments": BlogCommentAdminSerializer(
+                    BlogComment.objects.select_related("post", "parent").all()[:100],
+                    many=True,
+                ).data,
                 "telegram_operators": TelegramOperatorSerializer(
                     TelegramOperator.objects.select_related("django_user").all(),
                     many=True,

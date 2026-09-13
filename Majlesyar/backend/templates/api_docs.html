@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>مستندات API مجلس یار</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f8f5ee;
+      --card: #ffffff;
+      --text: #172033;
+      --muted: #516070;
+      --line: #e5ded2;
+      --accent: #00b7df;
+      --accent-dark: #00677e;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Tahoma, Arial, sans-serif;
+      line-height: 1.8;
+    }
+    main {
+      width: min(1040px, calc(100% - 32px));
+      margin: 40px auto;
+    }
+    .hero {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 28px;
+      box-shadow: 0 18px 45px rgba(23, 32, 51, .06);
+    }
+    h1, h2 { margin: 0 0 12px; }
+    p { margin: 0 0 16px; color: var(--muted); }
+    a { color: var(--accent-dark); font-weight: 700; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+      margin-top: 22px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 18px;
+    }
+    code {
+      direction: ltr;
+      unicode-bidi: plaintext;
+      display: inline-block;
+      background: #eefbfe;
+      color: #003d4d;
+      border-radius: 8px;
+      padding: 2px 8px;
+      font-family: Consolas, monospace;
+      font-size: .95rem;
+    }
+    ul { margin: 0; padding-right: 20px; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="hero">
+      <h1>مستندات API مجلس یار</h1>
+      <p>این صفحه بدون فایل خارجی و هماهنگ با سیاست امنیتی سایت نمایش داده می‌شود.</p>
+      <p><a href="/api/schema/">دانلود OpenAPI Schema</a></p>
+    </section>
+
+    <section class="grid" aria-label="بخش‌های API">
+      <article class="card">
+        <h2>سلامت سرویس</h2>
+        <p><code>GET /api/v1/health/</code></p>
+        <ul>
+          <li>بررسی فعال بودن سرور و دیتابیس</li>
+        </ul>
+      </article>
+      <article class="card">
+        <h2>محصولات</h2>
+        <p><code>GET /api/v1/products/</code></p>
+        <ul>
+          <li>لیست محصولات، دسته‌ها و جزئیات محصول</li>
+        </ul>
+      </article>
+      <article class="card">
+        <h2>سفارش‌ها</h2>
+        <p><code>POST /api/v1/orders/</code></p>
+        <ul>
+          <li>ثبت و پیگیری سفارش مشتری</li>
+        </ul>
+      </article>
+      <article class="card">
+        <h2>پنل مدیریت</h2>
+        <p><code>/majmanage/</code></p>
+        <ul>
+          <li>ورود فقط برای مدیران مجاز</li>
+        </ul>
+      </article>
+    </section>
+  </main>
+</body>
+</html>

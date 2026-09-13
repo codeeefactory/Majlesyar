@@ -14,7 +14,7 @@ import { useCustomerAuth } from '@/contexts/CustomerAuthContext';
 import { storage } from '@/lib/storage';
 import { notifySuccess } from '@/lib/notify';
 import type { Order } from '@/types/domain';
-import { CalendarDays, LogOut, MapPin, PackageCheck, ShoppingBag, UserRound } from 'lucide-react';
+import { CalendarDays, Clock3, LogOut, MapPin, PackageCheck, ShoppingBag, Truck, UserRound } from 'lucide-react';
 
 const statusLabels: Record<Order['status'], string> = {
   pending: 'در انتظار تایید',
@@ -75,6 +75,8 @@ export default function CustomerDashboardPage() {
 
   const activeTab = location.pathname.includes('profile') ? 'profile' : 'dashboard';
   const initials = customer.fullName.trim().slice(0, 1) || customer.username.slice(0, 1).toUpperCase();
+  const activeOrders = matchedOrders.filter((order) => order.status !== 'delivered').length;
+  const latestOrder = matchedOrders[0];
 
   const handleSave = (event: React.FormEvent) => {
     event.preventDefault();
@@ -91,7 +93,7 @@ export default function CustomerDashboardPage() {
     <AppShell>
       <SEO pageKey="customer-dashboard" path={activeTab === 'profile' ? '/profile' : '/dashboard'} noindex={true} />
       <div className="container py-8">
-        <section className="mb-8 rounded-2xl border border-primary/20 bg-card p-6 shadow-soft">
+        <section className="mb-8 overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 via-card to-secondary/20 p-6 shadow-soft">
           <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
             <div className="flex items-center gap-4">
               <Avatar className="h-16 w-16 border-2 border-primary/20">
@@ -105,12 +107,32 @@ export default function CustomerDashboardPage() {
                 <p className="mt-1 text-sm text-muted-foreground" dir="ltr">
                   @{customer.username} · {customer.email}
                 </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Badge variant="secondary" className="gap-1">
+                    <Truck className="h-3.5 w-3.5" />
+                    {activeOrders.toLocaleString('fa-IR')} سفارش فعال
+                  </Badge>
+                  {latestOrder && (
+                    <Badge variant="outline" className="gap-1">
+                      <Clock3 className="h-3.5 w-3.5" />
+                      آخرین وضعیت: {statusLabels[latestOrder.status]}
+                    </Badge>
+                  )}
+                </div>
               </div>
             </div>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Link to="/pack">
+                <Button variant="gold" className="w-full gap-2 sm:w-auto">
+                  <ShoppingBag className="h-4 w-4" />
+                  سفارش جدید
+                </Button>
+              </Link>
             <Button variant="outline" className="gap-2" onClick={handleLogout}>
               <LogOut className="h-4 w-4" />
               خروج
             </Button>
+            </div>
           </div>
         </section>
 
@@ -121,7 +143,7 @@ export default function CustomerDashboardPage() {
           </TabsList>
 
           <TabsContent value="dashboard" className="space-y-6">
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-4">
               {[
                 { label: 'سفارش‌های من', value: matchedOrders.length.toLocaleString('fa-IR'), icon: PackageCheck },
                 { label: 'محصول در سبد', value: totalQuantity.toLocaleString('fa-IR'), icon: ShoppingBag },
@@ -214,33 +236,38 @@ export default function CustomerDashboardPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleSave} className="grid gap-5 md:grid-cols-2">
+                <form
+                  onSubmit={handleSave}
+                  className="grid gap-5 md:grid-cols-2"
+                  toolname="update_customer_profile"
+                  tooldescription="Update Majlesyar customer profile and default delivery information."
+                >
                   <div className="space-y-2">
                     <Label htmlFor="fullName">نام و نام خانوادگی</Label>
-                    <Input id="fullName" value={form.fullName} onChange={(event) => setForm({ ...form, fullName: event.target.value })} />
+                    <Input id="fullName" name="fullName" toolparamdescription="Customer full name." value={form.fullName} onChange={(event) => setForm({ ...form, fullName: event.target.value })} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="username">نام کاربری</Label>
-                    <Input id="username" value={form.username} onChange={(event) => setForm({ ...form, username: event.target.value })} dir="ltr" />
+                    <Input id="username" name="username" toolparamdescription="Customer username." value={form.username} onChange={(event) => setForm({ ...form, username: event.target.value })} dir="ltr" />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="email">ایمیل</Label>
-                    <Input id="email" type="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} dir="ltr" />
+                    <Input id="email" name="email" toolparamdescription="Customer email address." type="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} dir="ltr" />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="phone">شماره موبایل</Label>
-                    <Input id="phone" value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} placeholder="09123456789" dir="ltr" />
+                    <Input id="phone" name="phone" toolparamdescription="Customer Iranian mobile number." value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} placeholder="09123456789" dir="ltr" />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="province">استان</Label>
-                    <Input id="province" value={form.province} onChange={(event) => setForm({ ...form, province: event.target.value })} />
+                    <Input id="province" name="province" toolparamdescription="Default delivery province." value={form.province} onChange={(event) => setForm({ ...form, province: event.target.value })} />
                   </div>
                   <div className="space-y-2 md:col-span-2">
                     <Label htmlFor="address" className="flex items-center gap-2">
                       <MapPin className="h-4 w-4 text-primary" />
                       آدرس پیش فرض
                     </Label>
-                    <Input id="address" value={form.address} onChange={(event) => setForm({ ...form, address: event.target.value })} />
+                    <Input id="address" name="address" toolparamdescription="Default delivery address." value={form.address} onChange={(event) => setForm({ ...form, address: event.target.value })} />
                   </div>
                   <div className="md:col-span-2">
                     <Button type="submit" variant="gold" size="lg">

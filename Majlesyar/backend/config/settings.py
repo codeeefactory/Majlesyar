@@ -44,11 +44,11 @@ def env_int_list(name: str, default: str = "") -> list[int]:
 
 
 def admin_overrides_stylesheet(_request) -> str:
-    return static_url("admin/css/persian-admin-overrides.css")
+    return f"{static_url('admin/css/persian-admin-overrides.css')}?v=20260707-admin-comfort-theme2"
 
 
 def admin_overrides_script(_request) -> str:
-    return static_url("admin/js/persian-admin-effects.js")
+    return f"{static_url('admin/js/persian-admin-effects.js')}?v=20260707-time-dark"
 
 
 DEFAULT_SECRET_KEY = "dev-insecure-secret-key-change-me"
@@ -83,16 +83,21 @@ INSTALLED_APPS = [
     "rest_framework",
     "django_filters",
     "drf_spectacular",
+    "blog",
     "catalog",
     "vision",
     "site_settings",
     "orders",
     "operations",
+    "google_maps_scraper",
     "telegram_bot",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "config.middleware.SecurityHeadersMiddleware",
+    "config.middleware.SensitivePathBlockMiddleware",
+    "config.middleware.LoginRateLimitMiddleware",
     "config.middleware.LegacyViteAssetRedirectMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.middleware.gzip.GZipMiddleware",
@@ -129,6 +134,10 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "config.wsgi.application"
+
+LOGIN_URL = "/majmanage/login/"
+LOGIN_REDIRECT_URL = "/majmanage/"
+LOGOUT_REDIRECT_URL = "/majmanage/login/"
 
 
 if env_bool("USE_POSTGRES", False) or os.getenv("POSTGRES_DB"):
@@ -198,6 +207,13 @@ REST_FRAMEWORK = {
     ),
 }
 
+GOOGLE_MAPS_SCRAPER = {
+    "BASE_URL": os.getenv("GOOGLE_MAPS_SCRAPER_BASE_URL", "http://127.0.0.1:8081").rstrip("/"),
+    "API_KEY": os.getenv("GOOGLE_MAPS_SCRAPER_API_KEY", ""),
+    "CONNECT_TIMEOUT": float(os.getenv("GOOGLE_MAPS_SCRAPER_CONNECT_TIMEOUT", "5")),
+    "READ_TIMEOUT": float(os.getenv("GOOGLE_MAPS_SCRAPER_READ_TIMEOUT", "60")),
+}
+
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
@@ -208,6 +224,14 @@ SPECTACULAR_SETTINGS = {
     "TITLE": "Majlesyar API",
     "DESCRIPTION": "Backend API for products, settings, and order workflows.",
     "VERSION": "1.0.0",
+    "ENUM_NAME_OVERRIDES": {
+        "OrderStatus": "config.schema.order_status_choices",
+        "InvoiceStatus": "config.schema.invoice_status_choices",
+        "SmsStatus": "config.schema.sms_status_choices",
+        "TelegramUpdateStatus": "config.schema.telegram_update_status_choices",
+        "TelegramAuditStatus": "config.schema.telegram_audit_status_choices",
+        "BlogPostStatus": "config.schema.blog_post_status_choices",
+    },
 }
 
 CORS_ALLOWED_ORIGINS = env_list(
@@ -234,15 +258,105 @@ CSRF_TRUSTED_ORIGINS = env_list(
 USE_X_FORWARDED_HOST = env_bool("USE_X_FORWARDED_HOST", True)
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SECURE_SSL_REDIRECT = env_bool("SECURE_SSL_REDIRECT", not DEBUG)
-SECURE_HSTS_SECONDS = int(os.getenv("SECURE_HSTS_SECONDS", "31536000" if not DEBUG else "0"))
+SECURE_REDIRECT_EXEMPT = [r"^api/v1/health/$"]
+SECURE_HSTS_SECONDS = int(os.getenv("SECURE_HSTS_SECONDS", "63072000" if not DEBUG else "0"))
 SECURE_HSTS_INCLUDE_SUBDOMAINS = env_bool("SECURE_HSTS_INCLUDE_SUBDOMAINS", not DEBUG)
-SECURE_HSTS_PRELOAD = env_bool("SECURE_HSTS_PRELOAD", False)
+SECURE_HSTS_PRELOAD = env_bool("SECURE_HSTS_PRELOAD", not DEBUG)
 SECURE_CONTENT_TYPE_NOSNIFF = env_bool("SECURE_CONTENT_TYPE_NOSNIFF", True)
 SECURE_REFERRER_POLICY = os.getenv("SECURE_REFERRER_POLICY", "same-origin")
 X_FRAME_OPTIONS = os.getenv("X_FRAME_OPTIONS", "DENY")
 CSRF_COOKIE_SECURE = env_bool("CSRF_COOKIE_SECURE", not DEBUG)
 SESSION_COOKIE_SECURE = env_bool("SESSION_COOKIE_SECURE", not DEBUG)
+CSRF_COOKIE_SAMESITE = os.getenv("CSRF_COOKIE_SAMESITE", "Lax")
+SESSION_COOKIE_SAMESITE = os.getenv("SESSION_COOKIE_SAMESITE", "Lax")
+SESSION_COOKIE_HTTPONLY = env_bool("SESSION_COOKIE_HTTPONLY", True)
 CSRF_PROXY_ALLOW_MISSING_REFERER = env_bool("CSRF_PROXY_ALLOW_MISSING_REFERER", True)
+
+CONTENT_SECURITY_POLICY = os.getenv(
+    "CONTENT_SECURITY_POLICY",
+    (
+        "default-src 'self'; "
+        "script-src 'self'; "
+        "style-src 'self' 'unsafe-inline'; "
+        "img-src 'self' data: blob: https:; "
+        "font-src 'self' data:; "
+        "connect-src 'self' https://majlesyar.com https://www.majlesyar.com; "
+        "frame-src https://www.google.com https://maps.google.com; "
+        "object-src 'none'; "
+        "base-uri 'self'; "
+        "form-action 'self'; "
+        "frame-ancestors 'none'; "
+        "require-trusted-types-for 'script'; "
+        "trusted-types default; "
+        "upgrade-insecure-requests"
+    ),
+)
+ADMIN_CONTENT_SECURITY_POLICY = os.getenv(
+    "ADMIN_CONTENT_SECURITY_POLICY",
+    (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-eval'; "
+        "style-src 'self' 'unsafe-inline'; "
+        "img-src 'self' data: blob: https:; "
+        "font-src 'self' data:; "
+        "connect-src 'self' https://majlesyar.com https://www.majlesyar.com; "
+        "object-src 'none'; "
+        "base-uri 'self'; "
+        "form-action 'self'; "
+        "frame-ancestors 'none'; "
+        "upgrade-insecure-requests"
+    ),
+)
+PERMISSIONS_POLICY = os.getenv(
+    "PERMISSIONS_POLICY",
+    "accelerometer=(), autoplay=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()",
+)
+
+SENSITIVE_BLOCKED_PATHS = {
+    "/.env",
+    "/.git",
+    "/.git/",
+    "/.git/head",
+    "/admin/",
+    "/wp-admin/",
+    "/phpinfo.php",
+}
+SENSITIVE_BLOCKED_PATH_GLOBS = (
+    "/.git/*",
+    "/.env*",
+    "/backup*",
+    "/db.*",
+    "/config.*",
+    "/logs",
+    "/logs/*",
+    "/*.sql",
+    "/*.sqlite",
+    "/*.sqlite3",
+    "/*.bak",
+    "/*.backup",
+    "/*.old",
+    "/*.map",
+    "/assets/*.map",
+    "/static/*.map",
+    "/static/assets/*.map",
+)
+LOGIN_RATE_LIMIT_PATHS = {
+    "/majmanage/login/",
+    "/api/v1/auth/token/",
+}
+LOGIN_RATE_LIMIT_ATTEMPTS = int(os.getenv("LOGIN_RATE_LIMIT_ATTEMPTS", "10"))
+LOGIN_RATE_LIMIT_WINDOW_SECONDS = int(os.getenv("LOGIN_RATE_LIMIT_WINDOW_SECONDS", "300"))
+
+PRIVATE_NOINDEX_PATHS = (
+    "/checkout",
+    "/dashboard",
+    "/login",
+    "/profile",
+    "/signup",
+    "/admin/login",
+    "/admin/orders",
+    "/admin/page-products",
+)
 
 # Django's built-in check only looks for the exact CsrfViewMiddleware path.
 # We use a subclass that preserves CSRF protection while adding proxy-aware fallback logic.

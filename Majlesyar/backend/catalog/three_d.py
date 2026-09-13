@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import hashlib
+import json
+import struct
 from pathlib import Path
 from typing import BinaryIO
 
@@ -12,6 +14,8 @@ from django.utils import timezone
 
 
 GLB_MAGIC = b"glTF"
+GLB_JSON_CHUNK = 0x4E4F534A
+GLB_BINARY_CHUNK = 0x004E4942
 
 
 def build_asset_3d_upload_path(instance, _file_name: str | None) -> str:
@@ -19,17 +23,56 @@ def build_asset_3d_upload_path(instance, _file_name: str | None) -> str:
     return f"3d/{asset_kind}/{instance.pk}.glb"
 
 
+def validate_glb_bytes(payload: bytes, *, max_bytes: int | None = None) -> dict:
+    """Validate the GLB container and require actual mesh geometry."""
+    limit = max_bytes or int(getattr(settings, "PRODUCT_3D_MAX_BYTES", 25 * 1024 * 1024))
+    if len(payload) > limit:
+        raise ValidationError(f"حجم مدل سه‌بعدی نباید بیشتر از {limit // (1024 * 1024)} مگابایت باشد.")
+    if len(payload) < 20:
+        raise ValidationError("فایل انتخاب‌شده GLB کامل نیست.")
+
+    magic, version, declared_length = struct.unpack_from("<4sII", payload)
+    if magic != GLB_MAGIC or version != 2 or declared_length != len(payload):
+        raise ValidationError("هدر فایل GLB معتبر نیست.")
+
+    chunks: dict[int, bytes] = {}
+    offset = 12
+    while offset < len(payload):
+        if offset + 8 > len(payload):
+            raise ValidationError("ساختار chunk فایل GLB ناقص است.")
+        chunk_length, chunk_type = struct.unpack_from("<II", payload, offset)
+        offset += 8
+        chunk_end = offset + chunk_length
+        if chunk_end > len(payload):
+            raise ValidationError("ساختار chunk فایل GLB ناقص است.")
+        chunks[chunk_type] = payload[offset:chunk_end]
+        offset = chunk_end
+    if offset != len(payload):
+        raise ValidationError("طول chunkهای GLB با فایل مطابقت ندارد.")
+
+    json_chunk = chunks.get(GLB_JSON_CHUNK)
+    binary_chunk = chunks.get(GLB_BINARY_CHUNK)
+    if not json_chunk or not binary_chunk:
+        raise ValidationError("فایل GLB باید داده JSON و باینری داشته باشد.")
+    try:
+        document = json.loads(json_chunk.rstrip(b" \t\r\n\0").decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise ValidationError("بخش JSON فایل GLB معتبر نیست.") from exc
+    meshes = document.get("meshes") or []
+    if not any(mesh.get("primitives") for mesh in meshes):
+        raise ValidationError("فایل GLB هندسه سه‌بعدی ندارد.")
+    if not document.get("accessors") or not document.get("bufferViews"):
+        raise ValidationError("هندسه فایل GLB ناقص است.")
+    return document
+
+
 def validate_glb_file(upload) -> None:
     max_bytes = int(getattr(settings, "PRODUCT_3D_MAX_BYTES", 25 * 1024 * 1024))
-    size = getattr(upload, "size", 0) or 0
-    if size > max_bytes:
-        raise ValidationError(f"حجم مدل سه‌بعدی نباید بیشتر از {max_bytes // (1024 * 1024)} مگابایت باشد.")
     original_position = upload.tell() if hasattr(upload, "tell") else None
     try:
         if hasattr(upload, "seek"):
             upload.seek(0)
-        if upload.read(4) != GLB_MAGIC:
-            raise ValidationError("فایل انتخاب‌شده GLB معتبر نیست.")
+        validate_glb_bytes(upload.read(max_bytes + 1), max_bytes=max_bytes)
     finally:
         if original_position is not None and hasattr(upload, "seek"):
             upload.seek(original_position)
@@ -46,8 +89,7 @@ def _response_bytes(response: requests.Response, max_bytes: int) -> bytes:
             raise ValidationError("خروجی سرویس سه‌بعدی از سقف حجم مجاز بزرگ‌تر است.")
         chunks.append(chunk)
     payload = b"".join(chunks)
-    if payload[:4] != GLB_MAGIC:
-        raise ValidationError("سرویس تولید سه‌بعدی فایل GLB معتبر برنگرداند.")
+    validate_glb_bytes(payload, max_bytes=max_bytes)
     return payload
 
 

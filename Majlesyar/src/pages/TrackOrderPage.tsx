@@ -62,11 +62,18 @@ export default function TrackOrderPage() {
             کد سفارش خود را وارد کنید
           </p>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form
+            onSubmit={handleSubmit}
+            className="space-y-4"
+            toolname="track_order"
+            tooldescription="Find a Majlesyar order by order code."
+          >
             <div className="space-y-2 text-right">
               <Label htmlFor="orderId">کد سفارش</Label>
               <Input
                 id="orderId"
+                name="orderId"
+                toolparamdescription="Majlesyar order code shown after checkout."
                 value={orderId}
                 onChange={(e) => setOrderId(e.target.value)}
                 placeholder="مثال: ORD-ABC123"

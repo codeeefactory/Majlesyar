@@ -1,7 +1,11 @@
 from __future__ import annotations
 
 from django import forms
+from django.contrib import messages
+from django.core.exceptions import ValidationError
+from django.db import IntegrityError
 from django.db import models
+from django.shortcuts import redirect
 
 
 class PersianAdminFormMixin:
@@ -62,6 +66,19 @@ class PersianAdminFormMixin:
         "entity_type": "Example: invoice",
         "entity_id": "Related record id",
         "metadata": "{}",
+        "telegram_user_id": "Example: 123456789",
+        "telegram_chat_id": "Example: 123456789",
+        "username": "Telegram username without @",
+        "first_name": "Operator first name",
+        "last_name": "Operator last name",
+        "command": "Example: /orders",
+        "target_type": "Example: order",
+        "target_identifier": "Order code or record id",
+        "previous_state": "{}",
+        "new_state": "{}",
+        "payload": "{}",
+        "key": "Example: last_update_id",
+        "value": "{}",
     }
     help_text_map = {
         "name": "نام محصول یا آیتم را کوتاه، دقیق و قابل فهم وارد کنید.",
@@ -113,7 +130,59 @@ class PersianAdminFormMixin:
         "entity_type": "Type of record affected, like invoice or client.",
         "entity_id": "Id of the affected record.",
         "metadata": "Extra technical details in JSON format.",
+        "telegram_user_id": "Telegram numeric user id. Copy it exactly from bot logs.",
+        "telegram_chat_id": "Telegram chat id used for notifications.",
+        "username": "Telegram username. Leave empty if user has no username.",
+        "first_name": "Operator first name from Telegram.",
+        "last_name": "Operator last name from Telegram.",
+        "django_user": "Optional admin user connected to this Telegram operator.",
+        "notifications_enabled": "Turn off when this operator should not receive bot messages.",
+        "last_seen_at": "Last activity time. Usually updated by the bot.",
+        "payload": "Technical JSON data from Telegram. Edit only if you know the exact structure.",
+        "previous_state": "Old value before bot action. Keep for audit history.",
+        "new_state": "New value after bot action. Keep for audit history.",
+        "target_type": "Type of target record, like order or product.",
+        "target_identifier": "Visible id/code of the target record.",
+        "token": "Confirmation token. Generated automatically.",
+        "expires_at": "Confirmation expiry time. Expired confirmations cannot be used.",
+        "consumed_at": "Filled when operator confirms the action.",
+        "cancelled_at": "Filled when operator cancels the action.",
+        "update_id": "Telegram update id. Must stay unique.",
+        "source": "Where the update came from, usually webhook.",
+        "processed_at": "Time this update was processed.",
+        "key": "Internal bot state key. Use short English names.",
+        "value": "Internal bot state JSON. Change carefully.",
     }
+
+    def _friendly_admin_error(self, request, exc):
+        self.message_user(
+            request,
+            f"خطا در ذخیره یا اجرای عملیات: {exc}. لطفا مقدار فیلدها را بررسی کنید و دوباره تلاش کنید.",
+            level=messages.ERROR,
+        )
+        return redirect(request.get_full_path())
+
+    def changeform_view(self, request, object_id=None, form_url="", extra_context=None):
+        try:
+            return super().changeform_view(request, object_id, form_url, extra_context)
+        except (ValidationError, IntegrityError, ValueError) as exc:
+            return self._friendly_admin_error(request, exc)
+
+    def response_action(self, request, queryset):
+        try:
+            return super().response_action(request, queryset)
+        except (ValidationError, IntegrityError, ValueError) as exc:
+            return self._friendly_admin_error(request, exc)
+
+    def delete_model(self, request, obj):
+        try:
+            return super().delete_model(request, obj)
+        except (ValidationError, IntegrityError, ValueError) as exc:
+            self.message_user(
+                request,
+                f"این مورد حذف نشد: {exc}. اگر به سفارش یا داده دیگر وصل است، اول وابستگی را بررسی کنید.",
+                level=messages.ERROR,
+            )
 
     def _build_placeholder(self, db_field: models.Field, label: str) -> str:
         if db_field.name in self.placeholder_map:

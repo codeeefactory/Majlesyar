@@ -3,9 +3,6 @@
 
 User-agent: *
 Allow: /
-Disallow: /admin/
-Disallow: /checkout
-Disallow: /order/
 
 # Allow specific AI crawlers
 User-agent: GPTBot

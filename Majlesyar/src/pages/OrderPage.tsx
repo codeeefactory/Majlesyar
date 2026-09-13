@@ -172,7 +172,7 @@ export default function OrderPage() {
                     <p className="font-medium text-foreground">{item.name}</p>
                     {item.isCustomPack && item.customConfig && (
                       <div className="flex flex-wrap gap-1 mt-1">
-                        {Object.values(item.customConfig).flat().filter(Boolean).slice(0, 3).map((c, i) => (
+                        {Object.values(item.customConfig).flat().filter(Boolean).slice(0, 6).map((c, i) => (
                           <span key={i} className="text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
                             {c}
                           </span>

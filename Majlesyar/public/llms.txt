@@ -1,0 +1,18 @@
+# Majlesyar
+
+Majlesyar is a Persian ecommerce and event-services website for ceremony products, flower arrangements, food packs, and related ordering workflows in Tehran and Karaj.
+
+## Website
+
+- [Home](https://majlesyar.com/)
+- [Products](https://majlesyar.com/pack)
+- [Flowers](https://majlesyar.com/flower)
+- [Food](https://majlesyar.com/food)
+- [Halva and dates](https://majlesyar.com/halva-khorma)
+- [Blog](https://majlesyar.com/blog)
+- [Contact](https://majlesyar.com/contact)
+- [Sitemap](https://majlesyar.com/sitemap.xml)
+
+## Crawling
+
+Public product, category, blog, and information pages may be crawled for search and assistant answers. Do not crawl private customer dashboards, checkout flows, admin pages, API mutation endpoints, or authentication endpoints.
