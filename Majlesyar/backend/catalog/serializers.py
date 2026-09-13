@@ -5,7 +5,12 @@ from rest_framework import serializers
 from PIL import Image, UnidentifiedImageError
 from django.utils.text import slugify
 
-from .image_utils import derive_image_label, image_extension_validator, image_supports_extension
+from .image_utils import (
+    derive_image_label,
+    image_extension_validator,
+    image_supports_extension,
+    prepare_image_for_existing_path,
+)
 from .image_variants import build_product_image_payload
 from .models import (
     BuilderItem,
@@ -19,6 +24,7 @@ from .models import (
     get_content_item_name,
     get_content_item_price,
     normalize_product_contents,
+    normalize_product_public_path,
     sync_product_categories,
 )
 from .services import serialize_page_preview_target
@@ -148,6 +154,7 @@ class ProductSerializer(serializers.ModelSerializer):
     contents = serializers.SerializerMethodField()
     customer_reviews = serializers.SerializerMethodField()
     photo_analysis = serializers.JSONField(read_only=True)
+    model_3d = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -155,6 +162,7 @@ class ProductSerializer(serializers.ModelSerializer):
             "id",
             "name",
             "url_slug",
+            "public_path",
             "uri",
             "description",
             "price",
@@ -168,8 +176,16 @@ class ProductSerializer(serializers.ModelSerializer):
             "image_name",
             "image_alt",
             "photo_analysis",
+            "model_3d",
+            "model_3d_status",
+            "model_3d_metadata",
             "featured",
             "available",
+            "is_temporary",
+            "show_in_builder",
+            "builder_group",
+            "builder_required",
+            "builder_display_order",
         )
 
     def get_category_ids(self, obj: Product) -> list[str]:
@@ -185,6 +201,14 @@ class ProductSerializer(serializers.ModelSerializer):
         if request:
             return request.build_absolute_uri(obj.image.url)
         return obj.image.url
+
+    def get_model_3d(self, obj: Product) -> str | None:
+        if not obj.model_3d or obj.model_3d_status != "ready":
+            return None
+        request = self.context.get("request")
+        if request:
+            return request.build_absolute_uri(obj.model_3d.url)
+        return obj.model_3d.url
 
     def get_image_responsive(self, obj: Product) -> dict:
         return build_product_image_payload(obj, request=self.context.get("request"))
@@ -204,7 +228,7 @@ class ProductSerializer(serializers.ModelSerializer):
         return ""
 
     def get_uri(self, obj: Product) -> str:
-        return f"/product/{obj.url_slug}"
+        return obj.public_path
 
     def get_contents(self, obj: Product) -> list[dict]:
         return normalize_product_contents(obj.contents)
@@ -251,6 +275,7 @@ class ProductWriteSerializer(serializers.ModelSerializer):
             "id",
             "name",
             "url_slug",
+            "public_path",
             "description",
             "price",
             "input_mode",
@@ -264,6 +289,11 @@ class ProductWriteSerializer(serializers.ModelSerializer):
             "image_alt",
             "featured",
             "available",
+            "is_temporary",
+            "show_in_builder",
+            "builder_group",
+            "builder_required",
+            "builder_display_order",
         )
         read_only_fields = ("id",)
 
@@ -322,6 +352,9 @@ class ProductWriteSerializer(serializers.ModelSerializer):
             return ""
         return cleaned
 
+    def validate_public_path(self, value: str) -> str:
+        return normalize_product_public_path(value)
+
     def validate_image_file(self, value):
         max_size_bytes = 5 * 1024 * 1024
         if value.size > max_size_bytes:
@@ -366,7 +399,7 @@ class ProductWriteSerializer(serializers.ModelSerializer):
                 product.categories.set(Category.objects.filter(slug__in=event_slugs))
         if tag_ids is not None:
             product.tags.set(Tag.objects.filter(id__in=tag_ids))
-        sync_product_categories(product)
+        sync_product_categories(product, force=category_ids is not serializers.empty)
         return product
 
     def update(self, instance: Product, validated_data: dict) -> Product:
@@ -380,7 +413,14 @@ class ProductWriteSerializer(serializers.ModelSerializer):
             setattr(instance, attr, value)
 
         if image_file is not serializers.empty:
-            instance.image = image_file
+            existing_image_name = instance.image.name if instance.image else ""
+            if existing_image_name:
+                replacement = prepare_image_for_existing_path(image_file, existing_image_name)
+                saved_name = instance.image.storage.save(existing_image_name, replacement)
+                instance.image.name = saved_name
+                instance._image_content_changed = True
+            else:
+                instance.image = image_file
             if not validated_data.get("image_name"):
                 instance.image_name = derive_image_label(image_file.name)
             if not validated_data.get("image_alt"):
@@ -402,17 +442,18 @@ class ProductWriteSerializer(serializers.ModelSerializer):
                 instance.categories.set(Category.objects.filter(slug__in=event_slugs))
         if tag_ids is not serializers.empty:
             instance.tags.set(Tag.objects.filter(id__in=tag_ids))
-        sync_product_categories(instance)
+        sync_product_categories(instance, force=category_ids is not serializers.empty)
 
         return instance
 
 
 class BuilderItemSerializer(serializers.ModelSerializer):
     image = serializers.SerializerMethodField()
+    model_3d = serializers.SerializerMethodField()
 
     class Meta:
         model = BuilderItem
-        fields = ("id", "name", "group", "price", "required", "image")
+        fields = ("id", "name", "group", "price", "required", "image", "model_3d", "model_3d_status")
 
     def get_image(self, obj: BuilderItem) -> str | None:
         if not obj.image:
@@ -422,11 +463,19 @@ class BuilderItemSerializer(serializers.ModelSerializer):
             return request.build_absolute_uri(obj.image.url)
         return obj.image.url
 
+    def get_model_3d(self, obj: BuilderItem) -> str | None:
+        if not obj.model_3d or obj.model_3d_status != "ready":
+            return None
+        request = self.context.get("request")
+        if request:
+            return request.build_absolute_uri(obj.model_3d.url)
+        return obj.model_3d.url
+
 
 class BuilderItemWriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = BuilderItem
-        fields = ("id", "name", "group", "price", "required", "image")
+        fields = ("id", "name", "group", "price", "required", "image", "model_3d", "model_3d_status")
         read_only_fields = ("id",)
 
 

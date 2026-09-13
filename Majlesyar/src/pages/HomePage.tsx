@@ -14,7 +14,11 @@ import type { CustomerReview, Product } from '@/types/domain';
 
 const HOME_EVENT_CARDS = [
   { routePath: '/halva-khorma', name: 'حلوا خرما، خرما گردو' },
-  { routePath: '/pack', name: 'پک میوه و پذیرایی' },
+  {
+    routePath: '/pack/memorial',
+    name: 'پک میوه و پذیرایی',
+    description: 'پک میوه و پذیرایی ترحیم ارسال سریع تهران البرز',
+  },
   { routePath: '/food', name: 'منوی فود' },
   { routePath: '/flower', name: 'گل' },
 ];
@@ -26,7 +30,7 @@ export default function HomePage() {
   const { settings } = useSettings();
   const visibleEventPages = HOME_EVENT_CARDS.map((homeCard) => {
     const event = settings.eventPages.find((item) => item.routePath === homeCard.routePath);
-    return event ? { ...event, name: homeCard.name } : null;
+    return event ? { ...event, ...homeCard } : null;
   }).filter(Boolean);
 
   useEffect(() => {
@@ -136,8 +140,7 @@ export default function HomePage() {
             </h1>
             
             <p className="text-lg md:text-xl text-muted-foreground max-w-lg mx-auto leading-relaxed">
-              خدمات آماده و سفارشی برای فینگر فود، ترحیم، گل و حلوا و خرما.
-              حداقل سفارش ۴۰ عدد با تحویل سریع در تهران و البرز.
+              خدمات آماده و سفارشی برای فینگر فود، ترحیم، گل، حلوا و خرما با تحویل سریع در تهران و البرز.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-3 justify-center items-stretch sm:items-center pt-4">

@@ -1,5 +1,9 @@
 import type {
   BuilderItem,
+  BlogCategory,
+  BlogComment,
+  BlogPost,
+  BlogTag,
   Category,
   CustomerReview,
   Order,
@@ -38,6 +42,7 @@ interface ApiProduct {
   id: string;
   name: string;
   url_slug: string;
+  public_path?: string;
   uri?: string;
   description: string;
   price: number | null;
@@ -67,9 +72,17 @@ interface ApiProduct {
   };
   image_alt?: string;
   image_name?: string;
+  model_3d?: string | null;
+  model_3d_status?: "missing" | "processing" | "ready" | "failed";
+  model_3d_metadata?: Record<string, unknown>;
   customer_reviews?: ApiCustomerReview[];
   featured: boolean;
   available: boolean;
+  is_temporary?: boolean;
+  show_in_builder?: boolean;
+  builder_group?: "packaging" | "fruit" | "drink" | "snack" | "addon" | "products" | "";
+  builder_required?: boolean;
+  builder_display_order?: number;
 }
 
 interface ApiCustomerReview {
@@ -86,6 +99,57 @@ interface ApiCustomerReview {
   created_at: string;
 }
 
+interface ApiBlogCategory {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  color: string;
+  display_order: number;
+  post_count: number;
+}
+
+interface ApiBlogTag {
+  id: string;
+  name: string;
+  slug: string;
+  post_count: number;
+}
+
+interface ApiBlogComment {
+  id: string;
+  parent?: string | null;
+  name: string;
+  body: string;
+  created_at: string;
+  replies?: ApiBlogComment[];
+}
+
+interface ApiBlogPost {
+  id: string;
+  title: string;
+  slug: string;
+  uri: string;
+  subtitle: string;
+  excerpt: string;
+  content?: string;
+  category?: ApiBlogCategory | null;
+  tags: ApiBlogTag[];
+  author_name: string;
+  hero_image?: string | null;
+  hero_image_alt: string;
+  featured: boolean;
+  allow_comments?: boolean;
+  reading_minutes: number;
+  view_count: number;
+  published_at?: string | null;
+  seo_title: string;
+  seo_description: string;
+  seo_keywords: string[];
+  comments?: ApiBlogComment[];
+  related_posts?: ApiBlogPost[];
+}
+
 interface ApiBuilderItem {
   id: string;
   name: string;
@@ -93,6 +157,8 @@ interface ApiBuilderItem {
   price: number;
   required: boolean;
   image: string | null;
+  model_3d?: string | null;
+  model_3d_status?: "missing" | "processing" | "ready" | "failed";
 }
 
 interface ApiSettings {
@@ -158,7 +224,7 @@ interface ApiSettings {
     seo_description?: string;
     seo_keywords?: string[];
     benefits?: { title?: string; description?: string }[];
-    internal_links?: { label?: string; url?: string }[];
+    internal_links?: { label?: string; url?: string; image?: string | null; image_alt?: string }[];
     intro_title?: string;
     intro_description?: string;
     content_blocks?: { tag?: string; text?: string }[];
@@ -328,6 +394,65 @@ function mapCustomerReview(apiReview: ApiCustomerReview): CustomerReview {
   };
 }
 
+function mapBlogCategory(apiCategory: ApiBlogCategory): BlogCategory {
+  return {
+    id: apiCategory.id,
+    name: apiCategory.name,
+    slug: apiCategory.slug,
+    description: apiCategory.description || "",
+    color: apiCategory.color || "",
+    displayOrder: apiCategory.display_order || 100,
+    postCount: apiCategory.post_count || 0,
+  };
+}
+
+function mapBlogTag(apiTag: ApiBlogTag): BlogTag {
+  return {
+    id: apiTag.id,
+    name: apiTag.name,
+    slug: apiTag.slug,
+    postCount: apiTag.post_count || 0,
+  };
+}
+
+function mapBlogComment(apiComment: ApiBlogComment): BlogComment {
+  return {
+    id: apiComment.id,
+    parent: apiComment.parent,
+    name: apiComment.name,
+    body: apiComment.body,
+    createdAt: apiComment.created_at,
+    replies: (apiComment.replies || []).map(mapBlogComment),
+  };
+}
+
+function mapBlogPost(apiPost: ApiBlogPost): BlogPost {
+  return {
+    id: apiPost.id,
+    title: apiPost.title,
+    slug: apiPost.slug,
+    uri: apiPost.uri || `/blog/${apiPost.slug}`,
+    subtitle: apiPost.subtitle || "",
+    excerpt: apiPost.excerpt || "",
+    content: apiPost.content,
+    category: apiPost.category ? mapBlogCategory(apiPost.category) : null,
+    tags: (apiPost.tags || []).map(mapBlogTag),
+    authorName: apiPost.author_name || "",
+    heroImage: apiPost.hero_image ? normalizeImageUrl(apiPost.hero_image) : undefined,
+    heroImageAlt: apiPost.hero_image_alt || apiPost.title,
+    featured: apiPost.featured,
+    allowComments: apiPost.allow_comments,
+    readingMinutes: apiPost.reading_minutes || 3,
+    viewCount: apiPost.view_count || 0,
+    publishedAt: apiPost.published_at,
+    seoTitle: apiPost.seo_title || "",
+    seoDescription: apiPost.seo_description || "",
+    seoKeywords: apiPost.seo_keywords || [],
+    comments: (apiPost.comments || []).map(mapBlogComment),
+    relatedPosts: (apiPost.related_posts || []).map(mapBlogPost),
+  };
+}
+
 function normalizeProductContent(item: ProductContent): ProductContentItem {
   if (typeof item === "string") {
     return { name: item.trim(), price: null };
@@ -360,6 +485,7 @@ function mapProduct(apiProduct: ApiProduct): Product {
     id: apiProduct.id,
     name: apiProduct.name,
     urlSlug: apiProduct.url_slug || apiProduct.id,
+    publicPath: apiProduct.public_path || `/pack/${apiProduct.url_slug || apiProduct.id}`,
     description: apiProduct.description,
     price: apiProduct.price,
     categoryIds: apiProduct.category_ids || [],
@@ -386,10 +512,18 @@ function mapProduct(apiProduct: ApiProduct): Product {
         }
       : undefined,
     imageAlt: apiProduct.image_alt || undefined,
-    imageName: apiProduct.image_name || undefined,
+      imageName: apiProduct.image_name || undefined,
+      model3dUrl: apiProduct.model_3d ? normalizeImageUrl(apiProduct.model_3d) : undefined,
+      model3dStatus: apiProduct.model_3d_status || "missing",
+      model3dMetadata: apiProduct.model_3d_metadata || undefined,
     customerReviews: (apiProduct.customer_reviews || []).map(mapCustomerReview),
     featured: apiProduct.featured,
     available: apiProduct.available,
+    isTemporary: apiProduct.is_temporary ?? false,
+    showInBuilder: apiProduct.show_in_builder ?? true,
+    builderGroup: apiProduct.builder_group || "",
+    builderRequired: apiProduct.builder_required ?? false,
+    builderDisplayOrder: apiProduct.builder_display_order ?? 100,
   };
 }
 
@@ -400,7 +534,9 @@ function mapBuilderItem(apiBuilderItem: ApiBuilderItem): BuilderItem {
     group: apiBuilderItem.group,
     price: apiBuilderItem.price,
     required: apiBuilderItem.required,
-    image: apiBuilderItem.image || undefined,
+      image: apiBuilderItem.image ? normalizeImageUrl(apiBuilderItem.image) : undefined,
+      model3dUrl: apiBuilderItem.model_3d ? normalizeImageUrl(apiBuilderItem.model_3d) : undefined,
+      model3dStatus: apiBuilderItem.model_3d_status || "missing",
   };
 }
 
@@ -529,6 +665,8 @@ function mapSettings(apiSettings: ApiSettings): Settings {
                     .map((link) => ({
                       label: link.label || "",
                       url: link.url || "",
+                      image: link.image ? normalizeImageUrl(link.image) : undefined,
+                      imageAlt: link.image_alt || link.label || "",
                     }))
                     .filter((link) => link.label && link.url)
                 : fallback?.internalLinks || [],
@@ -691,12 +829,18 @@ function mapPageProductPlacementState(apiState: ApiPageProductPlacementState): P
 function normalizeCustomConfig(raw: unknown): OrderItem["customConfig"] | undefined {
   if (!raw || typeof raw !== "object") return undefined;
   const config = raw as Record<string, unknown>;
+  const toSelectionList = (value: unknown) => Array.isArray(value)
+    ? value.map((item) => String(item))
+    : value
+      ? [String(value)]
+      : [];
   return {
-    packaging: String(config.packaging || ""),
-    fruit: String(config.fruit || ""),
-    drink: String(config.drink || ""),
-    snack: String(config.snack || ""),
-    addons: Array.isArray(config.addons) ? config.addons.map((item) => String(item)) : [],
+    packaging: toSelectionList(config.packaging),
+    fruit: toSelectionList(config.fruit),
+    drink: toSelectionList(config.drink),
+    snack: toSelectionList(config.snack),
+    addons: toSelectionList(config.addons),
+    products: toSelectionList(config.products),
   };
 }
 
@@ -738,6 +882,11 @@ function mapOrder(apiOrder: ApiOrder): Order {
 
 export async function listProducts(): Promise<Product[]> {
   const products = await requestJson<ApiProduct[]>("/api/v1/products/");
+  return products.map(mapProduct);
+}
+
+export async function listBuilderProducts(): Promise<Product[]> {
+  const products = await requestJson<ApiProduct[]>("/api/v1/products/?builder=true", { cache: "no-store" });
   return products.map(mapProduct);
 }
 
@@ -805,10 +954,21 @@ export async function getProduct(identifier: string): Promise<Product | null> {
   }
 }
 
+export async function getProductByPath(path: string): Promise<Product | null> {
+  try {
+    const params = new URLSearchParams({ path });
+    const product = await requestJson<ApiProduct>(`/api/v1/products/by-path/?${params.toString()}`);
+    return mapProduct(product);
+  } catch {
+    return null;
+  }
+}
+
 export async function createProduct(product: Omit<Product, "id"> & { imageFile?: File }): Promise<Product> {
   const formData = new FormData();
   formData.append("name", product.name);
   formData.append("url_slug", product.urlSlug || "");
+  formData.append("public_path", product.publicPath || "");
   formData.append("description", product.description);
   formData.append("price", product.price?.toString() || "");
   product.categoryIds.forEach(id => formData.append("category_ids", id));
@@ -818,6 +978,11 @@ export async function createProduct(product: Omit<Product, "id"> & { imageFile?:
   formData.append("image_name", product.imageName || "");
   formData.append("featured", product.featured.toString());
   formData.append("available", product.available.toString());
+  formData.append("is_temporary", String(product.isTemporary ?? false));
+  formData.append("show_in_builder", String(product.showInBuilder ?? true));
+  formData.append("builder_group", product.builderGroup || "");
+  formData.append("builder_required", String(product.builderRequired ?? false));
+  formData.append("builder_display_order", String(product.builderDisplayOrder ?? 100));
 
   if (product.imageFile) {
     formData.append("image_file", product.imageFile);
@@ -850,6 +1015,7 @@ export async function updateProduct(id: string, updates: Partial<Product> & { im
   const formData = new FormData();
   if (updates.name !== undefined) formData.append("name", updates.name);
   if (updates.urlSlug !== undefined) formData.append("url_slug", updates.urlSlug);
+  if (updates.publicPath !== undefined) formData.append("public_path", updates.publicPath);
   if (updates.description !== undefined) formData.append("description", updates.description);
   if (updates.price !== undefined) formData.append("price", updates.price?.toString() || "");
   if (updates.categoryIds !== undefined) updates.categoryIds.forEach(id => formData.append("category_ids", id));
@@ -860,6 +1026,11 @@ export async function updateProduct(id: string, updates: Partial<Product> & { im
   if (updates.imageName !== undefined) formData.append("image_name", updates.imageName || "");
   if (updates.featured !== undefined) formData.append("featured", updates.featured.toString());
   if (updates.available !== undefined) formData.append("available", updates.available.toString());
+  if (updates.isTemporary !== undefined) formData.append("is_temporary", updates.isTemporary.toString());
+  if (updates.showInBuilder !== undefined) formData.append("show_in_builder", updates.showInBuilder.toString());
+  if (updates.builderGroup !== undefined) formData.append("builder_group", updates.builderGroup || "");
+  if (updates.builderRequired !== undefined) formData.append("builder_required", updates.builderRequired.toString());
+  if (updates.builderDisplayOrder !== undefined) formData.append("builder_display_order", updates.builderDisplayOrder.toString());
 
   if (updates.imageFile) {
     formData.append("image_file", updates.imageFile);
@@ -1005,6 +1176,58 @@ export async function listCustomerReviews(options: { featured?: boolean; limit?:
   const query = params.toString();
   const reviews = await requestJson<ApiCustomerReview[]>(`/api/v1/reviews/${query ? `?${query}` : ""}`);
   return reviews.map(mapCustomerReview);
+}
+
+export async function listBlogCategories(): Promise<BlogCategory[]> {
+  const categories = await requestJson<ApiBlogCategory[]>("/api/v1/blog/categories/");
+  return categories.map(mapBlogCategory);
+}
+
+export async function listBlogTags(): Promise<BlogTag[]> {
+  const tags = await requestJson<ApiBlogTag[]>("/api/v1/blog/tags/");
+  return tags.map(mapBlogTag);
+}
+
+export async function listBlogPosts(options: {
+  search?: string;
+  category?: string;
+  tag?: string;
+  featured?: boolean;
+  limit?: number;
+} = {}): Promise<BlogPost[]> {
+  const params = new URLSearchParams();
+  if (options.search) params.set("search", options.search);
+  if (options.category) params.set("category", options.category);
+  if (options.tag) params.set("tag", options.tag);
+  if (options.featured !== undefined) params.set("featured", String(options.featured));
+  if (options.limit !== undefined) params.set("limit", String(options.limit));
+  const query = params.toString();
+  const posts = await requestJson<ApiBlogPost[]>(`/api/v1/blog/posts/${query ? `?${query}` : ""}`);
+  return posts.map(mapBlogPost);
+}
+
+export async function getBlogPost(slug: string): Promise<BlogPost | null> {
+  try {
+    const post = await requestJson<ApiBlogPost>(`/api/v1/blog/posts/${encodeURIComponent(slug)}/`);
+    return mapBlogPost(post);
+  } catch {
+    return null;
+  }
+}
+
+export async function createBlogComment(
+  slug: string,
+  comment: { name: string; email?: string; body: string; parent?: string | null },
+): Promise<{ detail: string }> {
+  return requestJson<{ detail: string }>(`/api/v1/blog/posts/${encodeURIComponent(slug)}/comments/`, {
+    method: "POST",
+    body: {
+      name: comment.name,
+      email: comment.email || "",
+      body: comment.body,
+      parent: comment.parent || null,
+    },
+  });
 }
 
 export async function uploadOfflineSessionBundle(file: File): Promise<OfflineSessionImportResult> {

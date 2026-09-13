@@ -16,6 +16,7 @@ export interface Product {
   id: string;
   name: string;
   urlSlug: string;
+  publicPath?: string;
   description: string;
   price: number | null;
   categoryIds: string[];
@@ -25,9 +26,17 @@ export interface Product {
   imageResponsive?: ProductImageResponsive;
   imageAlt?: string;
   imageName?: string;
+  model3dUrl?: string;
+  model3dStatus?: "missing" | "processing" | "ready" | "failed";
+  model3dMetadata?: Record<string, unknown>;
   customerReviews?: CustomerReview[];
   featured: boolean;
   available: boolean;
+  isTemporary?: boolean;
+  showInBuilder?: boolean;
+  builderGroup?: "packaging" | "fruit" | "drink" | "snack" | "addon" | "products" | "";
+  builderRequired?: boolean;
+  builderDisplayOrder?: number;
 }
 
 export interface CustomerReview {
@@ -42,6 +51,57 @@ export interface CustomerReview {
   isFeatured: boolean;
   displayOrder: number;
   createdAt: string;
+}
+
+export interface BlogCategory {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  color: string;
+  displayOrder: number;
+  postCount: number;
+}
+
+export interface BlogTag {
+  id: string;
+  name: string;
+  slug: string;
+  postCount: number;
+}
+
+export interface BlogComment {
+  id: string;
+  parent?: string | null;
+  name: string;
+  body: string;
+  createdAt: string;
+  replies: BlogComment[];
+}
+
+export interface BlogPost {
+  id: string;
+  title: string;
+  slug: string;
+  uri: string;
+  subtitle: string;
+  excerpt: string;
+  content?: string;
+  category?: BlogCategory | null;
+  tags: BlogTag[];
+  authorName: string;
+  heroImage?: string;
+  heroImageAlt: string;
+  featured: boolean;
+  allowComments?: boolean;
+  readingMinutes: number;
+  viewCount: number;
+  publishedAt?: string | null;
+  seoTitle: string;
+  seoDescription: string;
+  seoKeywords: string[];
+  comments?: BlogComment[];
+  relatedPosts?: BlogPost[];
 }
 
 export interface ProductImageVariant {
@@ -122,6 +182,8 @@ export interface BuilderItem {
   price: number;
   required: boolean;
   image?: string;
+  model3dUrl?: string;
+  model3dStatus?: "missing" | "processing" | "ready" | "failed";
 }
 
 export interface SiteBranding {
@@ -159,6 +221,8 @@ export interface PageSeoEntry {
 export interface InternalLink {
   label: string;
   url: string;
+  image?: string;
+  imageAlt?: string;
 }
 
 export interface EventContentBlock {
@@ -241,11 +305,12 @@ export interface OrderItem {
   price: number;
   isCustomPack?: boolean;
   customConfig?: {
-    packaging: string;
-    fruit: string;
-    drink: string;
-    snack: string;
+    packaging: string[];
+    fruit: string[];
+    drink: string[];
+    snack: string[];
     addons: string[];
+    products?: string[];
   };
 }
 

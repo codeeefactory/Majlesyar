@@ -1,11 +1,20 @@
 import uuid
+from urllib.parse import unquote, urlsplit
 
+from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils.text import slugify
 
-from .image_utils import derive_image_label, image_extension_validator
+from .image_utils import (
+    build_product_image_upload_path,
+    derive_image_label,
+    image_extension_validator,
+    prepare_image_for_existing_path,
+    product_image_storage,
+)
 from .image_variants import ensure_product_image_variants
+from .three_d import build_asset_3d_upload_path, validate_glb_file
 from vision.service import analyze_product_image, save_prediction_result
 
 
@@ -35,7 +44,76 @@ EVENT_CATEGORY_DEFINITIONS = (
     ("party", "گل", "💐"),
 )
 PRODUCT_INPUT_MODE_NORMAL = "normal"
+
+
+class Asset3DStatus(models.TextChoices):
+    MISSING = "missing", "ساخته نشده"
+    PROCESSING = "processing", "در حال ساخت"
+    READY = "ready", "آماده"
+    FAILED = "failed", "خطا در ساخت"
 PRODUCT_INPUT_MODE_PHOTO_PROCESSING = "photo_processing"
+
+
+def normalize_product_public_path(value: str | None) -> str:
+    raw_value = str(value or "").strip()
+    if not raw_value:
+        return ""
+
+    parsed = urlsplit(raw_value if "://" in raw_value else f"https://majlesyar.com/{raw_value.lstrip('/')}")
+    if parsed.hostname and parsed.hostname.lower() not in {"majlesyar.com", "www.majlesyar.com"}:
+        raise ValidationError("آدرس کامل محصول باید متعلق به دامنه majlesyar.com باشد.")
+
+    path = unquote(parsed.path or "")
+    path = "/" + "/".join(part for part in path.split("/") if part)
+    path = path.rstrip("/") or "/"
+    first_part = path.strip("/").split("/", 1)[0].lower()
+    if first_part in {"api", "majmanage", "media", "static", "product"}:
+        raise ValidationError("این پیشوند برای آدرس محصول مجاز نیست. از مسیرهایی مانند /pack/... استفاده کنید.")
+    if path == "/":
+        raise ValidationError("آدرس صفحه اصلی را نمی‌توان برای محصول استفاده کرد.")
+    return path
+
+
+ADDITIONAL_EVENT_CATEGORY_DEFINITIONS = (
+    ("food", "منوی فود", "🍽️"),
+    ("food-charcuterie-board", "چاکوتری برد", "🧀"),
+    ("food-ashe-rashteh", "آش رشته", "🍲"),
+    ("food-dessert", "دسر", "🍰"),
+    ("food-juice", "آبمیوه", "🧃"),
+    ("shaleh-zard", "شله زرد", "🍮"),
+    ("pack", "پک پذیرایی", "📦"),
+    ("pack-personal", "پک پذیرایی شخصی", "📦"),
+    ("pack-memorial-luxury", "پک ترحیم لوکس", "🕯️"),
+    ("halva-khorma-luxury", "حلوا و خرمای لوکس", "🍯"),
+    ("memorial-wreaths", "تاج گل ترحیم", "🖤"),
+    ("bouquets", "دسته گل", "💐"),
+    ("congratulatory-wreaths", "تاج گل تبریک", "🎉"),
+    ("flower-congratulation-wreaths", "تاج گل تبریک", "🎉"),
+    ("flower-funeral-bouquet", "دسته گل ترحیم", "🖤"),
+    ("flower-box", "باکس گل", "🌸"),
+)
+ALL_EVENT_CATEGORY_DEFINITIONS = tuple(
+    dict.fromkeys(EVENT_CATEGORY_DEFINITIONS + ADDITIONAL_EVENT_CATEGORY_DEFINITIONS)
+)
+
+
+EXTRA_EVENT_KEYWORDS = (
+    ("food-charcuterie-board", ("چاکوتری", "charcuterie", "cheese board", "میز مزه")),
+    ("food-ashe-rashteh", ("آش", "اش", "رشته", "ashe", "ash")),
+    ("food-dessert", ("دسر", "dessert", "کیک", "شیرینی")),
+    ("food-juice", ("آبمیوه", "ابمیوه", "juice", "نوشیدنی")),
+    ("shaleh-zard", ("شله زرد", "شله‌زرد", "shole", "sholeh")),
+    ("food", ("غذا", "فود", "خوراک", "پذیرایی", "food")),
+    ("pack-memorial-luxury", ("پک ترحیم لوکس", "luxury memorial")),
+    ("pack-personal", ("پک شخصی", "پک پذیرایی شخصی")),
+    ("pack", ("پک", "بسته", "pack", "جعبه پذیرایی")),
+    ("halva-khorma-luxury", ("حلوا لوکس", "خرما لوکس", "luxury halva")),
+    ("memorial-wreaths", ("تاج گل ترحیم", "تاج ترحیم", "تاج گل ختم", "funeral wreath")),
+    ("congratulatory-wreaths", ("تاج گل تبریک", "تاج تبریک", "congratulation wreath")),
+    ("flower-funeral-bouquet", ("دسته گل ترحیم", "دسته گل تسلیت", "funeral bouquet")),
+    ("flower-box", ("باکس گل", "جعبه گل", "flower box")),
+    ("bouquets", ("دسته گل", "bouquet")),
+)
 
 
 def get_content_item_name(item) -> str:
@@ -96,6 +174,8 @@ def infer_event_types(name: str, description: str = "", contents: list | None = 
         ("party", ["گل", "دسته گل", "گل آرایی", "گل‌آرایی", "bouquet", "flower"]),
     ]
 
+    keyword_map.extend(EXTRA_EVENT_KEYWORDS)
+
     detected: list[str] = []
     for slug, keywords in keyword_map:
         for keyword in keywords:
@@ -105,7 +185,7 @@ def infer_event_types(name: str, description: str = "", contents: list | None = 
     return detected
 
 
-AUTO_EVENT_CATEGORY_SLUGS = tuple(slug for slug, _name, _icon in EVENT_CATEGORY_DEFINITIONS)
+AUTO_EVENT_CATEGORY_SLUGS = tuple(slug for slug, _name, _icon in ALL_EVENT_CATEGORY_DEFINITIONS)
 
 
 def normalize_event_types(event_types: list[str] | None) -> list[str]:
@@ -116,12 +196,14 @@ def normalize_event_types(event_types: list[str] | None) -> list[str]:
             continue
         if slug == "defense":
             slug = "halva-khorma"
+        if slug == "flower":
+            slug = "party"
         cleaned.append(slug)
     return list(dict.fromkeys(cleaned))
 
 
 def ensure_event_categories() -> None:
-    for slug, name, icon in EVENT_CATEGORY_DEFINITIONS:
+    for slug, name, icon in ALL_EVENT_CATEGORY_DEFINITIONS:
         Category.objects.update_or_create(
             slug=slug,
             defaults={"name": name, "icon": icon},
@@ -144,15 +226,19 @@ def sync_product_categories(product: "Product", *, force: bool = False) -> None:
         for slug in product.categories.filter(slug__in=AUTO_EVENT_CATEGORY_SLUGS).values_list("slug", flat=True)
     ]
 
+    if force:
+        exact_event_types = list(dict.fromkeys(category_event_slugs))
+        if exact_event_types != (product.event_types or []):
+            product.event_types = exact_event_types
+            Product.objects.filter(pk=product.pk).update(event_types=exact_event_types)
+        return
+
     if not normalized_event_types and category_event_slugs:
         normalized_event_types = list(dict.fromkeys(category_event_slugs))
 
     if normalized_event_types != (product.event_types or []):
         product.event_types = normalized_event_types
         Product.objects.filter(pk=product.pk).update(event_types=normalized_event_types)
-
-    if product.categories.exists() and not force:
-        return
 
     event_slugs = [slug for slug in normalized_event_types if slug in AUTO_EVENT_CATEGORY_SLUGS]
     if not event_slugs:
@@ -261,6 +347,15 @@ class Product(models.Model):
         NORMAL = PRODUCT_INPUT_MODE_NORMAL, "عادی"
         PHOTO_PROCESSING = PRODUCT_INPUT_MODE_PHOTO_PROCESSING, "با پردازش عکس"
 
+    class BuilderGroup(models.TextChoices):
+        AUTO = "", "تشخیص خودکار"
+        PACKAGING = "packaging", "بسته بندی"
+        FRUIT = "fruit", "میوه"
+        DRINK = "drink", "نوشیدنی"
+        SNACK = "snack", "اسنک"
+        ADDON = "addon", "افزودنی"
+        PRODUCTS = "products", "محصولات آماده"
+
     id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,
@@ -319,7 +414,9 @@ class Product(models.Model):
         help_text="نکته: اقلام محصول را به صورت لیست JSON وارد کنید.",
     )
     image = models.ImageField(
-        upload_to="products/",
+        upload_to=build_product_image_upload_path,
+        storage=product_image_storage,
+        max_length=500,
         blank=True,
         null=True,
         validators=[image_extension_validator],
@@ -349,8 +446,35 @@ class Product(models.Model):
     image_variants = models.JSONField(
         default=dict,
         blank=True,
-        verbose_name="Image variants",
-        help_text="Automatically generated AVIF, WebP, JPEG, and original backup metadata for responsive delivery.",
+        verbose_name="نسخه‌های بهینه تصویر",
+        help_text="اطلاعات نسخه‌های AVIF، WebP، JPEG و فایل اصلی برای نمایش سریع‌تر و واکنش‌گرا.",
+    )
+    model_3d = models.FileField(
+        upload_to=build_asset_3d_upload_path,
+        max_length=500,
+        blank=True,
+        null=True,
+        validators=[validate_glb_file],
+        verbose_name="مدل سه‌بعدی محصول (GLB)",
+        help_text="مدل GLB تاییدشده را بارگذاری کنید؛ در نبود آن پیش‌نمایش حجمی از عکس محصول ساخته می‌شود.",
+    )
+    model_3d_status = models.CharField(
+        max_length=20,
+        choices=Asset3DStatus.choices,
+        default=Asset3DStatus.MISSING,
+        verbose_name="وضعیت مدل سه‌بعدی",
+    )
+    model_3d_metadata = models.JSONField(default=dict, blank=True, verbose_name="اطلاعات تولید مدل سه‌بعدی")
+    model_3d_error = models.TextField(blank=True, default="", verbose_name="خطای تولید مدل سه‌بعدی")
+    public_path = models.CharField(
+        max_length=500,
+        unique=True,
+        blank=True,
+        verbose_name="آدرس کامل محصول",
+        help_text=(
+            "کل آدرس یا مسیر را وارد کنید؛ مثل https://majlesyar.com/pack/my-pack یا /pack/my-pack. "
+            "مسیرهای /product مجاز نیستند."
+        ),
     )
     featured = models.BooleanField(
         default=False,
@@ -361,6 +485,38 @@ class Product(models.Model):
         default=True,
         verbose_name="موجود",
         help_text="نکته: اگر غیرفعال باشد، سفارش این محصول ممکن نیست.",
+    )
+    is_temporary = models.BooleanField(
+        default=False,
+        verbose_name="محصول موقت (عدم نمایش در گوگل)",
+        help_text=(
+            "راهنما: برای محصول آزمایشی فعال کنید. صفحه محصول در سایت قابل بررسی می‌ماند، "
+            "اما به موتورهای جستجو دستور داده می‌شود آن را ایندکس یا دنبال نکنند."
+        ),
+    )
+    show_in_builder = models.BooleanField(
+        default=True,
+        verbose_name="نمایش در سازنده پک",
+        help_text="نکته: اگر فعال باشد، این محصول در صفحه ساخت پک اختصاصی (/builder) قابل انتخاب است.",
+    )
+    builder_group = models.CharField(
+        max_length=20,
+        choices=BuilderGroup.choices,
+        blank=True,
+        default=BuilderGroup.AUTO,
+        verbose_name="بخش محصول در سازنده پک",
+        help_text="نکته: با حالت تشخیص خودکار، بخش محصول از دسته‌بندی و متن محصول حدس زده می‌شود.",
+    )
+    builder_required = models.BooleanField(
+        default=False,
+        verbose_name="انتخاب اجباری در سازنده پک",
+        help_text="نکته: برای محصولات معمولاً خاموش بماند؛ فقط وقتی روشن کنید که این محصول باید در پک انتخاب شود.",
+    )
+    builder_display_order = models.PositiveIntegerField(
+        default=100,
+        validators=[MinValueValidator(1)],
+        verbose_name="ترتیب نمایش در سازنده پک",
+        help_text="نکته: عدد کوچکتر یعنی نمایش زودتر در صفحه ساخت پک.",
     )
     created_at = models.DateTimeField(
         auto_now_add=True,
@@ -386,6 +542,16 @@ class Product(models.Model):
             if previous:
                 previous_image_variants = previous.image_variants or {}
 
+        incoming_image_is_uncommitted = bool(
+            self.image and not getattr(self.image, "_committed", True)
+        )
+        if previous_image_name and incoming_image_is_uncommitted:
+            replacement = prepare_image_for_existing_path(self.image.file, previous_image_name)
+            saved_name = self.image.storage.save(previous_image_name, replacement)
+            self.image.name = saved_name
+            self.image._committed = True
+            self._image_content_changed = True
+
         if not isinstance(self.contents, list):
             self.contents = []
         self.contents = normalize_product_contents(self.contents)
@@ -399,7 +565,7 @@ class Product(models.Model):
                 cleaned_event_types = inferred
         self.event_types = cleaned_event_types
 
-        # Normalize/generate URI slug so each product has a stable /product/{slug} path.
+        # Keep a stable lookup slug while public URLs remain fully manager-controlled.
         base_slug = slugify((self.url_slug or "").strip()) if self.url_slug else ""
         if not base_slug:
             base_slug = slugify(self.name or "")
@@ -413,6 +579,15 @@ class Product(models.Model):
             suffix += 1
         self.url_slug = candidate
 
+        requested_path = normalize_product_public_path(self.public_path)
+        base_path = requested_path or f"/pack/{self.url_slug}"
+        candidate_path = base_path
+        suffix = 2
+        while Product.objects.exclude(pk=self.pk).filter(public_path=candidate_path).exists():
+            candidate_path = f"{base_path}-{suffix}"
+            suffix += 1
+        self.public_path = candidate_path
+
         if self.image:
             derived_label = derive_image_label(self.image.name)
             if derived_label and (not self.image_name or self.image_name == previous_default_label):
@@ -421,7 +596,15 @@ class Product(models.Model):
                 self.image_alt = derived_label
 
         current_image_name = self.image.name if self.image else ""
-        image_changed = current_image_name != previous_image_name
+        image_changed = current_image_name != previous_image_name or bool(
+            getattr(self, "_image_content_changed", False)
+        )
+        if self.model_3d and self.model_3d_status == Asset3DStatus.MISSING:
+            self.model_3d_status = Asset3DStatus.READY
+            self.model_3d_error = ""
+        elif not self.model_3d and self.model_3d_status == Asset3DStatus.READY:
+            self.model_3d_status = Asset3DStatus.MISSING
+            self.model_3d_metadata = {}
         super().save(*args, **kwargs)
         sync_product_categories(self)
 
@@ -537,6 +720,71 @@ class CustomerReview(models.Model):
         return f"{self.customer_name} - {self.rating}/5"
 
 
+class InternalLink(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    source_path = models.CharField(
+        max_length=500,
+        db_index=True,
+        verbose_name="صفحه نمایش‌دهنده",
+        help_text="مسیر صفحه‌ای که کارت در آن نمایش داده شود؛ مثل /pack/memorial.",
+    )
+    label = models.CharField(max_length=255, verbose_name="عنوان کارت")
+    target_url = models.CharField(
+        max_length=500,
+        verbose_name="لینک مقصد",
+        help_text="مسیر داخلی مقصد؛ مثل /builder یا /flower/memorial-wreaths.",
+    )
+    image = models.ImageField(
+        upload_to="internal-links/%Y/%m/",
+        blank=True,
+        null=True,
+        validators=[image_extension_validator],
+        verbose_name="تصویر کارت",
+        help_text="تصویر را هر زمان خواستید جایگزین یا پاک کنید.",
+    )
+    image_alt = models.CharField(
+        max_length=255,
+        blank=True,
+        default="",
+        verbose_name="متن جایگزین تصویر (Alt)",
+        help_text="توضیح کوتاه و دقیق تصویر برای دسترس‌پذیری و سئو.",
+    )
+    position = models.PositiveIntegerField(default=100, validators=[MinValueValidator(1)], verbose_name="ترتیب نمایش")
+    is_active = models.BooleanField(default=True, verbose_name="فعال")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def clean(self):
+        super().clean()
+        self.source_path = self._normalize_internal_path(self.source_path, "صفحه نمایش‌دهنده")
+        self.target_url = self._normalize_internal_path(self.target_url, "لینک مقصد")
+
+    def save(self, *args, **kwargs):
+        self.source_path = self._normalize_internal_path(self.source_path, "صفحه نمایش‌دهنده")
+        self.target_url = self._normalize_internal_path(self.target_url, "لینک مقصد")
+        super().save(*args, **kwargs)
+
+    @staticmethod
+    def _normalize_internal_path(value: str, label: str) -> str:
+        raw_value = str(value or "").strip()
+        parsed = urlsplit(raw_value if "://" in raw_value else f"https://majlesyar.com/{raw_value.lstrip('/')}")
+        if parsed.hostname and parsed.hostname.lower() not in {"majlesyar.com", "www.majlesyar.com"}:
+            raise ValidationError({"target_url": f"{label} باید داخل majlesyar.com باشد."})
+        path = "/" + "/".join(part for part in unquote(parsed.path or "").split("/") if part)
+        return path.rstrip("/") or "/"
+
+    class Meta:
+        ordering = ["source_path", "position", "created_at"]
+        constraints = [
+            models.UniqueConstraint(fields=["source_path", "target_url"], name="unique_internal_link_per_source"),
+        ]
+        verbose_name = "لینک داخلی تصویری"
+        verbose_name_plural = "لینک‌های داخلی تصویری"
+
+    def __str__(self) -> str:
+        return f"{self.source_path} ← {self.label}"
+
+
 class PageProductPlacement(models.Model):
     class PageType(models.TextChoices):
         HOME = "home", "صفحه اصلی"
@@ -638,6 +886,32 @@ class BuilderItem(models.Model):
         verbose_name="تصویر",
         help_text="نکته: بارگذاری تصویر با فرمت‌های jpg، jpeg، png، webp یا avif برای نمایش بهتر این آیتم.",
     )
+    model_3d = models.FileField(
+        upload_to=build_asset_3d_upload_path,
+        max_length=500,
+        blank=True,
+        null=True,
+        validators=[validate_glb_file],
+        verbose_name="مدل سه‌بعدی آیتم (GLB)",
+        help_text="اختیاری؛ اگر خالی باشد تصویر آیتم به‌صورت پیش‌نمایش حجمی نمایش داده می‌شود.",
+    )
+    model_3d_status = models.CharField(
+        max_length=20,
+        choices=Asset3DStatus.choices,
+        default=Asset3DStatus.MISSING,
+        verbose_name="وضعیت مدل سه‌بعدی",
+    )
+    model_3d_metadata = models.JSONField(default=dict, blank=True, verbose_name="اطلاعات تولید مدل سه‌بعدی")
+    model_3d_error = models.TextField(blank=True, default="", verbose_name="خطای تولید مدل سه‌بعدی")
+
+    def save(self, *args, **kwargs):
+        if self.model_3d and self.model_3d_status == Asset3DStatus.MISSING:
+            self.model_3d_status = Asset3DStatus.READY
+            self.model_3d_error = ""
+        elif not self.model_3d and self.model_3d_status == Asset3DStatus.READY:
+            self.model_3d_status = Asset3DStatus.MISSING
+            self.model_3d_metadata = {}
+        super().save(*args, **kwargs)
 
     class Meta:
         ordering = ["group", "name"]

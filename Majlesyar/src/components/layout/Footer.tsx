@@ -1,11 +1,19 @@
 import { useState, type ComponentProps } from 'react';
 import { Link } from 'react-router-dom';
-import { Phone, MapPin, Instagram, Store, Send, ShoppingBag, Scale } from 'lucide-react';
+import { Phone, MapPin, Instagram, Send, ShoppingBag, Scale, BookOpen } from 'lucide-react';
 import baleLogo from '@/assets/social/bale.webp';
 import eitaaLogo from '@/assets/social/eitaa.webp';
 import soroushLogo from '@/assets/social/soroush.webp';
+import majlesyarLogo from '@/assets/branding/majlesyar-logo.png';
 import { useSettings } from '@/contexts/SettingsContext';
 import { getInstagramHandle } from '@/lib/contact';
+import {
+  ECUNION_BADGE_SRC,
+  ECUNION_VERIFY_URL,
+  ENAMAD_CODE,
+  ENAMAD_LOGO_URL,
+  ENAMAD_URL,
+} from '@/lib/trustSeals';
 
 type SocialLogoProps = Omit<ComponentProps<'img'>, 'src' | 'alt'>;
 type SocialIconProps = ComponentProps<'svg'>;
@@ -41,8 +49,8 @@ const SocialLogo = ({ src, className, ...props }: SocialLogoProps & { src: strin
   <img
     src={src}
     alt=""
-    width={96}
-    height={96}
+    width={48}
+    height={48}
     loading="lazy"
     decoding="async"
     draggable={false}
@@ -62,6 +70,17 @@ const footerProductLinks = [
   { label: 'گل', to: '/flower' },
 ];
 
+const enamadImageProps = {
+  referrerPolicy: 'origin',
+  src: ENAMAD_LOGO_URL,
+  alt: 'eNamad trust seal',
+  loading: 'lazy',
+  decoding: 'async',
+  draggable: false,
+  className: 'h-24 w-auto object-contain',
+  code: ENAMAD_CODE,
+} satisfies ComponentProps<'img'> & { code: string };
+
 export function Footer() {
   const { settings } = useSettings();
   const [mapLoaded, setMapLoaded] = useState(false);
@@ -71,7 +90,7 @@ export function Footer() {
   const socialLinks = [
     {
       name: 'اینستاگرام',
-      label: getInstagramHandle(settings.instagramUrl),
+      label: getInstagramHandle(settings.instagramUrl) || '@majles.yar',
       icon: Instagram,
       url: settings.instagramUrl,
       bgColor: 'bg-gradient-to-br from-[#833AB4] via-[#E1306C] to-[#F77737]',
@@ -79,7 +98,7 @@ export function Footer() {
     },
     {
       name: 'واتساپ',
-      label: 'واتساپ',
+      label: '۰۹۱۲۲۱۴۸۳۵۴',
       icon: WhatsAppIcon,
       url: settings.whatsappUrl,
       bgColor: 'bg-[#25D366]',
@@ -87,7 +106,7 @@ export function Footer() {
     },
     {
       name: 'تلگرام',
-      label: 'تلگرام',
+      label: '@majlesyar',
       icon: Send,
       url: settings.telegramUrl,
       bgColor: 'bg-[#0088cc]',
@@ -95,7 +114,7 @@ export function Footer() {
     },
     {
       name: 'بله',
-      label: 'بله',
+      label: '@Majlesyar',
       icon: BaleIcon,
       url: settings.baleUrl,
       bgColor: 'bg-[#00A884]',
@@ -104,25 +123,25 @@ export function Footer() {
     },
     {
       name: 'ایتا',
-      label: 'ایتا',
+      label: '@majlesyarr',
       icon: EitaaIcon,
       url: settings.eitaaUrl,
-      bgColor: 'bg-[#f58220]',
-      hoverColor: 'hover:bg-[#d96f12]',
+      bgColor: 'bg-[#9a4b00]',
+      hoverColor: 'hover:bg-[#7c3c00]',
       logoClassName: 'w-12 h-12 md:w-10 md:h-10',
     },
     {
       name: 'سروش',
-      label: 'سروش',
+      label: '@majlesyar',
       icon: SoroushIcon,
       url: settings.soroushUrl,
-      bgColor: 'bg-[#1d9bf0]',
-      hoverColor: 'hover:bg-[#0b7fc8]',
+      bgColor: 'bg-[#075985]',
+      hoverColor: 'hover:bg-[#06466b]',
       logoClassName: 'w-12 h-12 md:w-11 md:h-11',
     },
     {
       name: 'روبیکا',
-      label: 'روبیکا',
+      label: '@majlesyar',
       icon: RubikaIcon,
       url: settings.rubikaUrl,
       bgColor: 'bg-gradient-to-br from-[#7c3aed] via-[#ec4899] to-[#f97316]',
@@ -140,37 +159,50 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div className="space-y-4 md:col-span-1">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl gold-gradient overflow-hidden flex items-center justify-center shadow-soft shrink-0">
+              <div className="h-16 w-16 shrink-0 overflow-hidden rounded-2xl bg-[#211b14] shadow-soft">
                 {settings.siteLogoUrl ? (
                   <img
                     src={settings.siteLogoUrl}
                     alt={settings.siteBranding.logoAlt}
-                    className="w-full h-full object-cover"
+                    className="h-full w-full object-contain p-0.5"
                     loading="lazy"
                     decoding="async"
                   />
                 ) : (
-                  <Store className="w-6 h-6 text-primary-foreground" aria-hidden="true" />
+                  <img
+                    src={majlesyarLogo}
+                    alt={settings.siteBranding.logoAlt}
+                    className="h-full w-full object-contain p-0.5"
+                    loading="lazy"
+                    decoding="async"
+                  />
                 )}
               </div>
               <div>
-                <h3 className="font-semibold text-foreground">{settings.siteBranding.siteName}</h3>
+                <div className="font-semibold text-foreground">{settings.siteBranding.siteName}</div>
                 <p className="text-xs text-muted-foreground">{settings.siteBranding.siteTagline}</p>
               </div>
             </div>
             <p className="text-muted-foreground text-sm leading-relaxed">
               مجلس یار مرجع تخصصی و یکپارچه تامین ملزومات مجالس و تشریفات در تهران و کرج است. ما با ارائه انواع پک های پذیرایی، فینگر فود، حلوا و خرمای مجلسی و لوکس ترین دیزاین های گل و ارائه غذا در تمامی رویدادها و مراسم های شما با افتخار همراهتان هستیم.
             </p>
-            <Link
-              to="/about"
-              className="inline-flex items-center gap-2 text-foreground hover:text-primary transition-colors text-sm font-medium"
-            >
-              درباره ما ←
-            </Link>
+          <Link
+            to="/about"
+            className="inline-flex items-center gap-2 text-foreground hover:text-primary transition-colors text-sm font-medium"
+          >
+            درباره ما ←
+          </Link>
+          <Link
+            to="/blog"
+            className="mr-4 inline-flex items-center gap-2 text-foreground hover:text-primary transition-colors text-sm font-medium"
+          >
+            <BookOpen className="h-4 w-4" aria-hidden="true" />
+            مجله
+          </Link>
           </div>
 
           <nav className="space-y-4" aria-label="انواع محصولات">
-            <h3 className="font-semibold text-foreground">انواع محصولات</h3>
+            <h2 className="font-semibold text-foreground">انواع محصولات</h2>
             <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {footerProductLinks.map((link) => (
                 <li key={link.to}>
@@ -184,7 +216,7 @@ export function Footer() {
           </nav>
 
           <address className="space-y-4 not-italic">
-            <h3 className="font-semibold text-foreground">تماس با ما</h3>
+            <h2 className="font-semibold text-foreground">تماس با ما</h2>
             <div className="space-y-3">
               <a
                 href={`tel:${settings.contactPhone}`}
@@ -203,7 +235,6 @@ export function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors text-sm"
-                  aria-label={`پیج اینستاگرام ${settings.siteBranding.siteName}`}
                 >
                   <Instagram className="w-4 h-4" aria-hidden="true" />
                   {getInstagramHandle(settings.instagramUrl)}
@@ -214,7 +245,7 @@ export function Footer() {
         </div>
 
         <div className="mt-10 pt-8 border-t border-border">
-          <h3 className="font-semibold text-foreground text-center mb-6">موقعیت ما روی نقشه</h3>
+          <h2 className="font-semibold text-foreground text-center mb-6">موقعیت ما روی نقشه</h2>
           <div className="rounded-2xl overflow-hidden shadow-lg border border-border/50 max-w-2xl mx-auto">
             {mapLoaded ? (
               <iframe
@@ -230,8 +261,9 @@ export function Footer() {
               />
             ) : (
               <button
+                type="button"
                 onClick={() => setMapLoaded(true)}
-                className="w-full h-[250px] bg-muted flex flex-col items-center justify-center gap-3 cursor-pointer hover:bg-muted/80 transition-colors"
+                className="w-full h-[250px] bg-muted flex flex-col items-center justify-center gap-3 cursor-pointer hover:bg-muted/80 transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                 aria-label="بارگذاری نقشه گوگل"
               >
                 <MapPin className="w-12 h-12 text-primary" aria-hidden="true" />
@@ -260,7 +292,6 @@ export function Footer() {
                   href={link.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  aria-label={link.name}
                   className={`w-28 h-24 md:w-24 md:h-20 rounded-xl ${link.bgColor} ${link.hoverColor} ${link.textColor ?? 'text-white'} border border-white/10 flex flex-col items-center justify-center gap-2 md:gap-1 transition-all duration-200 active:scale-95 shadow-[0_6px_14px_rgba(15,23,42,0.16)] hover:shadow-lg`}
                 >
                   <link.icon className={link.logoClassName ?? 'w-12 h-12 md:w-10 md:h-10'} aria-hidden="true" />
@@ -269,6 +300,40 @@ export function Footer() {
               ))}
             </div>
           </div>
+        </div>
+
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
+          <a
+            href={ENAMAD_URL}
+            target="_blank"
+            rel="nofollow noopener noreferrer"
+            referrerPolicy="origin"
+            aria-label="eNamad trust seal"
+            title="استعلام نماد اعتماد الکترونیکی مجلس یار"
+            className="inline-flex min-h-[112px] min-w-[112px] items-center justify-center rounded-2xl border border-border bg-background/80 p-3 shadow-soft transition hover:border-primary/60 hover:shadow-medium focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+          >
+            <img {...enamadImageProps} />
+          </a>
+          <a
+            href={ECUNION_VERIFY_URL}
+            target="_blank"
+            rel="nofollow noopener noreferrer"
+            referrerPolicy="origin"
+            aria-label="Ecunion trust badge"
+            title="استعلام مجوز اتحادیه کسب و کارهای مجازی مجلس یار"
+            className="inline-flex min-h-[168px] min-w-[112px] items-center justify-center rounded-2xl border border-border bg-background/80 p-3 shadow-soft transition hover:border-primary/60 hover:shadow-medium focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+          >
+            <img
+              src={ECUNION_BADGE_SRC}
+              alt="Ecunion trust badge"
+              width={96}
+              height={144}
+              loading="lazy"
+              decoding="async"
+              draggable={false}
+              className="h-36 w-24 object-contain"
+            />
+          </a>
         </div>
 
         <div className="mt-8 pt-8 border-t border-border text-center text-sm text-muted-foreground">
@@ -280,9 +345,7 @@ export function Footer() {
             قوانین و مقررات
           </Link>
           <p>© {persianYear} {settings.siteBranding.siteName}. تمامی حقوق محفوظ است.</p>
-          <p className="mt-2 text-xs">
-            حداقل سفارش: {settings.minOrderQty.toLocaleString('fa-IR')} عدد | ارسال: {settings.allowedProvinces.join(' و ')} | کیفیت تضمینی
-          </p>
+          <p className="mt-2 text-xs">ارسال: {settings.allowedProvinces.join(' و ')} | کیفیت تضمینی</p>
         </div>
       </div>
     </footer>

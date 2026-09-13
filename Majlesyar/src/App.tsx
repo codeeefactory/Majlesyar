@@ -4,14 +4,12 @@ import { CartProvider } from "@/contexts/CartContext";
 import { SettingsProvider } from "@/contexts/SettingsContext";
 import { AdminAuthProvider } from "@/contexts/AdminAuthContext";
 import { CustomerAuthProvider } from "@/contexts/CustomerAuthContext";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 import { SiteThemeSync } from "@/components/SiteThemeSync";
-import { PageLoader } from "@/components/PageLoader";
 import { RouteChangeLoader } from "@/components/RouteChangeLoader";
-import { getStoredClientPingMs, measureAndStoreClientPing } from "@/lib/network";
-import ProductPage from "./pages/ProductPage";
+import HomePage from "./pages/HomePage";
 
-// Keep product route eager; defer homepage code on non-home routes.
-const HomePage = lazy(() => import("./pages/HomePage"));
+const ProductPage = lazy(() => import("./pages/ProductPage"));
 
 // Lazy loaded pages - secondary routes
 const EventPage = lazy(() => import("./pages/EventPage"));
@@ -22,13 +20,14 @@ const OrderPage = lazy(() => import("./pages/OrderPage"));
 const TrackOrderPage = lazy(() => import("./pages/TrackOrderPage"));
 const ContactPage = lazy(() => import("./pages/ContactPage"));
 const AboutPage = lazy(() => import("./pages/AboutPage"));
+const BlogPage = lazy(() => import("./pages/BlogPage"));
+const BlogPostPage = lazy(() => import("./pages/BlogPostPage"));
 const TermsPage = lazy(() => import("./pages/TermsPage"));
 const CustomerAuthPage = lazy(() => import("./pages/CustomerAuthPage"));
 const CustomerDashboardPage = lazy(() => import("./pages/CustomerDashboardPage"));
 const AdminLoginPage = lazy(() => import("./pages/admin/AdminLoginPage"));
 const AdminOrdersPage = lazy(() => import("./pages/admin/AdminOrdersPage"));
 const AdminPageProductsPage = lazy(() => import("./pages/admin/AdminPageProductsPage"));
-const NotFound = lazy(() => import("./pages/NotFound"));
 const LazyToaster = lazy(() => import("@/components/ui/sonner").then((m) => ({ default: m.Toaster })));
 const LazyFloatingContactButton = lazy(() =>
   import("./components/FloatingContactButton").then((m) => ({ default: m.FloatingContactButton })),
@@ -78,52 +77,22 @@ function DeferredFloatingContactButton() {
 }
 
 const App = () => {
-  useEffect(() => {
-    if (getStoredClientPingMs() !== null) return;
-
-    let timeoutId: number | undefined;
-    let idleId: number | undefined;
-
-    const runPing = () => {
-      if ("requestIdleCallback" in window) {
-        idleId = window.requestIdleCallback(() => void measureAndStoreClientPing(), { timeout: 5000 });
-        return;
-      }
-      timeoutId = window.setTimeout(() => void measureAndStoreClientPing(), 2500);
-    };
-
-    if (document.readyState === "complete") {
-      runPing();
-    } else {
-      window.addEventListener("load", runPing, { once: true });
-    }
-
-    return () => {
-      window.removeEventListener("load", runPing);
-      if (idleId !== undefined && "cancelIdleCallback" in window) {
-        window.cancelIdleCallback(idleId);
-      }
-      if (timeoutId !== undefined) {
-        window.clearTimeout(timeoutId);
-      }
-    };
-  }, []);
-
   return (
     <SettingsProvider>
-      <SiteThemeSync />
-      <CartProvider>
-        <CustomerAuthProvider>
+      <ThemeProvider>
+        <SiteThemeSync />
+        <CartProvider>
+          <CustomerAuthProvider>
           <DeferredToaster />
           <BrowserRouter>
             <RouteChangeLoader />
-            <Suspense fallback={<PageLoader />}>
-              <Routes>
-              {/* Critical SEO Route */}
-              <Route path="/" element={<HomePage />} />
+            <div id="app-routes">
+              <Suspense fallback={null}>
+                <Routes>
+                {/* Critical SEO Route */}
+                <Route path="/" element={<HomePage />} />
 
               {/* Lazy loaded Routes */}
-              <Route path="/product/:slug" element={<ProductPage />} />
               <Route path="/events/:slug" element={<EventPage />} />
               <Route path="/pack" element={<EventPage />} />
               <Route path="/pack/memorial" element={<EventPage />} />
@@ -152,6 +121,8 @@ const App = () => {
               <Route path="/track" element={<TrackOrderPage />} />
               <Route path="/contact" element={<ContactPage />} />
               <Route path="/about" element={<AboutPage />} />
+              <Route path="/blog" element={<BlogPage />} />
+              <Route path="/blog/:slug" element={<BlogPostPage />} />
               <Route path="/terms" element={<TermsPage />} />
               <Route path="/login" element={<CustomerAuthPage />} />
               <Route path="/signup" element={<CustomerAuthPage />} />
@@ -164,14 +135,16 @@ const App = () => {
               <Route path="/admin/orders/:id" element={<AdminRoute><AdminOrdersPage /></AdminRoute>} />
               <Route path="/admin/page-products" element={<AdminRoute><AdminPageProductsPage /></AdminRoute>} />
 
-              {/* Catch-all */}
-              <Route path="*" element={<NotFound />} />
-              </Routes>
-            </Suspense>
+                {/* Catch-all */}
+                <Route path="*" element={<ProductPage />} />
+                </Routes>
+              </Suspense>
+            </div>
             <DeferredFloatingContactButton />
           </BrowserRouter>
-        </CustomerAuthProvider>
-      </CartProvider>
+          </CustomerAuthProvider>
+        </CartProvider>
+      </ThemeProvider>
     </SettingsProvider>
   );
 };

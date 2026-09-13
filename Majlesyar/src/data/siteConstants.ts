@@ -48,10 +48,7 @@ const withPdfFaqs = <T extends EventType>(event: T): T => ({
 const hiddenEventRoutePathSet = new Set([
   "/pack/personal",
   "/pack/memorial/luxury",
-  "/flower/congratulation-wreaths",
-  "/flower/congratulatory-wreaths",
   "/flower/funeral-bouquet",
-  "/flower/box",
   "/halva-khorma/luxury",
   "/food",
   "/food/charcuterie-board",
@@ -60,9 +57,23 @@ const hiddenEventRoutePathSet = new Set([
   "/food/juice",
 ]);
 
+const removedEventRoutePathSet = new Set([
+  "/pack/personal",
+  "/pack/memorial/luxury",
+  "/flower/funeral-bouquet",
+  "/halva-khorma/luxury",
+  "/food/charcuterie-board",
+  "/food/juice",
+]);
+
 export function isHiddenEventRoutePath(routePath?: string) {
   if (!routePath) return false;
   return hiddenEventRoutePathSet.has(routePath.replace(/\/+$/, "") || "/");
+}
+
+export function isRemovedEventRoutePath(routePath?: string) {
+  if (!routePath) return false;
+  return removedEventRoutePathSet.has(routePath.replace(/\/+$/, "") || "/");
 }
 
 const sharedServiceBenefits = [
@@ -87,15 +98,16 @@ const sharedServiceBenefits = [
 const internalPageLinks = {
   home: { label: "خانه", url: "/" },
   pack: { label: "پک میوه و پذیرایی", url: "/pack" },
-  memorial: { label: "پک ترحیم", url: "/pack/memorial" },
-  halvaKhorma: { label: "حلوا خرما", url: "/halva-khorma" },
+  memorial: { label: "پک‌های ترحیم و ختم", url: "/pack/memorial" },
+  halvaKhorma: { label: "حلوا خرما و خرما گردو", url: "/halva-khorma" },
   khormaGerdoo: { label: "خرما گردو", url: "/halva-khorma" },
-  flower: { label: "گل ترحیم و تسلیت", url: "/flower/memorial-wreaths" },
-  memorialWreaths: { label: "تاج گل ترحیم", url: "/flower/memorial-wreaths" },
+  flower: { label: "تاج گل‌های ترحیم و تسلیت", url: "/flower/memorial-wreaths" },
+  memorialWreaths: { label: "تاج گل‌های ترحیم و تسلیت", url: "/flower/memorial-wreaths" },
   bouquets: { label: "دسته گل", url: "/flower/bouquets" },
   flowerBox: { label: "باکس گل", url: "/flower/box" },
   fingerFood: { label: "فینگر فود", url: "/food/finger_food" },
   shalehZard: { label: "شله زرد", url: "/food/shaleh-zard" },
+  builder: { label: "ساخت پک اختصاصی", url: "/builder" },
 };
 
 const hiddenEventPage = (
@@ -184,10 +196,10 @@ export const eventTypes: EventType[] = [
     benefits: sharedServiceBenefits,
     contentBlocks: pdfPageContentBlocks.memorial,
     internalLinks: [
-      internalPageLinks.memorial,
       internalPageLinks.halvaKhorma,
-      internalPageLinks.khormaGerdoo,
       internalPageLinks.flower,
+      internalPageLinks.fingerFood,
+      internalPageLinks.builder,
       internalPageLinks.home,
     ],
     introTitle: "معرفی بخش پک ترحیم در مجلس",
@@ -433,7 +445,6 @@ export const eventTypes: EventType[] = [
     icon: "🎉",
     color: "bg-accent",
     available: true,
-    hidden: true,
   },
   {
     id: "flower-box",
@@ -457,7 +468,6 @@ export const eventTypes: EventType[] = [
     icon: "🌷",
     color: "bg-primary/20",
     available: true,
-    hidden: true,
   },
   {
     id: "food",
@@ -593,11 +603,11 @@ export const defaultSettings: Settings = {
   contactPhone: CONTACT_PHONE,
   contactAddress: "تهران، امیرآباد، خیابان کارگر شمالی، خیابان فرشی مقدم(شانزدهم)، پلاک ۹۱، واحد۶.",
   workingHours: "شنبه تا پنجشنبه ۹ صبح تا ۹ شب",
-  instagramUrl: "https://instagram.com/majlesyar",
+  instagramUrl: "https://instagram.com/majles.yar",
   telegramUrl: "https://t.me/majlesyar",
   whatsappUrl: `https://wa.me/${CONTACT_PHONE_WHATSAPP}`,
-  baleUrl: "https://ble.ir/majlesyar",
-  eitaaUrl: "https://eitaa.com/majlesyar",
+  baleUrl: "https://ble.ir/Majlesyar",
+  eitaaUrl: "https://eitaa.com/majlesyarr",
   soroushUrl: "https://splus.ir/majlesyar",
   rubikaUrl: "https://rubika.ir/majlesyar",
   mapsUrl: "https://maps.google.com/?q=Tehran,Valiasr",

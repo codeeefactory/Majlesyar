@@ -11,25 +11,26 @@ from typing import TYPE_CHECKING
 from django.conf import settings
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
-from django.utils.text import slugify
 from PIL import Image, ImageOps
+
+from .image_utils import normalize_image_basename, product_media_directory
 
 if TYPE_CHECKING:
     from .models import Product
 
 
-RESPONSIVE_WIDTHS = (320, 480, 640, 768, 960, 1280)
+RESPONSIVE_WIDTHS = (320, 384, 480, 640, 768, 960, 1280)
 DEFAULT_FALLBACK_WIDTH = 640
 OPTIMIZED_ROOT = "products/optimized"
 BACKUP_ROOT = "products/originals"
-VARIANT_SCHEMA_VERSION = 1
+VARIANT_SCHEMA_VERSION = 5
 
 FORMAT_CONFIG = {
     "avif": {
         "pil_format": "AVIF",
         "extension": "avif",
         "mime_type": "image/avif",
-        "quality": 52,
+        "quality": 44,
         "save_kwargs": {"speed": 6},
     },
     "webp": {
@@ -76,18 +77,25 @@ def _is_format_supported(format_key: str) -> bool:
     return config["pil_format"] in Image.SAVE
 
 
-def _safe_stem(product: "Product") -> str:
-    source_name = Path(product.image.name or "").stem if product.image else ""
-    fallback = product.image_name or product.name or "product-image"
-    return slugify(source_name) or slugify(fallback) or f"product-{str(product.pk)[:8]}"
+def _exact_stem(product: "Product") -> str:
+    if product.image:
+        image_basename = normalize_image_basename(product.image.name)
+        image_stem = Path(image_basename).stem.strip()
+        if image_stem:
+            return image_stem
+    fallback_name = normalize_image_basename(
+        product.image_name or product.name or f"product-{str(product.pk)[:8]}",
+        fallback="product-image",
+    )
+    return Path(fallback_name).stem or "product-image"
 
 
 def _product_variant_dir(product: "Product") -> str:
-    return f"{OPTIMIZED_ROOT}/{product.pk}"
+    return f"{OPTIMIZED_ROOT}/{product_media_directory(product)}"
 
 
 def _product_backup_dir(product: "Product") -> str:
-    return f"{BACKUP_ROOT}/{product.pk}"
+    return f"{BACKUP_ROOT}/{product_media_directory(product)}"
 
 
 def _remove_relative_tree(relative_dir: str) -> None:
@@ -97,14 +105,6 @@ def _remove_relative_tree(relative_dir: str) -> None:
         return
     if target_dir.exists():
         shutil.rmtree(target_dir, ignore_errors=True)
-
-
-def _resize_dimensions(width: int, height: int, target_width: int) -> tuple[int, int]:
-    if width <= target_width:
-        return width, height
-    ratio = target_width / float(width)
-    target_height = max(1, round(height * ratio))
-    return target_width, target_height
 
 
 def _target_widths(width: int) -> list[int]:
@@ -127,6 +127,14 @@ def _open_source_image(image_bytes: bytes) -> Image.Image:
         if oriented is source_image:
             return source_image.copy()
         return oriented.copy()
+
+
+def _center_crop_square(source_image: Image.Image) -> Image.Image:
+    width, height = source_image.size
+    side = min(width, height)
+    left = (width - side) // 2
+    top = (height - side) // 2
+    return source_image.crop((left, top, left + side, top + side))
 
 
 def _prepare_variant_source(source_image: Image.Image, format_key: str) -> Image.Image:
@@ -233,6 +241,7 @@ def ensure_product_image_variants(
     existing_metadata = product.image_variants or {}
     if (
         not force
+        and existing_metadata.get("schema_version") == VARIANT_SCHEMA_VERSION
         and existing_metadata.get("signature") == signature
         and product_image_variants_exist(existing_metadata)
     ):
@@ -240,20 +249,37 @@ def ensure_product_image_variants(
 
     source_image = _open_source_image(image_bytes)
     source_width, source_height = source_image.size
-    widths = _target_widths(source_width)
-    fallback_width = _fallback_width(widths)
+    square_image = _center_crop_square(source_image)
+    square_size = square_image.width
+    previous_variants = existing_metadata.get("variants") or {}
+    previous_variant_paths = {
+        (format_key, int((item or {}).get("width") or 0)): (item or {}).get("path")
+        for format_key, items in previous_variants.items()
+        if isinstance(items, list)
+        for item in items
+        if int((item or {}).get("width") or 0) > 0 and (item or {}).get("path")
+    }
+    previous_widths = {width for _format_key, width in previous_variant_paths}
+    widths = sorted(set(_target_widths(square_size)) | previous_widths)
+    previous_fallback_width = int((existing_metadata.get("fallback") or {}).get("width") or 0)
+    fallback_width = (
+        previous_fallback_width if previous_fallback_width in widths else _fallback_width(widths)
+    )
 
-    safe_stem = _safe_stem(product)
-    original_suffix = Path(product.image.name).suffix.lower() or ".jpg"
+    exact_stem = _exact_stem(product)
+    exact_basename = normalize_image_basename(Path(product.image.name).name)
     backup_dir = _product_backup_dir(product)
-    backup_path = f"{backup_dir}/{safe_stem}-{signature}{original_suffix}"
+    backup_path = (existing_metadata.get("original") or {}).get("backup_path") or (
+        f"{backup_dir}/{signature}/{exact_basename}"
+    )
     variant_dir = _product_variant_dir(product)
 
     if cleanup_stale:
         _remove_relative_tree(variant_dir)
 
-    if not default_storage.exists(backup_path):
-        default_storage.save(backup_path, ContentFile(image_bytes))
+    if default_storage.exists(backup_path):
+        default_storage.delete(backup_path)
+    default_storage.save(backup_path, ContentFile(image_bytes))
 
     generated_variants: dict[str, list[dict]] = {"avif": [], "webp": [], "jpeg": []}
 
@@ -262,13 +288,14 @@ def ensure_product_image_variants(
             continue
 
         for target_width in widths:
-            output_width, output_height = _resize_dimensions(source_width, source_height, target_width)
-            output_path = (
-                f"{variant_dir}/"
-                f"{safe_stem}-{signature}-{output_width}.{FORMAT_CONFIG[format_key]['extension']}"
+            output_width = target_width
+            output_height = target_width
+            output_path = previous_variant_paths.get((format_key, output_width)) or (
+                f"{variant_dir}/{signature}/{output_width}/"
+                f"{exact_stem}.{FORMAT_CONFIG[format_key]['extension']}"
             )
             generated = _render_variant(
-                source_image=source_image,
+                source_image=square_image,
                 format_key=format_key,
                 width=output_width,
                 height=output_height,
@@ -284,6 +311,7 @@ def ensure_product_image_variants(
                 }
             )
 
+    square_image.close()
     source_image.close()
 
     metadata = {
@@ -297,9 +325,15 @@ def ensure_product_image_variants(
             "bytes": len(image_bytes),
             "mime_type": mimetypes.guess_type(product.image.name)[0] or "application/octet-stream",
         },
+        "display": {
+            "width": square_size,
+            "height": square_size,
+            "crop": "center",
+            "aspect_ratio": "1:1",
+        },
         "fallback": {
             "width": fallback_width,
-            "height": _resize_dimensions(source_width, source_height, fallback_width)[1],
+            "height": fallback_width,
             "format": "jpeg",
             "sizes": {
                 "card": "50vw",
@@ -317,6 +351,7 @@ def build_product_image_payload(product: "Product", request=None) -> dict:
         return {}
 
     original = metadata.get("original") or {}
+    display = metadata.get("display") or original
     variants = metadata.get("variants") or {}
     fallback = metadata.get("fallback") or {}
     if not original.get("width") or not original.get("height"):
@@ -360,8 +395,8 @@ def build_product_image_payload(product: "Product", request=None) -> dict:
         fallback_item = fallback_candidates[-1]
 
     return {
-        "width": int(original["width"]),
-        "height": int(original["height"]),
+        "width": int(display["width"]),
+        "height": int(display["height"]),
         "backup_url": build_url(original.get("backup_path")),
         "formats": built_formats,
         "fallback": {

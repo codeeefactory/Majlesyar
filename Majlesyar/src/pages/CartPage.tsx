@@ -6,6 +6,12 @@ import { QuantityStepper } from '@/components/QuantityStepper';
 import { RuleAlert } from '@/components/RuleAlert';
 import { useCart } from '@/contexts/CartContext';
 import { Trash2, ShoppingBag, ArrowLeft, Package } from 'lucide-react';
+import type { OrderItem } from '@/types/domain';
+
+function getCustomPackBadges(config: OrderItem["customConfig"]) {
+  if (!config) return [];
+  return Object.values(config).flat().filter((value) => value && value !== "-");
+}
 
 export default function CartPage() {
   const {
@@ -71,18 +77,11 @@ export default function CartPage() {
                         <h3 className="font-semibold text-foreground">{item.name}</h3>
                         {item.isCustomPack && item.customConfig && (
                           <div className="mt-1 flex flex-wrap gap-1">
-                            <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full">
-                              {item.customConfig.packaging}
-                            </span>
-                            <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full">
-                              {item.customConfig.fruit}
-                            </span>
-                            <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full">
-                              {item.customConfig.drink}
-                            </span>
-                            <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full">
-                              {item.customConfig.snack}
-                            </span>
+                            {getCustomPackBadges(item.customConfig).map((badge, index) => (
+                              <span key={`${badge}-${index}`} className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full">
+                                {badge}
+                              </span>
+                            ))}
                           </div>
                         )}
                       </div>

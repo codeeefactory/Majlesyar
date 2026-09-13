@@ -8,9 +8,12 @@ import { Button } from '@/components/ui/button';
 import { getPageProductPreview, listProducts } from '@/lib/api';
 import { normalizePersianDisplayText } from '@/lib/persianText';
 import { useSettings } from '@/contexts/SettingsContext';
-import { isHiddenEventRoutePath } from '@/data/siteConstants';
-import { ArrowRight, Package, Wrench } from 'lucide-react';
+import { isHiddenEventRoutePath, isRemovedEventRoutePath } from '@/data/siteConstants';
+import { ArrowRight, Wrench } from 'lucide-react';
 import type { EventPage as EventPageConfig, Product } from '@/types/domain';
+import NotFound from '@/pages/NotFound';
+
+const FLOWER_HERO_NOTE = 'عکس گل همکاران را برای ما بفرستید تا با قیمت منصفانه‌تر به شما تحویل دهیم😉';
 
 function normalizeRoutePath(path?: string) {
   if (!path) return '';
@@ -19,6 +22,16 @@ function normalizeRoutePath(path?: string) {
 
 function getRouteDepth(path: string) {
   return normalizeRoutePath(path).split('/').filter(Boolean).length;
+}
+
+function getEventProductAliases(event: EventPageConfig) {
+  if (event.slug === 'congratulatory-wreaths') {
+    return ['congratulatory-wreaths', 'flower-congratulation-wreaths'];
+  }
+  if (event.slug === 'flower-congratulation-wreaths') {
+    return ['flower-congratulation-wreaths', 'congratulatory-wreaths'];
+  }
+  return [event.slug];
 }
 
 function buildEventBreadcrumbs(event: EventPageConfig, eventPages: EventPageConfig[]) {
@@ -58,6 +71,7 @@ function isEditorialContentBlock(block: NonNullable<EventPageConfig["contentBloc
   const text = block.text.trim();
   const normalized = normalizePersianDisplayText(text);
   return (
+    text === FLOWER_HERO_NOTE ||
     text.includes("پایین تر از h1") ||
     /آدرس\s*(اول|دوم|سوم|چهارم|پنجم|اصلی)?:/.test(text) ||
     /^[0-9۰-۹]+\s*آدرس\./.test(text) ||
@@ -68,11 +82,8 @@ function isEditorialContentBlock(block: NonNullable<EventPageConfig["contentBloc
 }
 
 function getHeroNoteFromContentBlocks(contentBlocks?: EventPageConfig["contentBlocks"]) {
-  const instruction = contentBlocks?.find((block) => block.text.includes("پایین تر از h1"));
-  if (!instruction) return "";
-
-  const [, note] = instruction.text.split("نوشته بشه");
-  return normalizePersianDisplayText(note || instruction.text.replace("پایین تر از h1 در گل بایدdiv نوشته بشه", ""));
+  const note = contentBlocks?.find((block) => block.text.trim() === FLOWER_HERO_NOTE);
+  return note ? normalizePersianDisplayText(note.text) : "";
 }
 
 export default function EventPage() {
@@ -104,21 +115,27 @@ export default function EventPage() {
 
     const loadProducts = async () => {
       const preview = await getPageProductPreview('event', event.slug || slug || '');
-      if (preview?.products?.length) {
-        setProducts(preview.products);
+      if (preview) {
+        setProducts(preview.products || []);
         setLoading(false);
         return;
       }
 
       const allProducts = await listProducts();
-      const filtered = allProducts.filter((p) => p.eventTypes.includes(event.slug || slug || ''));
+      const aliases = getEventProductAliases(event);
+      const filtered = allProducts.filter((p) =>
+        p.eventTypes.some((eventType) => aliases.includes(eventType))
+      );
       setProducts(filtered);
       setLoading(false);
     };
     loadProducts();
   }, [event, isEventAvailable, slug]);
 
-  if (!event) {
+  if (!event || isRemovedEventRoutePath(pathname)) {
+    if (isRemovedEventRoutePath(pathname)) {
+      return <NotFound />;
+    }
     return (
       <AppShell>
         <div className="container py-16 text-center">
@@ -221,12 +238,11 @@ export default function EventPage() {
 
           <div className="flex flex-wrap gap-4">
             <Button variant="gold" size="lg" className="gap-2" asChild>
-              <a href="#event-products">
-                <Package className="w-5 h-5" />
-                سفارش سریع
-              </a>
+              <Link to="/builder">
+                <Wrench className="w-5 h-5" />
+                ساخت پک اختصاصی
+              </Link>
             </Button>
-            {/* Hidden for now: ساخت پک اختصاصی button */}
           </div>
         </div>
       </section>
@@ -276,7 +292,7 @@ export default function EventPage() {
         <InternalLinkCards
           links={visibleInternalLinks || []}
           imageProduct={products[0]}
-          title=""
+          title="محصولات مرتبط برای شما"
           className="mt-10"
           withContainer={false}
         />

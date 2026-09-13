@@ -1,5 +1,7 @@
 import uuid
 
+from django.core.exceptions import ValidationError
+from django.db import connection
 from django.db.models import Q
 from django.http import Http404
 from drf_spectacular.utils import extend_schema
@@ -8,7 +10,7 @@ from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import BuilderItem, Category, CustomerReview, Product, Tag
+from .models import BuilderItem, Category, CustomerReview, Product, Tag, normalize_product_public_path
 from .serializers import (
     BuilderItemSerializer,
     BuilderItemWriteSerializer,
@@ -34,6 +36,22 @@ from .services import (
     save_page_product_order,
 )
 from orders.permissions import IsStaffUser
+
+
+def filter_products_by_event_type(queryset, event_type: str):
+    normalized_event_type = str(event_type or "").strip()
+    if not normalized_event_type:
+        return queryset
+
+    if connection.vendor == "sqlite":
+        product_ids = [
+            product.id
+            for product in queryset
+            if normalized_event_type in (product.event_types or [])
+        ]
+        return Product.objects.prefetch_related("categories", "tags", "customer_reviews").filter(id__in=product_ids)
+
+    return queryset.filter(event_types__contains=[normalized_event_type])
 
 
 class CategoryListAPIView(generics.ListAPIView):
@@ -78,6 +96,14 @@ class CustomerReviewListAPIView(generics.ListAPIView):
 class ProductListAPIView(generics.ListAPIView):
     serializer_class = ProductSerializer
 
+    def list(self, request, *args, **kwargs):
+        response = super().list(request, *args, **kwargs)
+        if request.query_params.get("builder", "").lower() == "true":
+            response["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+            response["Pragma"] = "no-cache"
+            response["Expires"] = "0"
+        return response
+
     def get_queryset(self):
         queryset = Product.objects.prefetch_related("categories", "tags", "customer_reviews").all()
 
@@ -94,7 +120,7 @@ class ProductListAPIView(generics.ListAPIView):
 
         event_type = self.request.query_params.get("event_type")
         if event_type:
-            queryset = queryset.filter(event_types__contains=[event_type])
+            queryset = filter_products_by_event_type(queryset, event_type)
 
         featured = self.request.query_params.get("featured")
         if featured is not None:
@@ -103,6 +129,10 @@ class ProductListAPIView(generics.ListAPIView):
         available = self.request.query_params.get("available")
         if available is not None:
             queryset = queryset.filter(available=available.lower() == "true")
+
+        builder = self.request.query_params.get("builder")
+        if builder is not None and builder.lower() == "true":
+            queryset = queryset.filter(available=True).order_by("builder_display_order", "name")
 
         search = self.request.query_params.get("search")
         if search:
@@ -143,6 +173,36 @@ class ProductDetailAPIView(generics.RetrieveAPIView):
             return by_id
 
         raise Http404
+
+    def retrieve(self, request, *args, **kwargs):
+        product = self.get_object()
+        response = Response(self.get_serializer(product).data)
+        if product.is_temporary:
+            response.headers["X-Robots-Tag"] = "noindex, nofollow, noarchive, nosnippet"
+        return response
+
+
+class ProductByPathAPIView(APIView):
+    authentication_classes = []
+    permission_classes = []
+
+    @extend_schema(responses=ProductSerializer)
+    def get(self, request):
+        try:
+            public_path = normalize_product_public_path(request.query_params.get("path"))
+        except ValidationError:
+            raise Http404 from None
+        if not public_path:
+            raise Http404
+        product = Product.objects.prefetch_related("categories", "tags", "customer_reviews").filter(
+            public_path=public_path,
+        ).first()
+        if not product:
+            raise Http404
+        response = Response(ProductSerializer(product, context={"request": request}).data)
+        if product.is_temporary:
+            response.headers["X-Robots-Tag"] = "noindex, nofollow, noarchive, nosnippet"
+        return response
 
 
 class BuilderItemListAPIView(generics.ListAPIView):

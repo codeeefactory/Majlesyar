@@ -1,4 +1,5 @@
 import { defaultSettings } from "@/data/siteConstants";
+import majlesyarLogo from "@/assets/branding/majlesyar-logo.png";
 
 interface PageLoaderProps {
   fullscreen?: boolean;
@@ -29,7 +30,7 @@ export function PageLoader({ fullscreen = true, brandName = defaultBrandName }: 
       <div className="relative z-10 w-[min(90vw,21rem)] rounded-[2rem] border border-border/70 bg-card/80 px-7 py-7 shadow-[0_24px_80px_-40px_hsl(var(--primary)/0.45)] backdrop-blur-xl">
         <div className="relative mx-auto mb-5 flex h-24 w-24 items-center justify-center">
           <div className="site-loader-pulse absolute h-24 w-24 rounded-full bg-primary/12 blur-2xl" />
-          <div className="relative flex h-20 w-20 items-center justify-center rounded-full border border-primary/15 bg-background/90">
+          <div className="relative flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border border-primary/15 bg-[#211b14]">
             <div className="absolute inset-[0.45rem] rounded-full border border-primary/10" />
             <div className="absolute inset-[1.1rem] rounded-full bg-primary/12" />
             {[0, 1, 2].map((index) => (
@@ -42,7 +43,14 @@ export function PageLoader({ fullscreen = true, brandName = defaultBrandName }: 
                 }}
               />
             ))}
-            <span className="site-loader-float relative h-3.5 w-3.5 rounded-full bg-primary shadow-[0_0_24px_hsl(var(--primary)/0.32)]" />
+            <img
+              src={majlesyarLogo}
+              alt=""
+              className="relative z-10 h-full w-full object-contain p-2"
+              width={80}
+              height={80}
+              decoding="async"
+            />
           </div>
         </div>
 

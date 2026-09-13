@@ -55,7 +55,7 @@ cd backend
 ..\backend\.venv\Scripts\python manage.py import_remote_products `
   --base-url https://majlesyar.com `
   --username admin `
-  --password admin `
+  --password "your-new-strong-admin-password" `
   --images-dir C:\path\to\images `
   --names-file C:\path\to\names.txt `
   --dry-run

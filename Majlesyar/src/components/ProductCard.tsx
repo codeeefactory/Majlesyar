@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ShoppingCart, Eye, Phone } from 'lucide-react';
 import type { Product } from '@/types/domain';
@@ -7,6 +7,7 @@ import { useCart } from '@/contexts/CartContext';
 import { Input } from '@/components/ui/input';
 import { ResponsiveProductImage } from '@/components/ResponsiveProductImage';
 import { notifyInfo, notifySuccess } from '@/lib/notify';
+import { buildProductPath } from '@/lib/productRoutes';
 import { useSettings } from '@/contexts/SettingsContext';
 
 interface ProductCardProps {
@@ -16,19 +17,15 @@ interface ProductCardProps {
 export function ProductCard({ product }: ProductCardProps) {
   const { addItem } = useCart();
   const { settings } = useSettings();
-  const navigate = useNavigate();
   const [quantity, setQuantity] = useState(1);
   const [imageFailed, setImageFailed] = useState(false);
 
-  const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const val = parseInt(e.target.value) || 1;
+  const handleQuantityChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const val = parseInt(event.target.value) || 1;
     setQuantity(Math.min(Math.max(val, 1), 999));
   };
 
-  const handleAddToCart = (e: React.MouseEvent) => {
-    e.preventDefault();
+  const handleAddToCart = () => {
     if (product.price === null) {
       notifyInfo('برای این محصول با ما تماس بگیرید');
       return;
@@ -49,16 +46,17 @@ export function ProductCard({ product }: ProductCardProps) {
   };
 
   const shouldShowImage = product.image && product.image !== '/placeholder.svg' && !imageFailed;
-  const productPath = `/product/${encodeURIComponent(product.urlSlug || product.id)}`;
+  const productPath = buildProductPath(product, settings.eventPages);
 
   return (
-    <article>
+    <article className="bg-card rounded-xl border border-border overflow-hidden card-hover">
       <Link
         to={productPath}
-        className="group block bg-card rounded-xl border border-border overflow-hidden card-hover focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+        rel={product.isTemporary ? 'nofollow' : undefined}
+        className="group block focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
         aria-label={`مشاهده ${product.name}`}
       >
-        <div className="aspect-[16/11] sm:aspect-[4/3] bg-muted relative overflow-hidden">
+        <div className="aspect-square bg-muted relative overflow-hidden">
           {shouldShowImage ? (
             <ResponsiveProductImage
               product={product}
@@ -79,7 +77,7 @@ export function ProductCard({ product }: ProductCardProps) {
             </span>
           )}
           {!product.available && (
-            <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
+            <div className="absolute inset-0 bg-background/80 flex items-center justify-center" aria-hidden="true">
               <span className="text-muted-foreground text-sm font-semibold">ناموجود</span>
             </div>
           )}
@@ -99,62 +97,64 @@ export function ProductCard({ product }: ProductCardProps) {
               {formatPrice(product.price)}
             </p>
           </div>
+        </div>
+      </Link>
 
-          <div className="flex flex-col gap-2">
-            {product.price !== null && product.available && (
-              <div className="flex items-center gap-2">
-                <Input
-                  type="number"
-                  min={1}
-                  max={999}
-                  value={quantity}
-                  onChange={handleQuantityChange}
-                  onClick={(e) => e.preventDefault()}
-                  className="w-16 h-10 text-center text-sm"
-                  aria-label="تعداد"
-                />
-                <Button
-                  variant="gold"
-                  size="sm"
-                  className="flex-1 h-10 min-h-[40px] touch-manipulation"
-                  onClick={handleAddToCart}
-                  aria-label={`افزودن ${quantity} عدد ${product.name} به سبد خرید`}
-                >
-                  <ShoppingCart className="w-4 h-4 ml-1" aria-hidden="true" />
-                  افزودن
-                </Button>
-              </div>
-            )}
-            <div className="flex gap-2">
+      <div className="px-3 pb-3 md:px-4 md:pb-4">
+        <div className="flex flex-col gap-2">
+          {product.price !== null && product.available && (
+            <div className="flex items-center gap-2">
+              <Input
+                type="number"
+                min={1}
+                max={999}
+                value={quantity}
+                onChange={handleQuantityChange}
+                className="w-16 h-10 text-center text-sm"
+                aria-label={`تعداد ${product.name}`}
+              />
               <Button
-                variant="outline"
+                type="button"
+                variant="gold"
                 size="sm"
-                className="flex-1 text-xs h-10 min-h-[40px] touch-manipulation transition-all duration-150 hover:bg-primary/5 hover:border-primary/50 active:scale-95 active:bg-primary/10"
-                onClick={(e) => {
-                  e.preventDefault();
-                  navigate(productPath);
-                  window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
-                }}
+                className="flex-1 h-10 min-h-[40px] touch-manipulation"
+                onClick={handleAddToCart}
+                aria-label={`افزودن ${quantity} عدد ${product.name} به سبد خرید`}
+              >
+                <ShoppingCart className="w-4 h-4 ml-1" aria-hidden="true" />
+                افزودن
+              </Button>
+            </div>
+          )}
+          <div className="flex gap-2">
+            <Button
+              asChild
+              variant="outline"
+              size="sm"
+              className="flex-1 text-xs h-10 min-h-[40px] touch-manipulation transition-all duration-150 hover:bg-primary/5 hover:border-primary/50 active:scale-95 active:bg-primary/10"
+            >
+              <Link
+                to={productPath}
+                rel={product.isTemporary ? 'nofollow' : undefined}
+                aria-label={`مشاهده جزئیات ${product.name}`}
               >
                 <Eye className="w-4 h-4 ml-1" aria-hidden="true" />
                 مشاهده
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-10 min-h-[40px] px-3 touch-manipulation text-primary border-primary hover:bg-primary/10"
-                onClick={(e) => {
-                  e.preventDefault();
-                  window.location.href = `tel:${settings.contactPhone}`;
-                }}
-                aria-label="تماس برای سفارش"
-              >
+              </Link>
+            </Button>
+            <Button
+              asChild
+              variant="outline"
+              size="sm"
+              className="h-10 min-h-[40px] px-3 touch-manipulation text-primary border-primary hover:bg-primary/10"
+            >
+              <a href={`tel:${settings.contactPhone}`} aria-label={`تماس برای سفارش ${product.name}`}>
                 <Phone className="w-4 h-4" aria-hidden="true" />
-              </Button>
-            </div>
+              </a>
+            </Button>
           </div>
         </div>
-      </Link>
+      </div>
     </article>
   );
 }

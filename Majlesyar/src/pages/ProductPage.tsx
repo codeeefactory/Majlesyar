@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { AppShell } from '@/components/layout';
 import { Button } from '@/components/ui/button';
 import { QuantityStepper } from '@/components/QuantityStepper';
@@ -8,7 +8,9 @@ import { InternalLinkCards } from '@/components/InternalLinkCards';
 import { RuleAlert } from '@/components/RuleAlert';
 import { ResponsiveProductImage } from '@/components/ResponsiveProductImage';
 import { SEO } from '@/components/SEO';
-import { getProduct } from '@/lib/api';
+import { getProductByPath } from '@/lib/api';
+import NotFound from '@/pages/NotFound';
+import { buildProductPath, getBestProductEvent, getRouteDepth, normalizeRoutePath } from '@/lib/productRoutes';
 import { isHiddenEventRoutePath } from '@/data/siteConstants';
 import { notifySuccess } from '@/lib/notify';
 import { useCart } from '@/contexts/CartContext';
@@ -86,33 +88,8 @@ const relatedProductLinks = [
   },
 ];
 
-function normalizeRoutePath(path?: string) {
-  if (!path) return '';
-  return path === '/' ? path : path.replace(/\/+$/, '');
-}
-
-function getRouteDepth(path: string) {
-  return normalizeRoutePath(path).split('/').filter(Boolean).length;
-}
-
-function getBestProductEvent(product: Product, eventPages: EventPage[]) {
-  const productEventSlugs = new Set(product.eventTypes);
-  const candidates = eventPages
-    .filter(
-      (event) =>
-        productEventSlugs.has(event.slug) &&
-        event.routePath &&
-        event.available !== false &&
-        !event.hidden &&
-        !isHiddenEventRoutePath(event.routePath),
-    )
-    .sort((a, b) => getRouteDepth(b.routePath || '') - getRouteDepth(a.routePath || ''));
-
-  return candidates[0];
-}
-
 function buildProductBreadcrumbs(product: Product, eventPages: EventPage[]) {
-  const productPath = `/product/${encodeURIComponent(product.urlSlug || product.id)}`;
+  const productPath = buildProductPath(product, eventPages);
   const bestEvent = getBestProductEvent(product, eventPages);
 
   if (!bestEvent?.routePath) {
@@ -149,7 +126,7 @@ function buildProductBreadcrumbs(product: Product, eventPages: EventPage[]) {
 }
 
 export default function ProductPage() {
-  const { slug } = useParams<{ slug: string }>();
+  const location = useLocation();
   const { settings } = useSettings();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
@@ -159,16 +136,12 @@ export default function ProductPage() {
 
   useEffect(() => {
     const loadProduct = async () => {
-      if (!slug) {
-        setLoading(false);
-        return;
-      }
-      const data = await getProduct(slug);
+      const data = await getProductByPath(location.pathname);
       setProduct(data);
       setLoading(false);
     };
     loadProduct();
-  }, [slug]);
+  }, [location.pathname]);
 
   const handleAddToCart = () => {
     if (!product || product.price === null) return;
@@ -202,7 +175,7 @@ export default function ProductPage() {
             <div className="h-5 w-56 bg-muted rounded" />
             <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
               <div className="space-y-4">
-                <div className="aspect-[4/3] sm:aspect-square bg-muted rounded-2xl border border-border" />
+                <div className="aspect-square bg-muted rounded-2xl border border-border" />
               </div>
               <div className="space-y-6 min-h-[32rem]">
                 <div className="space-y-3">
@@ -236,23 +209,10 @@ export default function ProductPage() {
   }
 
   if (!product) {
-    return (
-      <AppShell>
-        <div className="container py-16 text-center">
-          <div className="text-6xl mb-4">😕</div>
-          <h1 className="text-2xl font-bold text-foreground mb-4">محصول یافت نشد</h1>
-          <Link to="/pack">
-            <Button variant="outline" className="gap-2">
-              <ArrowRight className="w-4 h-4" />
-              بازگشت به محصولات
-            </Button>
-          </Link>
-        </div>
-      </AppShell>
-    );
+    return <NotFound />;
   }
 
-  const productPath = `/product/${encodeURIComponent(product.urlSlug || product.id)}`;
+  const productPath = buildProductPath(product, settings.eventPages);
   const breadcrumbs = buildProductBreadcrumbs(product, settings.eventPages);
   const productSearchText = [
     product.name,
@@ -273,6 +233,7 @@ export default function ProductPage() {
         title={product.name}
         description={product.description}
         path={productPath}
+        noindex={product.isTemporary === true}
         product={{
           name: product.name,
           description: product.description,
@@ -302,7 +263,7 @@ export default function ProductPage() {
 
         <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
           <div className="space-y-4">
-            <div className="aspect-[4/3] sm:aspect-square bg-muted rounded-2xl border border-border relative overflow-hidden">
+            <div className="aspect-square bg-muted rounded-2xl border border-border relative overflow-hidden">
               {shouldShowImage ? (
                 <ResponsiveProductImage
                   product={product}
@@ -311,7 +272,7 @@ export default function ProductPage() {
                   fetchPriority="high"
                   sizesKey="detail"
                   sizes="(max-width: 640px) 100vw, 50vw"
-                  className="w-full h-full object-contain object-center"
+                  className="w-full h-full object-cover object-center"
                   onError={() => setImageFailed(true)}
                 />
               ) : (
@@ -334,7 +295,7 @@ export default function ProductPage() {
             </div>
 
             <div className="bg-card rounded-xl border border-border p-4">
-              <h2 className="font-semibold text-foreground mb-3">محتویات پک:</h2>
+              <h2 className="font-semibold text-foreground mb-3">محتویات محصول:</h2>
               <ul className="space-y-2">
                 {product.contents.map((item, index) => (
                   <li key={index} className="flex items-center justify-between gap-3 text-muted-foreground">
@@ -401,7 +362,7 @@ export default function ProductPage() {
       <InternalLinkCards
         links={productInternalLinkCards}
         imageProduct={product}
-        title="صفحات مرتبط"
+        title="محصولات مرتبط برای شما"
       />
     </AppShell>
   );

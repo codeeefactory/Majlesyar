@@ -43,10 +43,10 @@ export interface OrderItem {
   price: number;
   isCustomPack?: boolean;
   customConfig?: {
-    packaging: string;
-    fruit: string;
-    drink: string;
-    snack: string;
+    packaging: string[];
+    fruit: string[];
+    drink: string[];
+    snack: string[];
     addons: string[];
   };
 }

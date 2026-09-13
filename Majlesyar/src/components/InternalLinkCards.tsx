@@ -12,13 +12,14 @@ interface InternalLinkCardsProps {
 }
 
 function getLinkLabel(link: InternalLink) {
-  return link.url === "/" ? "مشاهده صفحه اصلی" : `مشاهده ${link.label}`;
+  if (link.url === "/") return "صفحه اصلی";
+  return link.label.replace(/^مشاهده\s+/, "").trim();
 }
 
 export function InternalLinkCards({
   links,
   imageProduct,
-  title = "صفحات مرتبط",
+  title = "محصولات مرتبط برای شما",
   className = "",
   withContainer = true,
 }: InternalLinkCardsProps) {
@@ -36,7 +37,7 @@ export function InternalLinkCards({
   return (
     <section className={sectionClassName} aria-labelledby={headingId} aria-label={headingId ? undefined : "لینک‌های مرتبط"}>
       {headingId ? (
-        <h2 id={headingId} className="mb-6 text-2xl font-bold text-foreground">
+        <h2 id={headingId} className="mb-6 text-3xl font-black leading-tight text-foreground md:text-4xl">
           {title}
         </h2>
       ) : null}

@@ -65,7 +65,6 @@ export default function AdminLoginPage() {
             <Lock className="w-4 h-4" />
             {loading ? 'در حال ورود...' : 'ورود'}
           </Button>
-          <p className="text-xs text-muted-foreground text-center">admin / admin123</p>
         </form>
       </div>
     </div>

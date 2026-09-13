@@ -21,6 +21,19 @@
     );
   }
 
+  function ensureUnfoldFilenameTarget(fileInput) {
+    const unfoldContainer = fileInput.parentElement?.parentElement?.parentElement;
+    if (!unfoldContainer || unfoldContainer.querySelector('input[type="text"]')) return;
+
+    const filenameTarget = document.createElement("input");
+    filenameTarget.type = "text";
+    filenameTarget.hidden = true;
+    filenameTarget.tabIndex = -1;
+    filenameTarget.setAttribute("aria-hidden", "true");
+    filenameTarget.dataset.unfoldFilenameTarget = "1";
+    unfoldContainer.appendChild(filenameTarget);
+  }
+
   function buildPreviewCard(fieldRow, previewKey, fileInput) {
     const card = document.createElement("div");
     card.className = "admin-image-preview-card admin-image-preview-card--empty";
@@ -109,6 +122,7 @@
 
   function attachClearButton(fileInput) {
     if (!fileInput || fileInput.dataset.clearImageBound === "1") return;
+    ensureUnfoldFilenameTarget(fileInput);
     fileInput.dataset.clearImageBound = "1";
 
     const fieldRow = findFieldRow(fileInput);
@@ -139,7 +153,7 @@
   }
 
   function initClearButtons() {
-    const inputs = document.querySelectorAll('.unfold input[type="file"]');
+    const inputs = document.querySelectorAll('input[type="file"]');
     inputs.forEach((input) => attachClearButton(input));
   }
 

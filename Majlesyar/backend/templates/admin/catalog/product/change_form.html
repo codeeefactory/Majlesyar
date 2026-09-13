@@ -1,0 +1,12 @@
+{% extends "admin/change_form.html" %}
+
+{% block object-tools-items %}
+  {% if original and original.pk %}
+    <li>
+      <a href="{% url 'admin:catalog_product_export_mjlsyar' original.pk %}">
+        دریافت پشتیبان .mjlsyar
+      </a>
+    </li>
+  {% endif %}
+  {{ block.super }}
+{% endblock %}

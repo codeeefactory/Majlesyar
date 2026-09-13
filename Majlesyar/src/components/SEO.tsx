@@ -1,7 +1,9 @@
 import { useEffect } from "react";
 import { useSettings } from "@/contexts/SettingsContext";
 import { getSameAsLinks } from "@/lib/contact";
+import { buildProductPath } from "@/lib/productRoutes";
 import type { CustomerReview } from "@/types/domain";
+import majlesyarLogo from "@/assets/branding/majlesyar-logo.png";
 
 interface BreadcrumbItem {
   name: string;
@@ -34,6 +36,8 @@ interface SEOProps {
       name: string;
       urlSlug: string;
       id: string;
+      eventTypes?: string[];
+      isTemporary?: boolean;
     }>;
   };
   breadcrumbs?: BreadcrumbItem[];
@@ -43,7 +47,7 @@ interface SEOProps {
 }
 
 const PRODUCTION_SITE_URL = "https://majlesyar.com";
-const DEFAULT_OG_IMAGE = "https://lovable.dev/opengraph-image-p98pqg.png";
+let trustedTypesPolicy: { createScript: (input: string) => string } | null = null;
 
 function getBaseUrl() {
   if (typeof window !== "undefined") {
@@ -112,7 +116,22 @@ function upsertJsonLd(key: string, data: Record<string, unknown>) {
   }
   const content = JSON.stringify(data);
   if (script.textContent !== content) {
-    script.textContent = content;
+    const trustedTypes = (window as typeof window & {
+      trustedTypes?: {
+        createPolicy: (
+          name: string,
+          rules: { createScript: (input: string) => string },
+        ) => { createScript: (input: string) => string };
+      };
+    }).trustedTypes;
+
+    if (trustedTypes && !trustedTypesPolicy) {
+      trustedTypesPolicy = trustedTypes.createPolicy("default", {
+        createScript: (input) => input,
+      });
+    }
+
+    script.textContent = trustedTypesPolicy ? trustedTypesPolicy.createScript(content) : content;
   }
 }
 
@@ -144,15 +163,16 @@ export function SEO({
     const resolvedDescription =
       description || pageSeo?.description || branding.defaultMetaDescription;
     const resolvedKeywords = keywords || pageSeo?.keywords || branding.defaultMetaKeywords;
+    const baseUrl = getBaseUrl();
+    const fallbackLogoUrl = new URL(majlesyarLogo, `${baseUrl}/`).toString();
     const resolvedOgImage =
       ogImage ||
       product?.image ||
       settings.siteOgImageUrl ||
       settings.siteLogoUrl ||
       settings.siteFaviconUrl ||
-      DEFAULT_OG_IMAGE;
+      fallbackLogoUrl;
 
-    const baseUrl = getBaseUrl();
     const fullTitle = buildDocumentTitle(resolvedTitle, branding.siteName, branding.siteTagline);
     const canonicalUrl = `${baseUrl}${path}`;
     const keywordsValue = resolvedKeywords.join(", ");
@@ -165,7 +185,7 @@ export function SEO({
       settings.soroushUrl,
       settings.rubikaUrl,
     ]);
-    const logoUrl = settings.siteLogoUrl || settings.siteFaviconUrl || `${baseUrl}/favicon.ico`;
+    const logoUrl = settings.siteLogoUrl || settings.siteFaviconUrl || fallbackLogoUrl;
     const isHomePage = path === "/";
 
     if (typeof document !== "undefined") {
@@ -221,6 +241,7 @@ export function SEO({
         streetAddress: settings.contactAddress,
         addressLocality: "تهران",
         addressRegion: "تهران",
+        postalCode: "1439814383",
         addressCountry: "IR",
       },
       geo: {
@@ -269,7 +290,7 @@ export function SEO({
     removeJsonLd("organization");
     removeJsonLd("local-business");
 
-    if (product) {
+    if (product && !noindex) {
       const productReviews = (product.reviews || []).filter((review) => review.comment && review.rating > 0);
       const aggregateRating = productReviews.length
         ? {
@@ -336,10 +357,16 @@ export function SEO({
         url: canonicalUrl,
         mainEntity: {
           "@type": "ItemList",
-          itemListElement: collection.products.map((item, index) => ({
+          itemListElement: collection.products.filter((item) => !item.isTemporary).map((item, index) => ({
             "@type": "ListItem",
             position: index + 1,
-            url: `${baseUrl}/product/${encodeURIComponent(item.urlSlug || item.id)}`,
+            url: `${baseUrl}${buildProductPath(
+              {
+                ...item,
+                eventTypes: item.eventTypes || [],
+              },
+              settings.eventPages,
+            )}`,
             name: item.name,
           })),
         },

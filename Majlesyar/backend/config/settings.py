@@ -174,6 +174,12 @@ WHITENOISE_IMMUTABLE_FILE_TEST = is_vite_immutable_file
 MEDIA_URL = os.getenv("DJANGO_MEDIA_URL", "/media/")
 MEDIA_ROOT = Path(os.getenv("DJANGO_MEDIA_ROOT", str(BASE_DIR / "media")))
 
+# Optional exact-file cache invalidation after a product image changes in Django admin.
+# Keep credentials only in the production environment file, never in source control.
+CLOUDFLARE_API_TOKEN = os.getenv("CLOUDFLARE_API_TOKEN", "")
+CLOUDFLARE_ZONE_ID = os.getenv("CLOUDFLARE_ZONE_ID", "")
+CLOUDFLARE_PUBLIC_BASE_URL = os.getenv("CLOUDFLARE_PUBLIC_BASE_URL", "https://majlesyar.com")
+
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
@@ -270,6 +276,13 @@ VISION_TOP_K = int(os.getenv("VISION_TOP_K", "3"))
 VISION_DEVICE = os.getenv("VISION_DEVICE", "auto")
 VISION_MAX_PIXELS = int(os.getenv("VISION_MAX_PIXELS", "16000000"))
 VISION_MAX_DIMENSION = int(os.getenv("VISION_MAX_DIMENSION", "1600"))
+
+# Private image-to-3D worker. GPU inference stays outside the web process.
+PRODUCT_3D_GENERATOR_URL = os.getenv("PRODUCT_3D_GENERATOR_URL", "").strip()
+PRODUCT_3D_GENERATOR_TOKEN = os.getenv("PRODUCT_3D_GENERATOR_TOKEN", "").strip()
+PRODUCT_3D_GENERATOR_MODEL = os.getenv("PRODUCT_3D_GENERATOR_MODEL", "triposr").strip()
+PRODUCT_3D_GENERATOR_TIMEOUT = int(os.getenv("PRODUCT_3D_GENERATOR_TIMEOUT", "180"))
+PRODUCT_3D_MAX_BYTES = int(os.getenv("PRODUCT_3D_MAX_BYTES", str(25 * 1024 * 1024)))
 
 telegram_webhook_path = os.getenv("TELEGRAM_BOT_WEBHOOK_PATH", "api/v1/telegram/webhook/").strip()
 telegram_webhook_path = telegram_webhook_path.strip("/")

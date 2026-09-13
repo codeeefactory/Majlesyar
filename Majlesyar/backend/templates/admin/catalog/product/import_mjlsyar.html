@@ -1,0 +1,39 @@
+{% extends "admin/base_site.html" %}
+
+{% block breadcrumbs %}
+  <div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">خانه</a>
+    &rsaquo; <a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ opts.app_config.verbose_name }}</a>
+    &rsaquo; <a href="{% url 'admin:catalog_product_changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a>
+    &rsaquo; افزودن از فایل
+  </div>
+{% endblock %}
+
+{% block content %}
+  <div id="content-main">
+    <form method="post" enctype="multipart/form-data" novalidate>
+      {% csrf_token %}
+      <fieldset class="module aligned">
+        <h2>بازیابی یک محصول</h2>
+        <div class="description">
+          فایل .mjlsyar اطلاعات محصول، دسته‌بندی‌ها، تگ‌ها و تصویر اصلی را بررسی و سپس به عنوان محصول تازه ثبت می‌کند.
+        </div>
+        {{ form.non_field_errors }}
+        <div class="form-row{% if form.product_bundle.errors %} errors{% endif %}">
+          {{ form.product_bundle.errors }}
+          <div>
+            {{ form.product_bundle.label_tag }}
+            {{ form.product_bundle }}
+            {% if form.product_bundle.help_text %}
+              <div class="help">{{ form.product_bundle.help_text }}</div>
+            {% endif %}
+          </div>
+        </div>
+      </fieldset>
+      <div class="submit-row">
+        <input type="submit" value="بررسی و افزودن محصول" class="default">
+        <a href="{% url 'admin:catalog_product_changelist' %}" class="button cancel-link">انصراف</a>
+      </div>
+    </form>
+  </div>
+{% endblock %}

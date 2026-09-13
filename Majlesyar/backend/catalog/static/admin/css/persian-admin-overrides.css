@@ -461,7 +461,8 @@
 }
 
 .unfold .admin-image-preview-card__media {
-  min-height: 8rem;
+  width: min(100%, 18rem);
+  aspect-ratio: 1 / 1;
   display: grid;
   place-items: center;
   border-radius: 0.85rem;
@@ -475,9 +476,8 @@
 .unfold .admin-image-preview-card__image {
   display: block;
   width: 100%;
-  height: auto;
-  max-height: 18rem;
-  object-fit: contain;
+  height: 100%;
+  object-fit: cover;
 }
 
 .unfold .admin-image-preview-card__caption,

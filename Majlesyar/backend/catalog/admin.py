@@ -1,10 +1,35 @@
 from django import forms
-from django.contrib import admin
+from django.contrib import admin, messages
+from django.core.exceptions import PermissionDenied
+from django.http import Http404, HttpResponse
+from django.shortcuts import redirect
+from django.template.response import TemplateResponse
+from django.urls import path, reverse
+from django.utils.http import content_disposition_header
 from django.utils.html import format_html
 
 from config.admin_mixins import PersianAdminFormMixin
 from .image_variants import ensure_product_image_variants
-from .models import BuilderItem, Category, CustomerReview, PageProductPlacement, Product, Tag
+from .three_d import generate_asset_3d
+from .product_bundle import (
+    BUNDLE_CONTENT_TYPE,
+    BUNDLE_EXTENSION,
+    MAX_BUNDLE_BYTES,
+    ProductBundleError,
+    export_product_bundle,
+    import_product_bundle,
+    product_bundle_filename,
+)
+from .models import (
+    AUTO_EVENT_CATEGORY_SLUGS,
+    BuilderItem,
+    Category,
+    CustomerReview,
+    InternalLink,
+    PageProductPlacement,
+    Product,
+    Tag,
+)
 
 
 class ProductAdminForm(forms.ModelForm):
@@ -20,6 +45,11 @@ class ProductAdminForm(forms.ModelForm):
         model = Product
         fields = "__all__"
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["categories"].label = "صفحه‌های نمایش محصول"
+        self.fields["categories"].help_text = "یک یا چند صفحه را انتخاب کنید؛ محصول فقط در همان صفحه‌ها نمایش داده می‌شود."
+
     def save(self, commit=True):
         instance = super().save(commit=False)
         instance._input_mode = self.cleaned_data.get("input_mode") or Product.InputMode.NORMAL
@@ -29,20 +59,62 @@ class ProductAdminForm(forms.ModelForm):
         return instance
 
 
+class ProductBundleUploadForm(forms.Form):
+    product_bundle = forms.FileField(
+        label="فایل پشتیبان محصول",
+        help_text="فقط فایل امن با پسوند .mjlsyar و حداکثر ۶۴ مگابایت پذیرفته می‌شود.",
+    )
+
+    def clean_product_bundle(self):
+        upload = self.cleaned_data["product_bundle"]
+        if not upload.name.lower().endswith(BUNDLE_EXTENSION):
+            raise forms.ValidationError("پسوند فایل باید .mjlsyar باشد.")
+        if upload.size > MAX_BUNDLE_BYTES:
+            raise forms.ValidationError("حجم فایل پشتیبان بیش از ۶۴ مگابایت است.")
+        return upload
+
+
 @admin.register(Category)
 class CategoryAdmin(PersianAdminFormMixin, admin.ModelAdmin):
-    list_display = ("name", "slug", "icon", "color")
+    list_display = ("name", "slug", "page_url", "icon", "color")
     search_fields = ("name", "slug")
     prepopulated_fields = {"slug": ("name",)}
+    readonly_fields = ("page_url",)
     fieldsets = (
         (
             "اطلاعات دسته بندی",
             {
                 "description": "راهنما: نام را واضح بنویسید و اسلاگ را انگلیسی و یکتا ثبت کنید.",
-                "fields": ("name", "slug", "icon", "color", "logo"),
+                "fields": ("name", "slug", "page_url", "icon", "color", "logo"),
             },
         ),
     )
+
+    @admin.display(description="URL صفحه")
+    def page_url(self, obj: Category | None) -> str:
+        if not obj:
+            return "پس از ذخیره دسته‌بندی نمایش داده می‌شود."
+
+        from site_settings.models import SiteSetting
+
+        pages = SiteSetting.load().event_pages or []
+        page = next(
+            (
+                item
+                for item in pages
+                if isinstance(item, dict)
+                and str(item.get("slug") or item.get("id") or "").strip() == obj.slug
+            ),
+            None,
+        )
+        route_path = str((page or {}).get("route_path") or f"/events/{obj.slug}").strip()
+        if not route_path.startswith("/"):
+            route_path = f"/{route_path}"
+        return format_html(
+            '<a href="https://majlesyar.com{}" target="_blank" rel="noopener noreferrer" dir="ltr">{}</a>',
+            route_path,
+            route_path,
+        )
 
 
 @admin.register(Tag)
@@ -64,15 +136,33 @@ class TagAdmin(PersianAdminFormMixin, admin.ModelAdmin):
 @admin.register(Product)
 class ProductAdmin(PersianAdminFormMixin, admin.ModelAdmin):
     form = ProductAdminForm
-    EVENT_CATEGORY_SLUGS = ("conference", "memorial", "halva-khorma", "party")
-    list_display = ("name", "url_slug", "price", "available", "featured", "updated_at")
-    list_filter = ("available", "featured", "categories", "tags")
+    change_form_template = "admin/catalog/product/change_form.html"
+    change_list_template = "admin/catalog/product/change_list.html"
+    EVENT_CATEGORY_SLUGS = AUTO_EVENT_CATEGORY_SLUGS
+    list_display = (
+        "name",
+        "url_slug",
+        "price",
+        "available",
+        "is_temporary",
+        "featured",
+        "show_in_builder",
+        "builder_group",
+        "updated_at",
+    )
+    list_filter = ()
     search_fields = ("name", "url_slug", "description", "contents", "image_name", "image_alt", "tags__name")
-    prepopulated_fields = {"url_slug": ("name",)}
     filter_horizontal = ("categories", "tags")
-    list_editable = ("available", "featured")
-    readonly_fields = ("image_preview", "created_at", "updated_at")
-    actions = ("regenerate_image_variants",)
+    list_editable = ("available", "featured", "show_in_builder", "builder_group")
+    readonly_fields = (
+        "image_preview",
+        "model_3d_status",
+        "model_3d_metadata",
+        "model_3d_error",
+        "created_at",
+        "updated_at",
+    )
+    actions = ("regenerate_image_variants", "generate_3d_models")
     fieldsets = (
         (
             "اطلاعات اصلی",
@@ -82,11 +172,16 @@ class ProductAdmin(PersianAdminFormMixin, admin.ModelAdmin):
                     "input_mode",
                     "name",
                     "url_slug",
+                    "public_path",
                     "description",
                     "image",
                     "image_preview",
                     "image_name",
                     "image_alt",
+                    "model_3d",
+                    "model_3d_status",
+                    "model_3d_metadata",
+                    "model_3d_error",
                 ),
             },
         ),
@@ -94,14 +189,21 @@ class ProductAdmin(PersianAdminFormMixin, admin.ModelAdmin):
             "قیمت و وضعیت",
             {
                 "description": "راهنما: قیمت را به تومان وارد کنید. اگر قیمت توافقی است، آن را خالی بگذارید.",
-                "fields": ("price", "available", "featured"),
+                "fields": ("price", "available", "is_temporary", "featured"),
             },
         ),
         (
             "دسته بندی و محتوا",
             {
-                "description": "راهنما: دسته بندی، تگ، نوع مراسم و اقلام داخل پک را کامل و دقیق ثبت کنید.",
-                "fields": ("categories", "tags", "event_types", "contents"),
+                "description": "صفحه‌های نمایش را دقیق انتخاب کنید؛ این انتخاب مرجع قطعی نمایش محصول است.",
+                "fields": ("categories", "tags", "contents"),
+            },
+        ),
+        (
+            "نمایش در سازنده پک اختصاصی",
+            {
+                "description": "از این بخش مشخص کنید محصول در صفحه /builder به عنوان گزینه قابل افزودن به پک نمایش داده شود یا نه.",
+                "fields": ("show_in_builder", "builder_group", "builder_required", "builder_display_order"),
             },
         ),
         (
@@ -113,26 +215,70 @@ class ProductAdmin(PersianAdminFormMixin, admin.ModelAdmin):
         ),
     )
 
+    def get_urls(self):
+        custom_urls = [
+            path(
+                "import-mjlsyar/",
+                self.admin_site.admin_view(self.import_mjlsyar_view),
+                name="catalog_product_import_mjlsyar",
+            ),
+            path(
+                "<path:object_id>/export-mjlsyar/",
+                self.admin_site.admin_view(self.export_mjlsyar_view),
+                name="catalog_product_export_mjlsyar",
+            ),
+        ]
+        return custom_urls + super().get_urls()
+
+    def export_mjlsyar_view(self, request, object_id):
+        product = self.get_object(request, object_id)
+        if product is None:
+            raise Http404
+        if not self.has_view_or_change_permission(request, product):
+            raise PermissionDenied
+        try:
+            payload = export_product_bundle(product)
+        except ProductBundleError as exc:
+            self.message_user(request, str(exc), level=messages.ERROR)
+            return redirect(reverse("admin:catalog_product_change", args=(product.pk,)))
+
+        filename = product_bundle_filename(product)
+        response = HttpResponse(payload, content_type=BUNDLE_CONTENT_TYPE)
+        response.headers["Content-Disposition"] = content_disposition_header(True, filename)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["Cache-Control"] = "private, no-store"
+        return response
+
+    def import_mjlsyar_view(self, request):
+        if not self.has_add_permission(request):
+            raise PermissionDenied
+        form = ProductBundleUploadForm(request.POST or None, request.FILES or None)
+        if request.method == "POST" and form.is_valid():
+            upload = form.cleaned_data["product_bundle"]
+            try:
+                product = import_product_bundle(upload.read())
+            except ProductBundleError as exc:
+                form.add_error("product_bundle", str(exc))
+            else:
+                self.message_user(request, f"محصول «{product.name}» با موفقیت از فایل پشتیبان ساخته شد.")
+                return redirect(reverse("admin:catalog_product_change", args=(product.pk,)))
+
+        context = {
+            **self.admin_site.each_context(request),
+            "opts": self.model._meta,
+            "title": "افزودن محصول از فایل .mjlsyar",
+            "form": form,
+        }
+        return TemplateResponse(request, "admin/catalog/product/import_mjlsyar.html", context)
+
     def save_related(self, request, form, formsets, change):
         super().save_related(request, form, formsets, change)
         product: Product = form.instance
+        # Admin category selection is authoritative. This prevents one product
+        # from leaking into unrelated event pages through stale inferred values.
+        from .models import sync_product_categories
 
-        # If manager did not choose categories manually, auto-fill from event types
-        # to keep product categories aligned with website event categories.
-        if product.categories.exists():
-            return
-
-        event_slugs = [
-            slug
-            for slug in (product.event_types or [])
-            if isinstance(slug, str) and slug in self.EVENT_CATEGORY_SLUGS
-        ]
-        if not event_slugs:
-            return
-
-        categories = Category.objects.filter(slug__in=event_slugs)
-        if categories.exists():
-            product.categories.add(*categories)
+        sync_product_categories(product, force=True)
 
     @admin.action(description="Regenerate optimized image variants")
     def regenerate_image_variants(self, request, queryset):
@@ -155,6 +301,25 @@ class ProductAdmin(PersianAdminFormMixin, admin.ModelAdmin):
             self.message_user(
                 request,
                 f"{skipped} product(s) were skipped because they do not have an image.",
+            )
+
+    @admin.action(description="ساخت مدل سه‌بعدی با سرویس ML")
+    def generate_3d_models(self, request, queryset):
+        processed = 0
+        failed = 0
+        for product in queryset:
+            try:
+                generate_asset_3d(product, force=True)
+                processed += 1
+            except Exception:
+                failed += 1
+        if processed:
+            self.message_user(request, f"مدل سه‌بعدی {processed} محصول ساخته شد.")
+        if failed:
+            self.message_user(
+                request,
+                f"ساخت مدل سه‌بعدی {failed} محصول ناموفق بود؛ جزئیات داخل محصول ثبت شد.",
+                level=messages.ERROR,
             )
 
     @admin.display(description="پیش‌نمایش تصویر محصول")
@@ -203,7 +368,8 @@ class CustomerReviewAdmin(PersianAdminFormMixin, admin.ModelAdmin):
         "display_order",
         "created_at",
     )
-    list_filter = ("is_approved", "is_featured", "rating", "product")
+
+    list_filter = ()
     list_editable = ("is_approved", "is_featured", "display_order")
     search_fields = ("customer_name", "customer_city", "title", "comment", "product__name")
     autocomplete_fields = ("product",)
@@ -231,17 +397,59 @@ class CustomerReviewAdmin(PersianAdminFormMixin, admin.ModelAdmin):
     )
 
 
+@admin.register(InternalLink)
+class InternalLinkAdmin(PersianAdminFormMixin, admin.ModelAdmin):
+    list_display = ("label", "source_path", "target_url", "position", "is_active", "image_preview")
+    list_filter = ("is_active", "source_path")
+    list_editable = ("position", "is_active")
+    search_fields = ("label", "source_path", "target_url", "image_alt")
+    readonly_fields = ("image_preview", "created_at", "updated_at")
+    fields = (
+        "source_path",
+        "label",
+        "target_url",
+        "image",
+        "image_preview",
+        "image_alt",
+        "position",
+        "is_active",
+        "created_at",
+        "updated_at",
+    )
+
+    @admin.display(description="پیش‌نمایش")
+    def image_preview(self, obj: InternalLink | None) -> str:
+        if not obj or not obj.image:
+            return "—"
+        return format_html(
+            '<img src="{}" alt="{}" style="width:120px;height:80px;object-fit:cover;border-radius:12px" />',
+            obj.image.url,
+            obj.image_alt or obj.label,
+        )
+
+
 @admin.register(BuilderItem)
 class BuilderItemAdmin(PersianAdminFormMixin, admin.ModelAdmin):
     list_display = ("name", "group", "price", "required")
-    list_filter = ("group", "required")
+    list_filter = ()
     search_fields = ("name",)
+    readonly_fields = ("model_3d_status", "model_3d_metadata", "model_3d_error")
     fieldsets = (
         (
             "اطلاعات آیتم",
             {
                 "description": "راهنما: اطلاعات این آیتم را کامل وارد کنید تا در ساخت پک سفارشی درست نمایش داده شود.",
-                "fields": ("name", "group", "price", "required", "image"),
+                "fields": (
+                    "name",
+                    "group",
+                    "price",
+                    "required",
+                    "image",
+                    "model_3d",
+                    "model_3d_status",
+                    "model_3d_metadata",
+                    "model_3d_error",
+                ),
             },
         ),
     )
@@ -250,7 +458,7 @@ class BuilderItemAdmin(PersianAdminFormMixin, admin.ModelAdmin):
 @admin.register(PageProductPlacement)
 class PageProductPlacementAdmin(PersianAdminFormMixin, admin.ModelAdmin):
     list_display = ("page_type", "page_slug", "position", "product")
-    list_filter = ("page_type",)
+    list_filter = ()
     search_fields = ("page_slug", "product__name", "product__url_slug")
     ordering = ("page_type", "page_slug", "position")
     autocomplete_fields = ("product",)

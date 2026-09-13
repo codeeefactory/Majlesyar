@@ -302,8 +302,39 @@ def default_page_seo() -> dict:
     return deepcopy(DEFAULT_PAGE_SEO)
 
 
+DEFAULT_EVENT_PAGE_EXTRAS = [
+    {"id": "food", "name": "منوی فود", "slug": "food", "route_path": "/food", "description": "همه محصولات غذایی و پذیرایی", "icon": "🍽️", "color": "bg-secondary", "available": True},
+    {"id": "food-charcuterie-board", "name": "چاکوتری برد", "slug": "food-charcuterie-board", "route_path": "/food/charcuterie-board", "description": "سینی مزه و چاکوتری", "icon": "🧀", "color": "bg-secondary", "available": True},
+    {"id": "food-ashe-rashteh", "name": "آش رشته", "slug": "food-ashe-rashteh", "route_path": "/food/ashe-rashteh", "description": "آش رشته مناسب مراسم", "icon": "🍲", "color": "bg-secondary", "available": True},
+    {"id": "food-dessert", "name": "دسر", "slug": "food-dessert", "route_path": "/food/dessert", "description": "دسر و شیرینی مراسم", "icon": "🍰", "color": "bg-secondary", "available": True},
+    {"id": "food-juice", "name": "آبمیوه", "slug": "food-juice", "route_path": "/food/juice", "description": "نوشیدنی و آبمیوه مراسم", "icon": "🧃", "color": "bg-secondary", "available": True},
+    {"id": "shaleh-zard", "name": "شله زرد", "slug": "shaleh-zard", "route_path": "/food/shaleh-zard", "description": "شله زرد نذری و مراسم", "icon": "🍮", "color": "bg-accent", "available": True},
+    {"id": "pack", "name": "پک پذیرایی", "slug": "pack", "route_path": "/pack", "description": "پک های پذیرایی آماده", "icon": "📦", "color": "bg-muted", "available": True},
+    {"id": "pack-personal", "name": "پک پذیرایی شخصی", "slug": "pack-personal", "route_path": "/pack/personal", "description": "پک شخصی برای مهمانان", "icon": "📦", "color": "bg-muted", "available": True},
+    {"id": "pack-memorial-luxury", "name": "پک ترحیم لوکس", "slug": "pack-memorial-luxury", "route_path": "/pack/memorial/luxury", "description": "پک ترحیم لوکس و کامل", "icon": "🕯️", "color": "bg-muted", "available": True},
+    {"id": "halva-khorma-luxury", "name": "حلوا و خرمای لوکس", "slug": "halva-khorma-luxury", "route_path": "/halva-khorma/luxury", "description": "حلوا و خرمای لوکس مراسم", "icon": "🍯", "color": "bg-accent", "available": True},
+    {"id": "memorial-wreaths", "name": "تاج گل ترحیم", "slug": "memorial-wreaths", "route_path": "/flower/memorial-wreaths", "description": "تاج گل مناسب ترحیم", "icon": "🖤", "color": "bg-primary/20", "available": True},
+    {"id": "bouquets", "name": "دسته گل", "slug": "bouquets", "route_path": "/flower/bouquets", "description": "دسته گل هدیه و مراسم", "icon": "💐", "color": "bg-primary/20", "available": True},
+    {"id": "congratulatory-wreaths", "name": "تاج گل تبریک", "slug": "congratulatory-wreaths", "route_path": "/flower/congratulatory-wreaths", "description": "تاج گل تبریک و افتتاحیه", "icon": "🎉", "color": "bg-primary/20", "available": True},
+    {"id": "flower-congratulation-wreaths", "name": "تاج گل تبریک", "slug": "flower-congratulation-wreaths", "route_path": "/flower/congratulation-wreaths", "description": "تاج گل تبریک و افتتاحیه", "icon": "🎉", "color": "bg-primary/20", "available": True},
+    {"id": "flower-funeral-bouquet", "name": "دسته گل ترحیم", "slug": "flower-funeral-bouquet", "route_path": "/flower/funeral-bouquet", "description": "دسته گل تسلیت و ترحیم", "icon": "🖤", "color": "bg-primary/20", "available": True},
+    {"id": "flower-box", "name": "باکس گل", "slug": "flower-box", "route_path": "/flower/box", "description": "باکس گل هدیه", "icon": "🌸", "color": "bg-primary/20", "available": True},
+]
+
+
+def get_default_event_pages() -> list[dict]:
+    merged = deepcopy(DEFAULT_EVENT_PAGES)
+    seen = {str(page.get("slug") or page.get("id") or "").strip() for page in merged}
+    for page in DEFAULT_EVENT_PAGE_EXTRAS:
+        slug = str(page.get("slug") or page.get("id") or "").strip()
+        if slug and slug not in seen:
+            merged.append(deepcopy(page))
+            seen.add(slug)
+    return merged
+
+
 def default_event_pages() -> list[dict]:
-    return deepcopy(DEFAULT_EVENT_PAGES)
+    return get_default_event_pages()
 
 
 def _normalize_text(value) -> str:
@@ -462,14 +493,21 @@ def normalize_page_seo(value) -> dict:
 
 
 def normalize_event_pages(value) -> list[dict]:
-    raw_pages = value if isinstance(value, list) else DEFAULT_EVENT_PAGES
+    default_pages = get_default_event_pages()
+    raw_pages = value if isinstance(value, list) else default_pages
     normalized_pages: list[dict] = []
+    defaults_by_slug = {
+        _normalize_text(page.get("slug", page.get("id", ""))): page
+        for page in default_pages
+    }
 
     for index, raw_page in enumerate(raw_pages):
         if not isinstance(raw_page, dict):
             continue
 
-        default_entry = DEFAULT_EVENT_PAGES[index] if index < len(DEFAULT_EVENT_PAGES) else {}
+        fallback_entry = default_pages[index] if index < len(default_pages) else {}
+        raw_slug = _normalize_text(raw_page.get("slug", raw_page.get("id", "")))
+        default_entry = defaults_by_slug.get(raw_slug, fallback_entry)
         page_id = _normalize_text(raw_page.get("id", default_entry.get("id", "")))
         slug = _normalize_text(raw_page.get("slug", default_entry.get("slug", page_id)))
         name = _normalize_text(raw_page.get("name", default_entry.get("name", "")))
@@ -528,12 +566,17 @@ def normalize_event_pages(value) -> list[dict]:
             url = _normalize_text(raw_link.get("url"))
             if not label or not url:
                 continue
-            normalized_internal_links.append(
-                {
-                    "label": label,
-                    "url": url,
-                }
-            )
+            link = {
+                "label": label,
+                "url": url,
+            }
+            image = _normalize_text(raw_link.get("image"))
+            image_alt = _normalize_text(raw_link.get("image_alt"))
+            if image:
+                link["image"] = image
+            if image_alt:
+                link["image_alt"] = image_alt
+            normalized_internal_links.append(link)
 
         raw_content_blocks = raw_page.get("content_blocks", default_entry.get("content_blocks", []))
         if not isinstance(raw_content_blocks, list):
@@ -596,7 +639,7 @@ def normalize_event_pages(value) -> list[dict]:
             }
         )
 
-    return normalized_pages
+    return normalized_pages or default_pages
 
 
 class SiteSetting(models.Model):
@@ -605,31 +648,34 @@ class SiteSetting(models.Model):
     Always stored with primary key 1.
     """
 
-    id = models.PositiveSmallIntegerField(primary_key=True, default=1, editable=False)
-    min_order_qty = models.PositiveIntegerField(default=40, validators=[MinValueValidator(1)])
-    lead_time_hours = models.PositiveIntegerField(default=48, validators=[MinValueValidator(0)])
-    allowed_provinces = models.JSONField(default=list, blank=True)
-    delivery_windows = models.JSONField(default=list, blank=True)
-    payment_methods = models.JSONField(default=list, blank=True)
-    contact_phone = models.CharField(max_length=32, default="09122148354", blank=True)
+    id = models.PositiveSmallIntegerField("شناسه", primary_key=True, default=1, editable=False)
+    min_order_qty = models.PositiveIntegerField("حداقل تعداد سفارش", default=40, validators=[MinValueValidator(1)])
+    lead_time_hours = models.PositiveIntegerField("حداقل زمان آماده‌سازی (ساعت)", default=48, validators=[MinValueValidator(0)])
+    allowed_provinces = models.JSONField("استان‌های مجاز", default=list, blank=True)
+    delivery_windows = models.JSONField("بازه‌های تحویل", default=list, blank=True)
+    payment_methods = models.JSONField("روش‌های پرداخت", default=list, blank=True)
+    contact_phone = models.CharField("شماره تماس", max_length=32, default="09122148354", blank=True)
     contact_address = models.TextField(
+        "آدرس",
         default="تهران، امیرآباد، خیابان کارگر شمالی، خیابان فرشی مقدم(شانزدهم)، پلاک ۹۱، واحد۶.",
         blank=True,
     )
     working_hours = models.CharField(
+        "ساعت کاری",
         max_length=255,
         default="شنبه تا پنجشنبه ۹ صبح تا ۹ شب",
         blank=True,
     )
-    instagram_url = models.URLField(max_length=500, default="https://instagram.com/majlesyar", blank=True)
-    telegram_url = models.URLField(max_length=500, default="https://t.me/majlesyar", blank=True)
-    whatsapp_url = models.URLField(max_length=500, default="https://wa.me/989122148354", blank=True)
-    bale_url = models.URLField(max_length=500, default="https://ble.ir/majlesyar", blank=True)
-    eitaa_url = models.URLField(max_length=500, default="https://eitaa.com/majlesyar", blank=True)
-    soroush_url = models.URLField(max_length=500, default="https://splus.ir/majlesyar", blank=True)
-    rubika_url = models.URLField(max_length=500, default="https://rubika.ir/majlesyar", blank=True)
-    maps_url = models.URLField(max_length=500, default="https://maps.google.com/?q=Tehran,Valiasr", blank=True)
+    instagram_url = models.URLField("لینک اینستاگرام", max_length=500, default="https://instagram.com/majles.yar", blank=True)
+    telegram_url = models.URLField("لینک تلگرام", max_length=500, default="https://t.me/majlesyar", blank=True)
+    whatsapp_url = models.URLField("لینک واتساپ", max_length=500, default="https://wa.me/989122148354", blank=True)
+    bale_url = models.URLField("لینک بله", max_length=500, default="https://ble.ir/Majlesyar", blank=True)
+    eitaa_url = models.URLField("لینک ایتا", max_length=500, default="https://eitaa.com/majlesyarr", blank=True)
+    soroush_url = models.URLField("لینک سروش", max_length=500, default="https://splus.ir/majlesyar", blank=True)
+    rubika_url = models.URLField("لینک روبیکا", max_length=500, default="https://rubika.ir/majlesyar", blank=True)
+    maps_url = models.URLField("لینک نقشه", max_length=500, default="https://maps.google.com/?q=Tehran,Valiasr", blank=True)
     maps_embed_url = models.URLField(
+        "لینک نمایش نقشه",
         max_length=1000,
         default="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3239.9627430068!2d51.4066!3d35.7219!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMzXCsDQzJzE4LjgiTiA1McKwMjQnMjMuOCJF!5e0!3m2!1sen!2s!4v1699999999999!5m2!1sen!2s",
         blank=True,
@@ -659,6 +705,7 @@ class SiteSetting(models.Model):
         help_text="تصویر پیش‌فرض شبکه‌های اجتماعی و Open Graph.",
     )
     site_branding = models.JSONField(
+        "هویت برند و مدیریت",
         default=default_site_branding,
         blank=True,
         help_text=(
@@ -671,6 +718,7 @@ class SiteSetting(models.Model):
         ),
     )
     theme_palette = models.JSONField(
+        "رنگ‌های سایت",
         default=default_theme_palette,
         blank=True,
         help_text=(
@@ -681,6 +729,7 @@ class SiteSetting(models.Model):
         ),
     )
     page_seo = models.JSONField(
+        "سئوی صفحات",
         default=default_page_seo,
         blank=True,
         help_text=(
@@ -690,6 +739,7 @@ class SiteSetting(models.Model):
         ),
     )
     event_pages = models.JSONField(
+        "صفحات محصول",
         default=default_event_pages,
         blank=True,
         help_text=(
@@ -701,11 +751,13 @@ class SiteSetting(models.Model):
         ),
     )
     site_top_notice = models.JSONField(
+        "اعلان بالای سایت",
         default=default_site_top_notice,
         blank=True,
         help_text='ساختار پیشنهادی: {"title": "...", "message": "...", "badge": "..."}',
     )
     homepage_benefits_section = models.JSONField(
+        "مزایای صفحه اصلی",
         default=default_homepage_benefits_section,
         blank=True,
         help_text=(
@@ -713,7 +765,7 @@ class SiteSetting(models.Model):
             '{"eyebrow": "...", "title": "...", "items": [{"title": "...", "description": "...", "note": "..."}]}'
         ),
     )
-    updated_at = models.DateTimeField(auto_now=True)
+    updated_at = models.DateTimeField("آخرین بروزرسانی", auto_now=True)
 
     class Meta:
         verbose_name = "تنظیمات سایت"

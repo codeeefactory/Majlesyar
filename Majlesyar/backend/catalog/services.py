@@ -3,11 +3,38 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 from typing import Iterable
 
+from django.db import connection
+from django.db.models import Q
 from django.db import transaction
 
-from site_settings.models import SiteSetting
+from site_settings.models import SiteSetting, get_default_event_pages
 
 from .models import PageProductPlacement, Product
+
+
+EVENT_PRODUCT_ALIASES = {
+    "conference": ("conference", "food"),
+    "food": ("food", "conference"),
+    "food-charcuterie-board": ("food-charcuterie-board", "food", "conference"),
+    "food-ashe-rashteh": ("food-ashe-rashteh", "food"),
+    "food-dessert": ("food-dessert", "food", "conference"),
+    "food-juice": ("food-juice", "food", "conference"),
+    "shaleh-zard": ("shaleh-zard", "halva-khorma", "food"),
+    "memorial": ("memorial", "pack"),
+    "pack": ("pack", "memorial"),
+    "pack-personal": ("pack-personal", "pack"),
+    "pack-memorial-luxury": ("pack-memorial-luxury", "memorial", "pack"),
+    "halva-khorma": ("halva-khorma", "memorial"),
+    "halva-khorma-luxury": ("halva-khorma-luxury", "halva-khorma"),
+    "party": ("party", "flower"),
+    "flower": ("party", "flower"),
+    "memorial-wreaths": ("memorial-wreaths", "party"),
+    "bouquets": ("bouquets", "party"),
+    "congratulatory-wreaths": ("congratulatory-wreaths", "flower-congratulation-wreaths", "party"),
+    "flower-congratulation-wreaths": ("flower-congratulation-wreaths", "congratulatory-wreaths", "party"),
+    "flower-funeral-bouquet": ("flower-funeral-bouquet", "memorial-wreaths", "party"),
+    "flower-box": ("flower-box", "party"),
+}
 
 
 @dataclass(frozen=True)
@@ -37,7 +64,19 @@ def get_page_preview_targets() -> list[PagePreviewTargetDefinition]:
         ),
     ]
 
+    event_pages_by_slug = {
+        str(page.get("slug") or "").strip(): page
+        for page in get_default_event_pages()
+        if isinstance(page, dict) and str(page.get("slug") or "").strip()
+    }
     for event_page in settings.event_pages or []:
+        if not isinstance(event_page, dict):
+            continue
+        slug = str(event_page.get("slug") or "").strip()
+        if slug:
+            event_pages_by_slug[slug] = {**event_pages_by_slug.get(slug, {}), **event_page}
+
+    for event_page in event_pages_by_slug.values():
         slug = str(event_page.get("slug") or "").strip()
         if not slug:
             continue
@@ -62,6 +101,14 @@ def get_page_preview_target(page_type: str, page_slug: str | None = None) -> Pag
     raise ValueError("صفحه‌ی انتخاب‌شده برای چیدمان محصولات معتبر نیست.")
 
 
+def get_event_product_aliases(target: PagePreviewTargetDefinition) -> tuple[str, ...]:
+    if target.page_slug == "congratulatory-wreaths":
+        return ("congratulatory-wreaths", "flower-congratulation-wreaths")
+    if target.page_slug == "flower-congratulation-wreaths":
+        return ("flower-congratulation-wreaths", "congratulatory-wreaths")
+    return (target.page_slug,)
+
+
 def get_page_product_placements(page_type: str, page_slug: str | None = None):
     normalized_slug = (page_slug or "").strip()
     return PageProductPlacement.objects.select_related("product").prefetch_related(
@@ -80,7 +127,17 @@ def _get_default_products_for_target(target: PagePreviewTargetDefinition) -> lis
         return list(queryset.filter(featured=True)[:4])
 
     if target.page_type == PageProductPlacement.PageType.EVENT:
-        return list(queryset.filter(event_types__contains=[target.page_slug]))
+        aliases = get_event_product_aliases(target)
+        if connection.vendor == "sqlite":
+            return [
+                product
+                for product in queryset
+                if set(product.event_types or []).intersection(aliases)
+            ]
+        filters = Q()
+        for alias in aliases:
+            filters |= Q(event_types__contains=[alias])
+        return list(queryset.filter(filters))
 
     return list(queryset)
 
@@ -93,6 +150,13 @@ def get_page_products(page_type: str, page_slug: str | None = None) -> tuple[Pag
         return target, _get_default_products_for_target(target), False
 
     ordered_products = [placement.product for placement in placements if placement.product]
+    if target.page_type == PageProductPlacement.PageType.EVENT:
+        allowed_event_types = set(get_event_product_aliases(target))
+        ordered_products = [
+            product
+            for product in ordered_products
+            if allowed_event_types.intersection(product.event_types or [])
+        ]
 
     return target, ordered_products, True
 

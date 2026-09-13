@@ -1,5 +1,8 @@
 import { useEffect } from "react";
 import { useSettings } from "@/contexts/SettingsContext";
+import { useTheme } from "@/hooks/useTheme";
+import type { ThemePalette } from "@/types/domain";
+import majlesyarLogo from "@/assets/branding/majlesyar-logo.png";
 
 function hexToRgb(hex: string) {
   const normalized = hex.trim().replace("#", "");
@@ -94,12 +97,32 @@ function upsertLink(rel: string, href: string) {
   link.href = href;
 }
 
+function getTimeAwarePalette(palette: ThemePalette, isNight: boolean): ThemePalette {
+  if (!isNight) return palette;
+
+  return {
+    ...palette,
+    primary: mixHex(palette.primary, "#7DD3FC", 0.45),
+    accent: mixHex(palette.accent, "#38BDF8", 0.3),
+    background: "#0F172A",
+    surface: "#172033",
+    foreground: "#EEF5FF",
+    mutedForeground: "#B9C6D6",
+    success: mixHex(palette.success, "#86EFAC", 0.34),
+    warning: mixHex(palette.warning, "#FDE68A", 0.25),
+  };
+}
+
 export function SiteThemeSync() {
   const { settings } = useSettings();
+  const { isNight: isNightTheme } = useTheme();
 
   useEffect(() => {
     const root = document.documentElement;
-    const palette = settings.themePalette;
+    const palette = getTimeAwarePalette(settings.themePalette, isNightTheme);
+
+    root.classList.toggle("dark", isNightTheme);
+    root.dataset.timeTheme = isNightTheme ? "night" : "day";
 
     const primaryForeground = getReadableTextColor(palette.primary);
     const accentForeground = getReadableTextColor(palette.accent);
@@ -160,11 +183,9 @@ export function SiteThemeSync() {
     setMetaTag("msapplication-TileColor", palette.primary);
     setMetaTag("msapplication-navbutton-color", palette.primary);
 
-    if (settings.siteFaviconUrl) {
-      upsertLink("icon", settings.siteFaviconUrl);
-      upsertLink("apple-touch-icon", settings.siteFaviconUrl);
-    }
-  }, [settings]);
+    upsertLink("icon", settings.siteFaviconUrl || majlesyarLogo);
+    upsertLink("apple-touch-icon", settings.siteFaviconUrl || majlesyarLogo);
+  }, [settings, isNightTheme]);
 
   return null;
 }

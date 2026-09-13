@@ -19,6 +19,7 @@ from .views import (
     CustomerReviewListAPIView,
     PageProductPreviewAPIView,
     ProductDetailAPIView,
+    ProductByPathAPIView,
     ProductListAPIView,
     TagListAPIView,
 )
@@ -28,6 +29,7 @@ urlpatterns = [
     path("tags/", TagListAPIView.as_view(), name="tag-list"),
     path("reviews/", CustomerReviewListAPIView.as_view(), name="customer-review-list"),
     path("products/", ProductListAPIView.as_view(), name="product-list"),
+    path("products/by-path/", ProductByPathAPIView.as_view(), name="product-by-path"),
     path("products/<str:lookup>/", ProductDetailAPIView.as_view(), name="product-detail"),
     path("page-product-preview/", PageProductPreviewAPIView.as_view(), name="page-product-preview"),
     path("builder-items/", BuilderItemListAPIView.as_view(), name="builder-item-list"),
