@@ -1,9 +1,13 @@
 import { Phone } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useSettings } from '@/contexts/SettingsContext';
 
 export function FloatingContactButton() {
   const { settings } = useSettings();
+  const { pathname } = useLocation();
+
+  if (pathname === '/builder') return null;
 
   return (
     <div className="fixed bottom-4 left-4 z-50">

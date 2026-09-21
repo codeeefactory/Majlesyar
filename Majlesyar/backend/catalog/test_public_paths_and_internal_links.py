@@ -1,3 +1,4 @@
+from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.test import TestCase
 from django.urls import reverse
@@ -46,6 +47,7 @@ class ProductPublicPathTests(TestCase):
 class ManagedInternalLinkTests(TestCase):
     def setUp(self):
         SiteSetting.load()
+        InternalLink.objects.filter(source_path="/pack/memorial").delete()
         self.client = APIClient()
 
     def test_managed_image_link_overrides_default_card_and_exposes_alt(self):
@@ -63,3 +65,49 @@ class ManagedInternalLinkTests(TestCase):
 
         self.assertEqual(builder_link["label"], "پک اختصاصی من")
         self.assertEqual(builder_link["image_alt"], "تصویر ساخت پک اختصاصی")
+
+    def test_deleted_managed_link_does_not_return_from_hidden_fallback_data(self):
+        link = InternalLink.objects.create(
+            source_path="/pack/memorial",
+            label="ساخت پک اختصاصی",
+            target_url="/builder",
+            position=1,
+        )
+        link.delete()
+
+        response = self.client.get(reverse("site-setting-detail"))
+        memorial = next(page for page in response.data["event_pages"] if page["slug"] == "memorial")
+
+        self.assertNotIn("/builder", [item["url"] for item in memorial["internal_links"]])
+
+
+class InternalLinkAdminTests(TestCase):
+    def setUp(self):
+        InternalLink.objects.all().delete()
+        self.user = get_user_model().objects.create_superuser(
+            username="internal-link-admin",
+            email="admin@example.com",
+            password="test-password",
+        )
+        self.client.force_login(self.user)
+        self.link = InternalLink.objects.create(
+            source_path="/pack",
+            label="پک‌های ترحیم و ختم",
+            target_url="/pack/memorial",
+            position=10,
+        )
+
+    def test_changelist_shows_existing_link_and_both_urls(self):
+        response = self.client.get(reverse("admin:catalog_internallink_changelist"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "پک‌های ترحیم و ختم")
+        self.assertContains(response, "/pack")
+        self.assertContains(response, "/pack/memorial")
+
+    def test_existing_link_has_edit_and_delete_pages(self):
+        change_url = reverse("admin:catalog_internallink_change", args=[self.link.pk])
+        delete_url = reverse("admin:catalog_internallink_delete", args=[self.link.pk])
+
+        self.assertEqual(self.client.get(change_url).status_code, 200)
+        self.assertEqual(self.client.get(delete_url).status_code, 200)

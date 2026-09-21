@@ -660,7 +660,7 @@ function mapSettings(apiSettings: ApiSettings): Settings {
                     .filter((benefit) => benefit.title || benefit.description)
                 : fallback?.benefits || [],
             internalLinks:
-              Array.isArray(page.internal_links) && page.internal_links.length
+              Array.isArray(page.internal_links)
                 ? page.internal_links
                     .map((link) => ({
                       label: link.label || "",

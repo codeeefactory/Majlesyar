@@ -159,7 +159,7 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div className="space-y-4 md:col-span-1">
             <div className="flex items-center gap-3">
-              <div className="h-16 w-16 shrink-0 overflow-hidden rounded-2xl bg-[#211b14] shadow-soft">
+              <div className="h-[72px] w-[72px] shrink-0 overflow-hidden rounded-2xl bg-[#211b14] shadow-soft">
                 {settings.siteLogoUrl ? (
                   <img
                     src={settings.siteLogoUrl}
@@ -306,7 +306,7 @@ export function Footer() {
           <a
             href={ENAMAD_URL}
             target="_blank"
-            rel="nofollow noopener noreferrer"
+            rel="nofollow noopener"
             referrerPolicy="origin"
             aria-label="eNamad trust seal"
             title="استعلام نماد اعتماد الکترونیکی مجلس یار"

@@ -720,6 +720,21 @@ class CustomerReview(models.Model):
         return f"{self.customer_name} - {self.rating}/5"
 
 
+class InternalLinkSource(models.Model):
+    """Marks a page whose internal-link list is explicitly managed, even when empty."""
+
+    path = models.CharField(max_length=500, primary_key=True, verbose_name="مسیر صفحه")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["path"]
+        verbose_name = "منبع مدیریت لینک داخلی"
+        verbose_name_plural = "منابع مدیریت لینک داخلی"
+
+    def __str__(self) -> str:
+        return self.path
+
+
 class InternalLink(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     source_path = models.CharField(
@@ -763,6 +778,7 @@ class InternalLink(models.Model):
         self.source_path = self._normalize_internal_path(self.source_path, "صفحه نمایش‌دهنده")
         self.target_url = self._normalize_internal_path(self.target_url, "لینک مقصد")
         super().save(*args, **kwargs)
+        InternalLinkSource.objects.using(self._state.db).get_or_create(path=self.source_path)
 
     @staticmethod
     def _normalize_internal_path(value: str, label: str) -> str:

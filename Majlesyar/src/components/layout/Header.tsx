@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { ShoppingCart, Menu, X, Home, Wrench, Search, Info, UserRound, BookOpen, Moon, Sun } from 'lucide-react';
+import { ShoppingCart, ShoppingBag, ChevronDown, Menu, X, Home, Wrench, Search, Info, UserRound, BookOpen, Moon, Sun } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/contexts/CartContext';
@@ -7,12 +7,16 @@ import { useCustomerAuth } from '@/contexts/CustomerAuthContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { Badge } from '@/components/ui/badge';
 import { useTheme } from '@/hooks/useTheme';
+import { isHiddenEventRoutePath } from '@/data/siteConstants';
 import majlesyarLogo from '@/assets/branding/majlesyar-logo.png';
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [productMenuOpen, setProductMenuOpen] = useState(false);
+  const [mobileProductsOpen, setMobileProductsOpen] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
+  const productMenuRef = useRef<HTMLDivElement>(null);
   const { totalItems, totalQuantity, isMinQuantityMet } = useCart();
   const { customer, isAuthenticated } = useCustomerAuth();
   const { settings } = useSettings();
@@ -28,6 +32,9 @@ export function Header() {
   ];
 
   const visibleNavLinks = navLinks.filter((link) => !link.hidden);
+  const productCategories = settings.eventPages
+    .filter((page) => page.routePath && page.routePath !== '/pack' && page.available !== false && !page.hidden && !isHiddenEventRoutePath(page.routePath))
+    .filter((page, index, pages) => pages.findIndex((candidate) => candidate.routePath === page.routePath) === index);
   const accountHref = isAuthenticated ? '/dashboard' : '/login';
   const accountLabel = isAuthenticated ? customer?.fullName || 'حساب من' : 'ورود';
 
@@ -52,18 +59,36 @@ export function Header() {
 
   useEffect(() => {
     setMobileMenuOpen(false);
+    setProductMenuOpen(false);
+    setMobileProductsOpen(false);
   }, [location.pathname]);
+
+  useEffect(() => {
+    if (!productMenuOpen) return;
+    const closeOnOutsideClick = (event: MouseEvent) => {
+      if (!productMenuRef.current?.contains(event.target as Node)) setProductMenuOpen(false);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setProductMenuOpen(false);
+    };
+    document.addEventListener('mousedown', closeOnOutsideClick);
+    document.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.removeEventListener('mousedown', closeOnOutsideClick);
+      document.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [productMenuOpen]);
 
   return (
     <header className="relative sticky top-0 z-50 w-full bg-card shadow-soft" role="banner">
       <div className="border-b border-border">
-        <nav className="container flex h-20 items-center justify-between" aria-label="منوی اصلی">
+        <nav className="container flex h-[88px] items-center justify-between" aria-label="منوی اصلی">
           <Link
             to="/"
             className="flex items-center gap-3 group min-w-0 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-xl"
             aria-label={`صفحه اصلی ${settings.siteBranding.siteName}`}
           >
-            <div className="h-16 w-16 shrink-0 overflow-hidden rounded-2xl bg-[#211b14] shadow-soft transition-shadow group-hover:shadow-glow">
+            <div className="h-[72px] w-[72px] shrink-0 overflow-hidden rounded-2xl bg-[#211b14] shadow-soft transition-shadow group-hover:shadow-glow">
               {settings.siteLogoUrl ? (
                 <img
                   src={settings.siteLogoUrl}
@@ -85,6 +110,43 @@ export function Header() {
           </Link>
 
           <div className="hidden md:flex items-center gap-1">
+            {productCategories.length > 0 && (
+              <div ref={productMenuRef} className="relative">
+                <Button
+                  type="button"
+                  variant={productCategories.some((page) => isActive(page.routePath)) ? 'default' : 'ghost'}
+                  size="sm"
+                  className="gap-2 min-h-[44px] touch-manipulation"
+                  onClick={() => setProductMenuOpen((open) => !open)}
+                  aria-expanded={productMenuOpen}
+                  aria-controls="desktop-product-categories"
+                >
+                  <ShoppingBag className="h-4 w-4" aria-hidden="true" />
+                  محصولات
+                  <ChevronDown className="h-4 w-4" aria-hidden="true" />
+                </Button>
+                {productMenuOpen && (
+                  <nav
+                    id="desktop-product-categories"
+                    aria-label="دسته‌بندی محصولات"
+                    className="absolute right-0 top-full z-50 mt-2 max-h-[65vh] min-w-56 overflow-y-auto rounded-xl border border-border bg-card p-2 shadow-medium"
+                  >
+                    {productCategories.map((page) => (
+                      <Link
+                        key={page.routePath}
+                        to={page.routePath}
+                        className="flex min-h-10 items-center gap-2 rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted focus:bg-muted focus:outline-none"
+                        aria-current={isActive(page.routePath) ? 'page' : undefined}
+                        onClick={() => setProductMenuOpen(false)}
+                      >
+                        <span aria-hidden="true">{page.icon}</span>
+                        {page.name}
+                      </Link>
+                    ))}
+                  </nav>
+                )}
+              </div>
+            )}
             {visibleNavLinks.map((link) => (
               <Button
                 key={link.href}
@@ -208,6 +270,37 @@ export function Header() {
                 </Link>
               </Button>
             ))}
+            {productCategories.length > 0 && (
+              <div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="w-full justify-start gap-3 min-h-[48px] touch-manipulation"
+                  onClick={() => setMobileProductsOpen((open) => !open)}
+                  aria-expanded={mobileProductsOpen}
+                  aria-controls="mobile-product-categories"
+                >
+                  <ShoppingBag className="h-5 w-5" aria-hidden="true" />
+                  محصولات
+                  <ChevronDown className="mr-auto h-4 w-4" aria-hidden="true" />
+                </Button>
+                {mobileProductsOpen && (
+                  <nav id="mobile-product-categories" aria-label="دسته‌بندی محصولات" className="max-h-[45vh] space-y-1 overflow-y-auto pr-5">
+                    {productCategories.map((page) => (
+                      <Link
+                        key={page.routePath}
+                        to={page.routePath}
+                        className="flex min-h-11 items-center gap-2 rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted focus:bg-muted focus:outline-none"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        <span aria-hidden="true">{page.icon}</span>
+                        {page.name}
+                      </Link>
+                    ))}
+                  </nav>
+                )}
+              </div>
+            )}
             <Button
               asChild
               variant={isActive(accountHref) ? 'default' : 'ghost'}

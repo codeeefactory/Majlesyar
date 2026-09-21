@@ -399,23 +399,47 @@ class CustomerReviewAdmin(PersianAdminFormMixin, admin.ModelAdmin):
 
 @admin.register(InternalLink)
 class InternalLinkAdmin(PersianAdminFormMixin, admin.ModelAdmin):
-    list_display = ("label", "source_path", "target_url", "position", "is_active", "image_preview")
+    list_display = ("label", "source_page", "target_page", "position", "is_active", "image_preview")
+    list_display_links = ("label", "source_page", "target_page")
     list_filter = ("is_active", "source_path")
     list_editable = ("position", "is_active")
     search_fields = ("label", "source_path", "target_url", "image_alt")
     readonly_fields = ("image_preview", "created_at", "updated_at")
-    fields = (
-        "source_path",
-        "label",
-        "target_url",
-        "image",
-        "image_preview",
-        "image_alt",
-        "position",
-        "is_active",
-        "created_at",
-        "updated_at",
+    save_on_top = True
+    list_per_page = 100
+    fieldsets = (
+        (
+            "مسیر و متن لینک",
+            {
+                "description": (
+                    "صفحه نمایش‌دهنده یعنی لینکی که کارت در آن دیده می‌شود. "
+                    "عنوان و مقصد را تغییر دهید یا برای حذف موقت، «فعال» را خاموش کنید."
+                ),
+                "fields": ("source_path", "label", "target_url", "position", "is_active"),
+            },
+        ),
+        (
+            "تصویر اختیاری کارت",
+            {
+                "fields": ("image", "image_preview", "image_alt"),
+            },
+        ),
+        (
+            "زمان‌ها",
+            {
+                "classes": ("collapse",),
+                "fields": ("created_at", "updated_at"),
+            },
+        ),
     )
+
+    @admin.display(description="نمایش در صفحه", ordering="source_path")
+    def source_page(self, obj: InternalLink) -> str:
+        return format_html('<span dir="ltr">{}</span>', obj.source_path)
+
+    @admin.display(description="مقصد لینک", ordering="target_url")
+    def target_page(self, obj: InternalLink) -> str:
+        return format_html('<span dir="ltr">{}</span>', obj.target_url)
 
     @admin.display(description="پیش‌نمایش")
     def image_preview(self, obj: InternalLink | None) -> str:

@@ -265,7 +265,7 @@ def _base_structured_data(request, site_setting) -> list[dict]:
         "@id": f"{base_url}/#website",
         "url": base_url,
         "name": site_name,
-        "alternateName": alternate_name,
+        "alternateName": site_name.replace(" ", "‌"),
         "publisher": {"@id": f"{base_url}/#organization"},
         "inLanguage": "fa-IR",
     }

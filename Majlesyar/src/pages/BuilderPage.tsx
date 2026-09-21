@@ -6,11 +6,11 @@ import { AppShell } from '@/components/layout';
 import { SEO } from '@/components/SEO';
 import { Button } from '@/components/ui/button';
 import { RuleAlert } from '@/components/RuleAlert';
-import { getBuilderConfig, listBuilderProducts, listCategories } from '@/lib/api';
+import { getBuilderConfig } from '@/lib/api';
 import { notifySuccess } from '@/lib/notify';
 import { cn } from '@/lib/utils';
 import { useCart } from '@/contexts/CartContext';
-import type { BuilderItem, Category, Product } from '@/types/domain';
+import type { BuilderItem } from '@/types/domain';
 import {
   ArrowLeft,
   ArrowRight,
@@ -26,9 +26,9 @@ import {
   Sparkles,
 } from 'lucide-react';
 
-type BaseStep = 'packaging' | 'fruit' | 'drink' | 'snack' | 'addons' | 'products' | 'quantity';
+type BaseStep = 'packaging' | 'fruit' | 'drink' | 'snack' | 'addons' | 'quantity';
 type ChoiceStep = Exclude<BaseStep, 'quantity'>;
-type ChoiceSource = 'builder' | 'product';
+type ChoiceSource = 'builder';
 
 interface BuilderChoice {
   id: string;
@@ -65,7 +65,6 @@ interface Selections {
   drink: string[];
   snack: string[];
   addons: string[];
-  products: string[];
 }
 
 type TelegramHapticStyle = 'light' | 'medium' | 'heavy' | 'rigid' | 'soft';
@@ -94,20 +93,18 @@ const stepLabels: Record<BaseStep, string> = {
   drink: 'نوشیدنی',
   snack: 'کیک/اسنک',
   addons: 'افزودنی‌ها',
-  products: 'محصولات آماده',
   quantity: 'تعداد',
 };
 
-const stepOrder: BaseStep[] = ['packaging', 'fruit', 'drink', 'snack', 'addons', 'products', 'quantity'];
+const stepOrder: BaseStep[] = ['packaging', 'fruit', 'drink', 'snack', 'addons', 'quantity'];
 const BUILDER_3D_PREVIEW_ENABLED = true;
-const choiceSteps: ChoiceStep[] = ['packaging', 'fruit', 'drink', 'snack', 'addons', 'products'];
+const choiceSteps: ChoiceStep[] = ['packaging', 'fruit', 'drink', 'snack', 'addons'];
 const stepStories: Record<BaseStep, string> = {
   packaging: 'اول جعبه را انتخاب کن؛ صحنه باز می‌شود و آماده چیدن می‌ماند.',
   fruit: 'میوه‌ها کنار جعبه ظاهر می‌شوند و برای چیدمان نهایی آماده‌اند.',
   drink: 'نوشیدنی‌ها مثل آیتم‌های بازی وارد صف کنار جعبه می‌شوند.',
   snack: 'کیک یا اسنک وزن پک را کامل‌تر می‌کند.',
   addons: 'افزودنی‌ها اختیاری‌اند؛ هر انتخاب کنار جعبه اضافه می‌شود.',
-  products: 'هر تعداد محصول از همه دسته‌ها را هم‌زمان به پک اضافه کن.',
   quantity: 'حالا جعبه بسته می‌شود؛ تعداد را بزن و پک را به سبد بفرست.',
 };
 const stepHints: Record<BaseStep, string> = {
@@ -116,7 +113,6 @@ const stepHints: Record<BaseStep, string> = {
   drink: 'چند نوشیدنی را هم‌زمان انتخاب کن',
   snack: 'چند خوراکی را هم‌زمان انتخاب کن',
   addons: 'چند انتخاب آزاد',
-  products: 'انتخاب هم‌زمان و بدون محدودیت',
   quantity: 'مرحله نهایی',
 };
 function triggerHaptic(type: 'select' | 'impact' | 'success' = 'select') {
@@ -140,24 +136,6 @@ function toChoice(item: BuilderItem): BuilderChoice {
     model3dUrl: item.model3dUrl,
     model3dStatus: item.model3dStatus,
   };
-}
-
-function productToChoices(product: Product): BuilderChoice[] {
-  if (!product.available) return [];
-  return [{
-    id: `product:${product.id}:products`,
-    name: product.name,
-    group: 'products',
-    price: product.price || 0,
-    required: product.builderRequired ?? false,
-    image: product.image,
-    source: 'product',
-    productId: product.id,
-    categoryIds: product.categoryIds,
-    description: product.description,
-    model3dUrl: product.model3dUrl,
-    model3dStatus: product.model3dStatus,
-  }];
 }
 
 function useBuilderScene({
@@ -276,8 +254,6 @@ function useBuilderScene({
         ? '#0c9fc7'
         : choice.group === 'snack'
         ? '#d6a45b'
-        : choice.group === 'products'
-        ? '#8f63d7'
         : choice.group === 'packaging'
         ? '#5aa986'
         : '#7bbf75';
@@ -305,7 +281,7 @@ function useBuilderScene({
         drawRoundedRect(-size * 0.32, -size * 0.52, size * 0.64, size * 1.04, size * 0.16);
         ctx.fillStyle = 'rgba(255,255,255,0.75)';
         drawRoundedRect(-size * 0.16, -size * 0.34, size * 0.32, size * 0.18, 4);
-      } else if (choice.group === 'snack' || choice.group === 'products') {
+      } else if (choice.group === 'snack') {
         drawRoundedRect(-size * 0.55, -size * 0.38, size * 1.1, size * 0.76, size * 0.18);
         ctx.fillStyle = 'rgba(255,255,255,0.55)';
         drawRoundedRect(-size * 0.34, -size * 0.15, size * 0.68, size * 0.14, 4);
@@ -359,7 +335,6 @@ function useBuilderScene({
         [stepLabels.drink, selections.drink.length ? `${selections.drink.length.toLocaleString('fa-IR')} انتخاب` : '-'],
         [stepLabels.snack, selections.snack.length ? `${selections.snack.length.toLocaleString('fa-IR')} انتخاب` : '-'],
         [stepLabels.addons, selections.addons.length ? `${selections.addons.length.toLocaleString('fa-IR')} انتخاب` : '-'],
-        [stepLabels.products, selections.products.length ? `${selections.products.length.toLocaleString('fa-IR')} انتخاب` : '-'],
       ];
 
       ctx.font = '800 11px Vazirmatn, sans-serif';
@@ -458,17 +433,6 @@ function useBuilderScene({
       }
 
       const trayChoices = [] as BuilderChoice[];
-      /*
-      const trayChoices = selectedChoices.length ? selectedChoices.slice(-7) : [{
-        id: 'hint',
-        name: 'انتخاب کنید',
-        group: currentStep === 'products' ? 'products' : currentStep === 'quantity' ? 'products' : currentStep,
-        price: 0,
-        required: false,
-        source: 'builder',
-        categoryIds: [],
-      } as BuilderChoice];
-      */
       trayChoices.forEach((choice, index) => {
         const col = index % 2;
         const row = Math.floor(index / 2);
@@ -991,7 +955,6 @@ function useBuilderScene3D({
       drink: 0x0c9fc7,
       snack: 0xd6a45b,
       addons: 0x8f63d7,
-      products: 0x2fbf8f,
     };
 
     const disposeObject = (object: THREE.Object3D) => {
@@ -1480,18 +1443,14 @@ export default function BuilderPage() {
   const navigate = useNavigate();
   const { addItem, minQuantityRequired } = useCart();
   const [builderItems, setBuilderItems] = useState<BuilderItem[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentStep, setCurrentStep] = useState<BaseStep>('packaging');
-  const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [selections, setSelections] = useState<Selections>({
     packaging: [],
     fruit: [],
     drink: [],
     snack: [],
     addons: [],
-    products: [],
   });
   const [quantity, setQuantity] = useState(minQuantityRequired);
 
@@ -1531,15 +1490,11 @@ export default function BuilderPage() {
     let mounted = true;
     const loadData = async () => {
       try {
-        const [itemsResult, productsResult, categoriesResult] = await Promise.allSettled([
-          getBuilderConfig(),
-          listBuilderProducts(),
-          listCategories(),
-        ]);
+        const itemsResult = await getBuilderConfig();
         if (!mounted) return;
-        setBuilderItems(itemsResult.status === 'fulfilled' ? itemsResult.value : []);
-        setProducts(productsResult.status === 'fulfilled' ? productsResult.value : []);
-        setCategories(categoriesResult.status === 'fulfilled' ? categoriesResult.value : []);
+        setBuilderItems(itemsResult);
+      } catch {
+        if (mounted) setBuilderItems([]);
       } finally {
         if (mounted) setLoading(false);
       }
@@ -1552,24 +1507,14 @@ export default function BuilderPage() {
 
   const choices = useMemo(() => {
     const itemChoices = builderItems.map(toChoice);
-    const productChoices = products.flatMap(productToChoices);
     const seen = new Set<string>();
-    return [...itemChoices, ...productChoices].filter((choice) => {
+    return itemChoices.filter((choice) => {
       const key = `${choice.group}:${choice.source}:${choice.productId || choice.id}`;
       if (seen.has(key)) return false;
       seen.add(key);
       return true;
-    }).sort((left, right) => {
-      if (left.source !== right.source) return left.source === 'builder' ? -1 : 1;
-      const leftOrder = left.source === 'product' && left.productId
-        ? products.find((product) => product.id === left.productId)?.builderDisplayOrder ?? 100
-        : 100;
-      const rightOrder = right.source === 'product' && right.productId
-        ? products.find((product) => product.id === right.productId)?.builderDisplayOrder ?? 100
-        : 100;
-      return leftOrder - rightOrder || left.name.localeCompare(right.name, 'fa');
-    });
-  }, [builderItems, products]);
+    }).sort((left, right) => left.name.localeCompare(right.name, 'fa'));
+  }, [builderItems]);
 
   const choicesById = useMemo(() => new Map(choices.map((choice) => [choice.id, choice])), [choices]);
   const groupedChoices = useMemo(() => ({
@@ -1578,13 +1523,7 @@ export default function BuilderPage() {
     drink: choices.filter((choice) => choice.group === 'drink'),
     snack: choices.filter((choice) => choice.group === 'snack'),
     addons: choices.filter((choice) => choice.group === 'addons'),
-    products: choices.filter((choice) => choice.group === 'products'),
   }), [choices]);
-
-  const catalogCategories = useMemo(() => {
-    const visibleCategoryIds = new Set(groupedChoices.products.flatMap((choice) => choice.categoryIds));
-    return categories.filter((category) => visibleCategoryIds.has(category.id));
-  }, [categories, groupedChoices.products]);
 
   const currentStepIndex = stepOrder.indexOf(currentStep);
   const selectedChoices = useMemo(() => {
@@ -1625,10 +1564,9 @@ export default function BuilderPage() {
 
   const resetBuilder = () => {
     triggerHaptic('impact');
-    setSelections({ packaging: [], fruit: [], drink: [], snack: [], addons: [], products: [] });
+    setSelections({ packaging: [], fruit: [], drink: [], snack: [], addons: [] });
     setQuantity(minQuantityRequired);
     setCurrentStep('packaging');
-    setCategoryFilter('all');
   };
 
   const handleAddToCart = () => {
@@ -1644,7 +1582,6 @@ export default function BuilderPage() {
         drink: selections.drink.map((id) => getChoiceName(id)),
         snack: selections.snack.map((id) => getChoiceName(id)),
         addons: selections.addons.map((id) => getChoiceName(id)),
-        products: selections.products.map((id) => getChoiceName(id)),
       },
     });
 
@@ -1663,43 +1600,14 @@ export default function BuilderPage() {
 
   const renderChoiceGrid = (step: ChoiceStep) => {
     const baseChoices = groupedChoices[step];
-    const currentChoices = step === 'products' && categoryFilter !== 'all'
-      ? baseChoices.filter((choice) => choice.categoryIds.includes(categoryFilter))
-      : baseChoices;
+    const currentChoices = baseChoices;
 
     if (!baseChoices.length) {
-      return renderEmptyState(step === 'products' ? 'محصول آماده‌ای برای افزودن به پک پیدا نشد.' : 'افزودنی‌ای ثبت نشده است.');
+      return renderEmptyState('افزودنی‌ای ثبت نشده است.');
     }
 
     return (
       <div className="min-w-0 space-y-4">
-        {step === 'products' && catalogCategories.length > 0 && (
-          <div className="flex max-w-full gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            <button
-              type="button"
-              onClick={() => setCategoryFilter('all')}
-              className={cn(
-                'rounded-full px-3 py-1.5 text-xs font-bold transition-colors whitespace-nowrap',
-                categoryFilter === 'all' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground',
-              )}
-            >
-              همه دسته‌ها
-            </button>
-            {catalogCategories.map((category) => (
-              <button
-                type="button"
-                key={category.id}
-                onClick={() => setCategoryFilter(category.id)}
-                className={cn(
-                  'rounded-full px-3 py-1.5 text-xs font-bold transition-colors whitespace-nowrap',
-                  categoryFilter === category.id ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground',
-                )}
-              >
-                {category.icon} {category.name}
-              </button>
-            ))}
-          </div>
-        )}
         {currentChoices.length ? (
           <div className="grid w-full min-w-0 max-w-full grid-cols-1 gap-3 min-[430px]:grid-cols-2 min-[1180px]:grid-cols-3">
             {currentChoices.map((choice) => (
@@ -1792,7 +1700,7 @@ export default function BuilderPage() {
           { name: 'ساخت پک اختصاصی', url: '/builder' },
         ]}
       />
-      <div className="mx-auto w-full max-w-[1400px] overflow-x-clip px-3 py-5 sm:px-4 sm:py-8">
+      <div className="mx-auto w-full max-w-[1400px] overflow-x-clip px-3 pt-5 pb-36 sm:px-4 sm:pt-8 lg:pb-8">
         <div className="mb-5 flex min-w-0 flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="min-w-0">
             <div className="mb-3 inline-flex max-w-full items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-[11px] font-bold text-primary sm:text-xs">
@@ -1801,7 +1709,7 @@ export default function BuilderPage() {
             </div>
             <h1 className="text-xl font-black leading-9 text-foreground sm:text-2xl md:text-3xl">ساخت پک اختصاصی</h1>
             <p className="mt-2 max-w-2xl text-xs leading-7 text-muted-foreground sm:text-sm">
-              بسته‌بندی، خوراکی‌ها، افزودنی‌ها و محصولات دلخواه را بدون انتخاب اجباری به پک اضافه کنید.
+              بسته‌بندی، میوه، نوشیدنی، خوراکی و افزودنی‌های دلخواه را به پک اضافه کنید.
             </p>
           </div>
           <Button variant="outline" onClick={resetBuilder} className="w-full gap-2 sm:w-auto">
@@ -1883,9 +1791,7 @@ export default function BuilderPage() {
                 <div className="min-w-0">
                   <h2 className="text-lg font-black text-foreground">{stepLabels[currentStep]}</h2>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    {currentStep === 'products'
-                      ? 'تمام محصولات موجود سایت از همه دسته‌ها اینجا قابل افزودن هستند.'
-                      : 'گزینه‌ها از آیتم‌های سازنده و محصولات بک‌اند ساخته می‌شوند.'}
+                    گزینه‌ها از آیتم‌های سازنده پک خوانده می‌شوند.
                   </p>
                 </div>
                 <span className="rounded-full bg-muted px-3 py-1 text-xs font-bold text-muted-foreground">
@@ -1898,7 +1804,7 @@ export default function BuilderPage() {
               </div>
               {renderStepContent()}
 
-              <div className="sticky bottom-0 z-20 -mx-3 mt-6 grid grid-cols-2 items-center gap-2 border-t border-border bg-card/95 px-3 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-8px_20px_hsl(var(--background)/0.25)] backdrop-blur sm:-mx-5 sm:flex sm:justify-between sm:gap-3 sm:px-5 sm:py-4">
+              <div className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-2 items-center gap-2 border-t border-border bg-card/95 px-3 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-8px_20px_hsl(var(--background)/0.25)] backdrop-blur sm:flex sm:justify-between sm:gap-3 sm:px-5 sm:py-4 lg:sticky lg:inset-x-auto lg:z-20 lg:-mx-5 lg:mt-6">
               <Button
                 variant="outline"
                 onClick={goPrev}

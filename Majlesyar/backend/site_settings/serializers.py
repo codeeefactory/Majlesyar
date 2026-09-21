@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from catalog.models import Category, InternalLink
+from catalog.models import Category, InternalLink, InternalLinkSource
 from catalog.services import get_page_products
 from .models import SiteSetting
 
@@ -144,7 +144,7 @@ class SiteSettingSerializer(serializers.ModelSerializer):
                 children.append({"label": str(child.get("name") or child.get("slug") or ""), "url": child_route})
         return [link for link in children if link["label"] and link["url"]]
 
-    def _managed_internal_links(self, page: dict) -> list[dict]:
+    def _managed_internal_links(self, page: dict) -> tuple[list[dict], bool]:
         source_path = self._normalize_path(page.get("route_path") or f"/events/{page.get('slug', '')}")
         managed_links = []
         for item in InternalLink.objects.filter(source_path=source_path, is_active=True).order_by("position", "created_at"):
@@ -152,15 +152,16 @@ class SiteSettingSerializer(serializers.ModelSerializer):
             if item.image:
                 link["image"] = item.image.url
             managed_links.append(link)
-        return managed_links
+        is_managed = InternalLinkSource.objects.filter(path=source_path).exists()
+        return managed_links, is_managed
 
     def _enrich_internal_links(self, page: dict, event_pages: list[dict], pages_by_route: dict[str, dict]) -> list[dict]:
         links: list[dict] = []
         seen_urls: set[str] = set()
         source_path = self._normalize_path(page.get("route_path") or f"/events/{page.get('slug', '')}")
-        raw_links = (
-            self._managed_internal_links(page)
-            + DEFAULT_INTERNAL_LINKS_BY_PAGE.get(source_path, [])
+        managed_links, is_managed = self._managed_internal_links(page)
+        raw_links = managed_links if is_managed else (
+            DEFAULT_INTERNAL_LINKS_BY_PAGE.get(source_path, [])
             + list(page.get("internal_links") or [])
             + self._direct_child_links(page, event_pages)
         )

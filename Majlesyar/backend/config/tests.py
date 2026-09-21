@@ -89,6 +89,7 @@ class StructuredDataTests(TestCase):
         self.assertIn('"@context":"https://schema.org"', content)
         self.assertIn('"WebSite"', content)
         self.assertIn('"name":"مجلس یار"', content)
+        self.assertIn('"alternateName":"مجلس‌یار"', content)
         self.assertIn('"LocalBusiness"', content)
         self.assertIn('"@type":"WebPage"', content)
         self.assertIn('"@type":"PostalAddress"', content)

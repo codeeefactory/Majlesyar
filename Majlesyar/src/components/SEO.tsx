@@ -273,7 +273,7 @@ export function SEO({
       "@type": "WebSite",
       "@id": `${baseUrl}/#website`,
       name: branding.siteName,
-      alternateName: [branding.siteAlternateName, "majlesyar.com"],
+      alternateName: branding.siteName.replace(/\s+/g, '‌'),
       url: baseUrl,
       publisher: {
         "@id": `${baseUrl}/#brand`,

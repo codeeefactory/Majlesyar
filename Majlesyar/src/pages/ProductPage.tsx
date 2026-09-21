@@ -7,6 +7,7 @@ import { CustomerFeedbackSection } from '@/components/CustomerFeedbackSection';
 import { InternalLinkCards } from '@/components/InternalLinkCards';
 import { RuleAlert } from '@/components/RuleAlert';
 import { ResponsiveProductImage } from '@/components/ResponsiveProductImage';
+import { ProductModelViewer } from '@/components/ProductModelViewer';
 import { SEO } from '@/components/SEO';
 import { getProductByPath } from '@/lib/api';
 import NotFound from '@/pages/NotFound';
@@ -16,7 +17,7 @@ import { notifySuccess } from '@/lib/notify';
 import { useCart } from '@/contexts/CartContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import type { Product } from '@/types/domain';
-import { ShoppingCart, ArrowRight, Check, Phone, Package } from 'lucide-react';
+import { ShoppingCart, Check, Phone, Package, Image as ImageIcon, Rotate3D } from 'lucide-react';
 import type { EventPage } from '@/types/domain';
 
 const relatedProductLinks = [
@@ -132,9 +133,12 @@ export default function ProductPage() {
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const [imageFailed, setImageFailed] = useState(false);
+  const [mediaView, setMediaView] = useState<'image' | '3d'>('image');
   const { addItem } = useCart();
 
   useEffect(() => {
+    setMediaView('image');
+    setImageFailed(false);
     const loadProduct = async () => {
       const data = await getProductByPath(location.pathname);
       setProduct(data);
@@ -166,6 +170,7 @@ export default function ProductPage() {
     typeof item === 'string' ? null : item.price;
 
   const shouldShowImage = product?.image && product.image !== '/placeholder.svg' && !imageFailed;
+  const hasModel3d = Boolean(product?.model3dUrl);
 
   if (loading) {
     return (
@@ -264,7 +269,9 @@ export default function ProductPage() {
         <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
           <div className="space-y-4">
             <div className="aspect-square bg-muted rounded-2xl border border-border relative overflow-hidden">
-              {shouldShowImage ? (
+              {hasModel3d && mediaView === '3d' ? (
+                <ProductModelViewer modelUrl={product.model3dUrl!} productName={product.name} />
+              ) : shouldShowImage ? (
                 <ResponsiveProductImage
                   product={product}
                   alt={product.imageAlt || product.name}
@@ -286,6 +293,30 @@ export default function ProductPage() {
                 </div>
               )}
             </div>
+            {hasModel3d && (
+              <div className="grid grid-cols-2 gap-2 rounded-xl border border-border bg-card p-2" role="group" aria-label="نوع نمایش محصول">
+                <Button
+                  type="button"
+                  variant={mediaView === 'image' ? 'default' : 'ghost'}
+                  className="gap-2"
+                  onClick={() => setMediaView('image')}
+                  aria-pressed={mediaView === 'image'}
+                >
+                  <ImageIcon className="h-4 w-4" aria-hidden="true" />
+                  عکس محصول
+                </Button>
+                <Button
+                  type="button"
+                  variant={mediaView === '3d' ? 'default' : 'ghost'}
+                  className="gap-2"
+                  onClick={() => setMediaView('3d')}
+                  aria-pressed={mediaView === '3d'}
+                >
+                  <Rotate3D className="h-4 w-4" aria-hidden="true" />
+                  نمای سه‌بعدی
+                </Button>
+              </div>
+            )}
           </div>
 
           <div className="space-y-6 min-h-[32rem]">

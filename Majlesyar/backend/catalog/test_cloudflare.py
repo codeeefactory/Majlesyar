@@ -4,10 +4,25 @@ from django.contrib.auth import get_user_model
 from django.test import Client, SimpleTestCase, TestCase, override_settings
 from django.urls import reverse
 
-from .cloudflare import CloudflarePurgeResult, purge_cloudflare_cache
+from .cloudflare import CloudflarePurgeResult, purge_cloudflare_cache, purge_cloudflare_files
 
 
 class CloudflarePurgeTests(SimpleTestCase):
+    @override_settings(CLOUDFLARE_API_TOKEN="secret-token", CLOUDFLARE_ZONE_ID="zone-id", MEDIA_URL="/media/")
+    @patch("catalog.cloudflare.requests.post")
+    def test_deleted_image_purge_uses_exact_encoded_urls(self, post_mock):
+        response = Mock(ok=True, content=b"{}")
+        response.json.return_value = {"success": True}
+        post_mock.return_value = response
+
+        result = purge_cloudflare_files({"products/optimized/pak/640/پک عزا.avif"})
+
+        self.assertTrue(result.purged)
+        self.assertEqual(
+            post_mock.call_args.kwargs["json"],
+            {"files": ["https://majlesyar.com/media/products/optimized/pak/640/%D9%BE%DA%A9%20%D8%B9%D8%B2%D8%A7.avif"]},
+        )
+
     @override_settings(CLOUDFLARE_API_TOKEN="secret-token", CLOUDFLARE_ZONE_ID="zone-id")
     @patch("catalog.cloudflare.requests.post")
     def test_full_purge_uses_explicit_purge_everything_payload(self, post_mock):
