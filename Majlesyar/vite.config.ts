@@ -3,28 +3,6 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 
-function nonBlockingStylesheetPlugin() {
-  return {
-    name: "non-blocking-stylesheet-plugin",
-    apply: "build" as const,
-    transformIndexHtml(html: string) {
-      return html.replace(/<link rel="stylesheet"[^>]*>/g, (tag) => {
-        const hrefMatch = tag.match(/href="([^"]+)"/);
-        if (!hrefMatch) return tag;
-
-        const href = hrefMatch[1];
-        const hasCrossorigin = /\scrossorigin(\s|>)/.test(tag);
-        const crossorigin = hasCrossorigin ? " crossorigin" : "";
-
-        return [
-          `<link rel="preload" as="style" href="${href}"${crossorigin} onload="this.onload=null;this.rel='stylesheet'">`,
-          `<noscript><link rel="stylesheet" href="${href}"${crossorigin}></noscript>`,
-        ].join("");
-      });
-    },
-  };
-}
-
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   server: {
@@ -41,7 +19,7 @@ export default defineConfig(({ mode }) => ({
       },
     },
   },
-  plugins: [react(), mode === "development" && componentTagger(), nonBlockingStylesheetPlugin()].filter(Boolean),
+  plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
