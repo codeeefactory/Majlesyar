@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import hashlib
+import io
 import json
 import logging
 from datetime import timedelta
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -11,6 +13,7 @@ import requests
 from django.conf import settings
 from django.db import connection, transaction
 from django.utils import timezone
+from PIL import Image, ImageOps
 
 from vision.constants import PERSIAN_LABELS, PERSIAN_TO_ENGLISH
 from vision.service import analyze_product_image
@@ -270,7 +273,98 @@ def _remote_analyze(instance: Product | BuilderItem, candidates: list[dict[str, 
         instance.image.close()
 
 
-def _local_analyze(instance: Product | BuilderItem) -> dict[str, Any]:
+@lru_cache(maxsize=1)
+def _zero_shot_backend():
+    import open_clip
+    import torch
+
+    model_name = str(getattr(settings, "VISION_ZERO_SHOT_MODEL", "ViT-B-32"))
+    pretrained = str(getattr(settings, "VISION_ZERO_SHOT_PRETRAINED", "laion2b_s34b_b79k"))
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    model, _, preprocess = open_clip.create_model_and_transforms(model_name, pretrained=pretrained)
+    model = model.to(device).eval()
+    tokenizer = open_clip.get_tokenizer(model_name)
+    return model, preprocess, tokenizer, device, f"{model_name}:{pretrained}"
+
+
+def _read_pil_image(instance: Product | BuilderItem) -> Image.Image:
+    instance.image.open("rb")
+    try:
+        payload = instance.image.read()
+    finally:
+        instance.image.close()
+    return ImageOps.exif_transpose(Image.open(io.BytesIO(payload))).convert("RGB")
+
+
+def _zero_shot_analyze(
+    instance: Product | BuilderItem,
+    candidates: list[dict[str, str]],
+) -> dict[str, Any]:
+    import torch
+
+    model, preprocess, tokenizer, device, model_version = _zero_shot_backend()
+    image = _read_pil_image(instance)
+    width, height = image.size
+    tiles = [("full", image, {"x": 0.0, "y": 0.0, "width": 1.0, "height": 1.0})]
+    if width >= 2 and height >= 2:
+        midpoint_x, midpoint_y = width // 2, height // 2
+        tiles.extend(
+            (
+                ("top_left", image.crop((0, 0, midpoint_x, midpoint_y)), {"x": 0.0, "y": 0.0, "width": 0.5, "height": 0.5}),
+                ("top_right", image.crop((midpoint_x, 0, width, midpoint_y)), {"x": 0.5, "y": 0.0, "width": 0.5, "height": 0.5}),
+                ("bottom_left", image.crop((0, midpoint_y, midpoint_x, height)), {"x": 0.0, "y": 0.5, "width": 0.5, "height": 0.5}),
+                ("bottom_right", image.crop((midpoint_x, midpoint_y, width, height)), {"x": 0.5, "y": 0.5, "width": 0.5, "height": 0.5}),
+            )
+        )
+
+    prompts = [f"a product photo containing {item['prompt']}" for item in candidates]
+    image_batch = torch.stack([preprocess(tile[1]) for tile in tiles]).to(device)
+    text_batch = tokenizer(prompts).to(device)
+    with torch.no_grad():
+        image_features = model.encode_image(image_batch)
+        text_features = model.encode_text(text_batch)
+        image_features /= image_features.norm(dim=-1, keepdim=True)
+        text_features /= text_features.norm(dim=-1, keepdim=True)
+        probabilities = (100.0 * image_features @ text_features.T).softmax(dim=-1).cpu()
+
+    threshold = float(getattr(settings, "VISION_ZERO_SHOT_THRESHOLD", 0.08))
+    detections = []
+    for label_index, spec in enumerate(candidates):
+        scores = probabilities[:, label_index]
+        tile_index = int(torch.argmax(scores).item())
+        confidence = float(scores[tile_index].item())
+        if confidence < threshold:
+            continue
+        source, _tile, bbox = tiles[tile_index]
+        detections.append(
+            {
+                "label_key": spec["key"],
+                "label": spec["label"],
+                "confidence": round(confidence, 4),
+                "bbox": bbox,
+                "source": source,
+            }
+        )
+    detections.sort(key=lambda item: item["confidence"], reverse=True)
+    detections = detections[:12]
+    return {
+        "success": True,
+        "detections": detections,
+        "top_label": detections[0]["label"] if detections else None,
+        "top_label_key": detections[0]["label_key"] if detections else None,
+        "uncertain": not detections,
+        "error": None if detections else "low_confidence",
+        "threshold": threshold,
+        "model_version": model_version,
+        "provider": f"zero_shot_{device}",
+        "image": {"width": width, "height": height},
+    }
+
+
+def _local_analyze(
+    instance: Product | BuilderItem,
+    candidates: list[dict[str, str]],
+) -> dict[str, Any]:
     if hasattr(instance.image, "path"):
         result = analyze_product_image(instance.image.path)
     else:
@@ -281,6 +375,15 @@ def _local_analyze(instance: Product | BuilderItem) -> dict[str, Any]:
             instance.image.close()
     result = dict(result or {})
     result["provider"] = "local_classifier"
+    if (
+        getattr(settings, "VISION_ZERO_SHOT_ENABLED", True)
+        and result.get("error") in {"model_unavailable", "inference_error"}
+    ):
+        try:
+            return _zero_shot_analyze(instance, candidates)
+        except Exception as exc:
+            logger.exception("Zero-shot image analysis failed for %s", instance.pk)
+            result["zero_shot_error"] = str(exc).strip()[:500] or exc.__class__.__name__
     return result
 
 
@@ -324,7 +427,7 @@ def analyze_asset(instance: Product | BuilderItem, source_sha256: str) -> dict[s
         logger.warning("Remote image analysis failed for %s: %s", instance.pk, remote_error)
         analysis = None
     if analysis is None:
-        analysis = _local_analyze(instance)
+        analysis = _local_analyze(instance, candidates)
 
     detections = [item for item in analysis.get("detections", []) if isinstance(item, dict)]
     analysis.update(

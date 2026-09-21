@@ -104,6 +104,34 @@ class AssetProcessingQueueTests(TestCase):
         self.assertEqual(item.photo_analysis["pack_items"][0]["name"], "آبمیوه")
         self.assertTrue(item.photo_analysis["pack_items"][0]["detected"])
 
+    @override_settings(PRODUCT_IMAGE_ANALYZER_URL="")
+    def test_missing_trained_model_falls_back_to_zero_shot_analysis(self):
+        item = BuilderItem.objects.create(
+            name="موز",
+            group=BuilderItem.Group.FRUIT,
+            price=15000,
+            image=image_upload("banana.png", "yellow"),
+        )
+        job = enqueue_asset_processing("builder_item", item.pk, image_changed=True)
+        unavailable = {"success": False, "detections": [], "error": "model_unavailable"}
+        zero_shot = {
+            "success": True,
+            "detections": [{"label_key": "banana", "label": "موز", "confidence": 0.82}],
+            "provider": "zero_shot_cpu",
+        }
+
+        with patch("catalog.media_processing.analyze_product_image", return_value=unavailable), patch(
+            "catalog.media_processing._zero_shot_analyze", return_value=zero_shot
+        ) as zero_shot_mock, patch("catalog.media_processing.generate_asset_3d", return_value={}):
+            process_next_asset_job()
+
+        item.refresh_from_db()
+        job.refresh_from_db()
+        self.assertEqual(job.status, AssetProcessingJob.Status.SUCCEEDED)
+        self.assertEqual(item.photo_analysis["provider"], "zero_shot_cpu")
+        self.assertTrue(item.photo_analysis["pack_items"][0]["detected"])
+        zero_shot_mock.assert_called_once()
+
     def test_removed_image_cancels_pending_work(self):
         product = Product.objects.create(
             name="Removed image",

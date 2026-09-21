@@ -390,6 +390,10 @@ VISION_TOP_K = int(os.getenv("VISION_TOP_K", "3"))
 VISION_DEVICE = os.getenv("VISION_DEVICE", "auto")
 VISION_MAX_PIXELS = int(os.getenv("VISION_MAX_PIXELS", "16000000"))
 VISION_MAX_DIMENSION = int(os.getenv("VISION_MAX_DIMENSION", "1600"))
+VISION_ZERO_SHOT_ENABLED = env_bool("VISION_ZERO_SHOT_ENABLED", True)
+VISION_ZERO_SHOT_MODEL = os.getenv("VISION_ZERO_SHOT_MODEL", "ViT-B-32")
+VISION_ZERO_SHOT_PRETRAINED = os.getenv("VISION_ZERO_SHOT_PRETRAINED", "laion2b_s34b_b79k")
+VISION_ZERO_SHOT_THRESHOLD = float(os.getenv("VISION_ZERO_SHOT_THRESHOLD", "0.08"))
 
 # Private image-to-3D worker. GPU inference stays outside the web process.
 PRODUCT_3D_GENERATOR_URL = os.getenv("PRODUCT_3D_GENERATOR_URL", "").strip()
