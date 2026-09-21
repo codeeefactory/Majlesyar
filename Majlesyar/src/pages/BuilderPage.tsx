@@ -42,7 +42,7 @@ interface BuilderChoice {
   categoryIds: string[];
   description?: string;
   model3dUrl?: string;
-  model3dStatus?: 'missing' | 'processing' | 'ready' | 'failed';
+  model3dStatus?: 'missing' | 'queued' | 'processing' | 'ready' | 'failed';
 }
 
 interface BuilderSceneControls {

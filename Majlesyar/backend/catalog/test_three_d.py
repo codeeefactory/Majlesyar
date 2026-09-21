@@ -89,12 +89,13 @@ class Product3DGenerationTests(TestCase):
         session = Mock()
         session.post.return_value = response
 
-        metadata = generate_asset_3d(product, session=session)
+        metadata = generate_asset_3d(product, session=session, source_sha256="abc123")
 
         product.refresh_from_db()
         self.assertEqual(product.model_3d_status, "ready")
         self.assertTrue(product.model_3d.name.endswith(".glb"))
         self.assertEqual(metadata["bytes"], len(glb))
+        self.assertEqual(metadata["source_image_sha256"], "abc123")
         self.assertEqual(session.post.call_args.kwargs["headers"]["Authorization"], "Bearer secret")
 
     def test_invalid_worker_payload_records_failure(self):

@@ -73,7 +73,7 @@ interface ApiProduct {
   image_alt?: string;
   image_name?: string;
   model_3d?: string | null;
-  model_3d_status?: "missing" | "processing" | "ready" | "failed";
+  model_3d_status?: "missing" | "queued" | "processing" | "ready" | "failed";
   model_3d_metadata?: Record<string, unknown>;
   customer_reviews?: ApiCustomerReview[];
   featured: boolean;
@@ -158,7 +158,7 @@ interface ApiBuilderItem {
   required: boolean;
   image: string | null;
   model_3d?: string | null;
-  model_3d_status?: "missing" | "processing" | "ready" | "failed";
+  model_3d_status?: "missing" | "queued" | "processing" | "ready" | "failed";
 }
 
 interface ApiSettings {

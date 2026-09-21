@@ -453,7 +453,18 @@ class BuilderItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = BuilderItem
-        fields = ("id", "name", "group", "price", "required", "image", "model_3d", "model_3d_status")
+        fields = (
+            "id",
+            "name",
+            "group",
+            "price",
+            "required",
+            "image",
+            "photo_analysis",
+            "model_3d",
+            "model_3d_status",
+            "model_3d_metadata",
+        )
 
     def get_image(self, obj: BuilderItem) -> str | None:
         if not obj.image:
@@ -475,8 +486,26 @@ class BuilderItemSerializer(serializers.ModelSerializer):
 class BuilderItemWriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = BuilderItem
-        fields = ("id", "name", "group", "price", "required", "image", "model_3d", "model_3d_status")
-        read_only_fields = ("id",)
+        fields = (
+            "id",
+            "name",
+            "group",
+            "price",
+            "required",
+            "image",
+            "photo_analysis",
+            "model_3d",
+            "model_3d_status",
+            "model_3d_metadata",
+            "model_3d_error",
+        )
+        read_only_fields = (
+            "id",
+            "photo_analysis",
+            "model_3d_status",
+            "model_3d_metadata",
+            "model_3d_error",
+        )
 
 
 class PagePreviewTargetSerializer(serializers.Serializer):

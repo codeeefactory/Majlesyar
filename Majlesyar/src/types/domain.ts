@@ -27,7 +27,7 @@ export interface Product {
   imageAlt?: string;
   imageName?: string;
   model3dUrl?: string;
-  model3dStatus?: "missing" | "processing" | "ready" | "failed";
+  model3dStatus?: "missing" | "queued" | "processing" | "ready" | "failed";
   model3dMetadata?: Record<string, unknown>;
   customerReviews?: CustomerReview[];
   featured: boolean;
@@ -183,7 +183,7 @@ export interface BuilderItem {
   required: boolean;
   image?: string;
   model3dUrl?: string;
-  model3dStatus?: "missing" | "processing" | "ready" | "failed";
+  model3dStatus?: "missing" | "queued" | "processing" | "ready" | "failed";
 }
 
 export interface SiteBranding {

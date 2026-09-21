@@ -4,6 +4,7 @@ from urllib.parse import unquote, urlsplit
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+from django.utils import timezone
 from django.utils.text import slugify
 
 from .image_utils import (
@@ -47,6 +48,7 @@ PRODUCT_INPUT_MODE_NORMAL = "normal"
 
 
 class Asset3DStatus(models.TextChoices):
+    QUEUED = "queued", "در صف ساخت"
     MISSING = "missing", "ساخته نشده"
     PROCESSING = "processing", "در حال ساخت"
     READY = "ready", "آماده"
@@ -533,14 +535,22 @@ class Product(models.Model):
         previous_default_label = ""
         previous_image_name = ""
         previous_image_variants = {}
+        previous_contents = []
         previous = None
         if self.pk:
-            previous = Product.objects.filter(pk=self.pk).only("image", "image_alt", "image_name", "image_variants").first()
+            previous = Product.objects.filter(pk=self.pk).only(
+                "image",
+                "image_alt",
+                "image_name",
+                "image_variants",
+                "contents",
+            ).first()
             if previous and previous.image:
                 previous_default_label = derive_image_label(previous.image.name)
                 previous_image_name = previous.image.name
             if previous:
                 previous_image_variants = previous.image_variants or {}
+                previous_contents = previous.contents or []
 
         incoming_image_is_uncommitted = bool(
             self.image and not getattr(self.image, "_committed", True)
@@ -555,6 +565,7 @@ class Product(models.Model):
         if not isinstance(self.contents, list):
             self.contents = []
         self.contents = normalize_product_contents(self.contents)
+        contents_changed = self.contents != normalize_product_contents(previous_contents)
 
         if not isinstance(self.event_types, list):
             self.event_types = []
@@ -630,6 +641,12 @@ class Product(models.Model):
                     update_fields["event_types"] = self.event_types
                 Product.objects.filter(pk=self.pk).update(**update_fields)
                 sync_product_categories(self)
+
+        if image_changed or contents_changed:
+            from .media_processing import schedule_asset_processing
+
+            schedule_asset_processing(self, image_changed=image_changed)
+        self._image_content_changed = False
 
     class Meta:
         ordering = ["-featured", "name"]
@@ -902,6 +919,12 @@ class BuilderItem(models.Model):
         verbose_name="تصویر",
         help_text="نکته: بارگذاری تصویر با فرمت‌های jpg، jpeg، png، webp یا avif برای نمایش بهتر این آیتم.",
     )
+    photo_analysis = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name="نتیجه تحلیل تصویر",
+        help_text="خروجی تحلیل خودکار تصویر و مشخصات آیتم ذخیره‌شده روی سرور.",
+    )
     model_3d = models.FileField(
         upload_to=build_asset_3d_upload_path,
         max_length=500,
@@ -921,6 +944,18 @@ class BuilderItem(models.Model):
     model_3d_error = models.TextField(blank=True, default="", verbose_name="خطای تولید مدل سه‌بعدی")
 
     def save(self, *args, **kwargs):
+        previous_image_name = ""
+        previous_identity = None
+        if self.pk:
+            previous = BuilderItem.objects.filter(pk=self.pk).only("image", "name", "group", "price").first()
+            if previous:
+                previous_image_name = previous.image.name if previous.image else ""
+                previous_identity = (previous.name, previous.group, previous.price)
+
+        incoming_image_is_uncommitted = bool(self.image and not getattr(self.image, "_committed", True))
+        current_image_name = self.image.name if self.image else ""
+        image_changed = incoming_image_is_uncommitted or current_image_name != previous_image_name
+        identity_changed = previous_identity != (self.name, self.group, self.price)
         if self.model_3d and self.model_3d_status == Asset3DStatus.MISSING:
             self.model_3d_status = Asset3DStatus.READY
             self.model_3d_error = ""
@@ -928,6 +963,10 @@ class BuilderItem(models.Model):
             self.model_3d_status = Asset3DStatus.MISSING
             self.model_3d_metadata = {}
         super().save(*args, **kwargs)
+        if image_changed or identity_changed:
+            from .media_processing import schedule_asset_processing
+
+            schedule_asset_processing(self, image_changed=image_changed)
 
     class Meta:
         ordering = ["group", "name"]
@@ -936,3 +975,53 @@ class BuilderItem(models.Model):
 
     def __str__(self) -> str:
         return f"{self.name} ({self.group})"
+
+
+class AssetProcessingJob(models.Model):
+    class TargetType(models.TextChoices):
+        PRODUCT = "product", "محصول"
+        BUILDER_ITEM = "builder_item", "آیتم سازنده پک"
+
+    class Status(models.TextChoices):
+        PENDING = "pending", "در صف"
+        RUNNING = "running", "در حال پردازش"
+        SUCCEEDED = "succeeded", "موفق"
+        FAILED = "failed", "ناموفق"
+        SUPERSEDED = "superseded", "جایگزین شده"
+        SKIPPED = "skipped", "رد شده"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    target_type = models.CharField(max_length=20, choices=TargetType.choices)
+    target_id = models.UUIDField()
+    source_image_name = models.CharField(max_length=500)
+    source_sha256 = models.CharField(max_length=64)
+    request_sha256 = models.CharField(max_length=64)
+    requested_actions = models.JSONField(default=list, blank=True)
+    input_metadata = models.JSONField(default=dict, blank=True)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
+    attempts = models.PositiveSmallIntegerField(default=0)
+    available_at = models.DateTimeField(default=timezone.now)
+    locked_at = models.DateTimeField(null=True, blank=True)
+    finished_at = models.DateTimeField(null=True, blank=True)
+    error = models.TextField(blank=True, default="")
+    result = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["target_type", "target_id", "request_sha256"],
+                name="unique_asset_processing_request",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["status", "available_at"], name="asset_job_status_available"),
+            models.Index(fields=["target_type", "target_id"], name="asset_job_target"),
+        ]
+        verbose_name = "وظیفه پردازش تصویر"
+        verbose_name_plural = "وظایف پردازش تصاویر"
+
+    def __str__(self) -> str:
+        return f"{self.target_type}:{self.target_id} ({self.status})"

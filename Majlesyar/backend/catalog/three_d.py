@@ -93,7 +93,13 @@ def _response_bytes(response: requests.Response, max_bytes: int) -> bytes:
     return payload
 
 
-def generate_asset_3d(instance, *, force: bool = False, session: requests.Session | None = None) -> dict:
+def generate_asset_3d(
+    instance,
+    *,
+    force: bool = False,
+    session: requests.Session | None = None,
+    source_sha256: str = "",
+) -> dict:
     """Generate and persist one GLB through the configured private ML worker.
 
     Worker contract: multipart POST with ``image``, ``asset_id`` and ``model``;
@@ -136,6 +142,8 @@ def generate_asset_3d(instance, *, force: bool = False, session: requests.Sessio
             "bytes": len(payload),
             "generated_at": timezone.now().isoformat(),
         }
+        if source_sha256:
+            metadata["source_image_sha256"] = source_sha256
         instance.__class__.objects.filter(pk=instance.pk).update(
             model_3d=instance.model_3d.name,
             model_3d_status="ready",

@@ -398,6 +398,12 @@ PRODUCT_3D_GENERATOR_MODEL = os.getenv("PRODUCT_3D_GENERATOR_MODEL", "triposr").
 PRODUCT_3D_GENERATOR_TIMEOUT = int(os.getenv("PRODUCT_3D_GENERATOR_TIMEOUT", "180"))
 PRODUCT_3D_MAX_BYTES = int(os.getenv("PRODUCT_3D_MAX_BYTES", str(25 * 1024 * 1024)))
 
+# Optional GPU image-analysis endpoint. Empty means use the local classifier.
+PRODUCT_IMAGE_ANALYZER_URL = os.getenv("PRODUCT_IMAGE_ANALYZER_URL", "").strip()
+PRODUCT_IMAGE_ANALYZER_TIMEOUT = int(os.getenv("PRODUCT_IMAGE_ANALYZER_TIMEOUT", "180"))
+ASSET_PROCESSING_MAX_ATTEMPTS = int(os.getenv("ASSET_PROCESSING_MAX_ATTEMPTS", "3"))
+ASSET_PROCESSING_STALE_SECONDS = int(os.getenv("ASSET_PROCESSING_STALE_SECONDS", "1800"))
+
 telegram_webhook_path = os.getenv("TELEGRAM_BOT_WEBHOOK_PATH", "api/v1/telegram/webhook/").strip()
 telegram_webhook_path = telegram_webhook_path.strip("/")
 if not telegram_webhook_path:

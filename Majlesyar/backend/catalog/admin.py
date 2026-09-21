@@ -22,6 +22,7 @@ from .product_bundle import (
 )
 from .models import (
     AUTO_EVENT_CATEGORY_SLUGS,
+    AssetProcessingJob,
     BuilderItem,
     Category,
     CustomerReview,
@@ -156,6 +157,7 @@ class ProductAdmin(PersianAdminFormMixin, admin.ModelAdmin):
     list_editable = ("available", "featured", "show_in_builder", "builder_group")
     readonly_fields = (
         "image_preview",
+        "photo_analysis",
         "model_3d_status",
         "model_3d_metadata",
         "model_3d_error",
@@ -178,6 +180,7 @@ class ProductAdmin(PersianAdminFormMixin, admin.ModelAdmin):
                     "image_preview",
                     "image_name",
                     "image_alt",
+                    "photo_analysis",
                     "model_3d",
                     "model_3d_status",
                     "model_3d_metadata",
@@ -454,10 +457,10 @@ class InternalLinkAdmin(PersianAdminFormMixin, admin.ModelAdmin):
 
 @admin.register(BuilderItem)
 class BuilderItemAdmin(PersianAdminFormMixin, admin.ModelAdmin):
-    list_display = ("name", "group", "price", "required")
+    list_display = ("name", "group", "price", "required", "model_3d_status")
     list_filter = ()
     search_fields = ("name",)
-    readonly_fields = ("model_3d_status", "model_3d_metadata", "model_3d_error")
+    readonly_fields = ("photo_analysis", "model_3d_status", "model_3d_metadata", "model_3d_error")
     fieldsets = (
         (
             "اطلاعات آیتم",
@@ -469,6 +472,7 @@ class BuilderItemAdmin(PersianAdminFormMixin, admin.ModelAdmin):
                     "price",
                     "required",
                     "image",
+                    "photo_analysis",
                     "model_3d",
                     "model_3d_status",
                     "model_3d_metadata",
@@ -477,6 +481,39 @@ class BuilderItemAdmin(PersianAdminFormMixin, admin.ModelAdmin):
             },
         ),
     )
+
+
+@admin.register(AssetProcessingJob)
+class AssetProcessingJobAdmin(admin.ModelAdmin):
+    list_display = ("target_type", "target_id", "status", "attempts", "created_at", "finished_at")
+    list_filter = ("target_type", "status")
+    search_fields = ("target_id", "source_image_name", "source_sha256", "error")
+    ordering = ("-created_at",)
+    readonly_fields = (
+        "id",
+        "target_type",
+        "target_id",
+        "source_image_name",
+        "source_sha256",
+        "request_sha256",
+        "requested_actions",
+        "input_metadata",
+        "status",
+        "attempts",
+        "available_at",
+        "locked_at",
+        "finished_at",
+        "error",
+        "result",
+        "created_at",
+        "updated_at",
+    )
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
 
 
 @admin.register(PageProductPlacement)
