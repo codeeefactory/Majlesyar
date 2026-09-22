@@ -72,6 +72,12 @@ interface ApiProduct {
   };
   image_alt?: string;
   image_name?: string;
+  gallery_images?: Array<{
+    id: string;
+    image: string;
+    image_alt?: string;
+    display_order: number;
+  }>;
   model_3d?: string | null;
   model_3d_status?: "missing" | "queued" | "processing" | "ready" | "failed";
   model_3d_metadata?: Record<string, unknown>;
@@ -512,10 +518,16 @@ function mapProduct(apiProduct: ApiProduct): Product {
         }
       : undefined,
     imageAlt: apiProduct.image_alt || undefined,
-      imageName: apiProduct.image_name || undefined,
-      model3dUrl: apiProduct.model_3d ? normalizeImageUrl(apiProduct.model_3d) : undefined,
-      model3dStatus: apiProduct.model_3d_status || "missing",
-      model3dMetadata: apiProduct.model_3d_metadata || undefined,
+    imageName: apiProduct.image_name || undefined,
+    galleryImages: (apiProduct.gallery_images || []).map((image) => ({
+      id: image.id,
+      image: normalizeImageUrl(image.image),
+      imageAlt: image.image_alt || undefined,
+      displayOrder: image.display_order,
+    })),
+    model3dUrl: apiProduct.model_3d ? normalizeImageUrl(apiProduct.model_3d) : undefined,
+    model3dStatus: apiProduct.model_3d_status || "missing",
+    model3dMetadata: apiProduct.model_3d_metadata || undefined,
     customerReviews: (apiProduct.customer_reviews || []).map(mapCustomerReview),
     featured: apiProduct.featured,
     available: apiProduct.available,

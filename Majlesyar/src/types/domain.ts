@@ -12,6 +12,13 @@ export interface ProductContentItem {
 
 export type ProductContent = string | ProductContentItem;
 
+export interface ProductGalleryImage {
+  id: string;
+  image: string;
+  imageAlt?: string;
+  displayOrder: number;
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -26,6 +33,7 @@ export interface Product {
   imageResponsive?: ProductImageResponsive;
   imageAlt?: string;
   imageName?: string;
+  galleryImages?: ProductGalleryImage[];
   model3dUrl?: string;
   model3dStatus?: "missing" | "queued" | "processing" | "ready" | "failed";
   model3dMetadata?: Record<string, unknown>;

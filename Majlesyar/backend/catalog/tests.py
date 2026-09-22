@@ -18,7 +18,16 @@ from rest_framework.test import APITestCase
 
 from config.admin_branding import get_admin_theme_manifest
 from .image_utils import register_image_plugins
-from .models import BuilderItem, Category, CustomerReview, PageProductPlacement, Product, Tag, ensure_event_categories
+from .models import (
+    BuilderItem,
+    Category,
+    CustomerReview,
+    PageProductPlacement,
+    Product,
+    ProductGalleryImage,
+    Tag,
+    ensure_event_categories,
+)
 from site_settings.models import SiteSetting, get_default_event_pages
 
 
@@ -129,6 +138,7 @@ class AdminProductApiTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertContains(response, "نمایش در سازنده پک اختصاصی")
+        self.assertContains(response, "تصاویر بیشتر محصول")
         self.assertContains(response, "id_show_in_builder")
         self.assertContains(response, "id_builder_group")
         self.assertContains(response, "id_builder_required")
@@ -138,6 +148,36 @@ class AdminProductApiTests(APITestCase):
         from .admin import ProductAdmin
 
         self.assertNotIn("url_slug", ProductAdmin.prepopulated_fields)
+
+    def test_product_detail_returns_ordered_gallery_images(self):
+        product = Product.objects.create(
+            name="محصول چند تصویری",
+            url_slug="multi-image-product",
+            description="توضیحات",
+            available=True,
+        )
+        later = ProductGalleryImage.objects.create(
+            product=product,
+            image=self._make_uploaded_image("نمای دوم.jpg", "JPEG"),
+            image_alt="نمای دوم محصول",
+            display_order=20,
+        )
+        earlier = ProductGalleryImage.objects.create(
+            product=product,
+            image=self._make_uploaded_image("نمای اول.jpg", "JPEG"),
+            image_alt="نمای اول محصول",
+            display_order=10,
+        )
+
+        response = self.client.get(reverse("product-detail", args=[product.url_slug]))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            [item["id"] for item in response.data["gallery_images"]],
+            [str(earlier.id), str(later.id)],
+        )
+        self.assertEqual(response.data["gallery_images"][0]["image_alt"], "نمای اول محصول")
+        self.assertTrue(response.data["gallery_images"][0]["image"].startswith("http://testserver/media/"))
 
     @patch("catalog.cloudflare.requests.post")
     def test_product_admin_image_replacement_keeps_public_urls(self, cloudflare_post_mock):
@@ -178,6 +218,10 @@ class AdminProductApiTests(APITestCase):
                 "builder_group": Product.BuilderGroup.PRODUCTS,
                 "builder_display_order": "1",
                 "image": self._make_uploaded_image("new-admin-photo.png", "PNG", size=(1200, 1200)),
+                "gallery_images-TOTAL_FORMS": "0",
+                "gallery_images-INITIAL_FORMS": "0",
+                "gallery_images-MIN_NUM_FORMS": "0",
+                "gallery_images-MAX_NUM_FORMS": "20",
             },
         )
 

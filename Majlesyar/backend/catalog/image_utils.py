@@ -160,6 +160,21 @@ def build_product_image_upload_path(instance, file_name: str | None) -> str:
     return f"products/{product_media_directory(instance)}/{exact_stem}.{extension}"
 
 
+def build_product_gallery_image_upload_path(instance, file_name: str | None) -> str:
+    """Build a collision-safe path for an additional product image."""
+    product = getattr(instance, "product", None) or instance
+    base_name = normalize_image_basename(file_name)
+    source_stem, _source_extension = os.path.splitext(base_name)
+    exact_stem = source_stem.strip() or "product-gallery-image"
+    supplied_extension = os.path.splitext(base_name)[1].lstrip(".")
+    extension = supplied_extension if supplied_extension.lower() in ALLOWED_IMAGE_EXTENSIONS else "jpg"
+    gallery_id = normalize_image_basename(str(getattr(instance, "id", "") or "image"), fallback="image")
+    return (
+        f"products/{product_media_directory(product)}/gallery/"
+        f"{gallery_id}/{exact_stem}.{extension}"
+    )
+
+
 def derive_image_label(file_name: str | None) -> str:
     base_name = extract_image_basename(file_name)
     if not base_name:

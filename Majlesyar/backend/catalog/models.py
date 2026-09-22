@@ -3,11 +3,12 @@ from urllib.parse import unquote, urlsplit
 
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
-from django.db import models
+from django.db import models, transaction
 from django.utils import timezone
 from django.utils.text import slugify
 
 from .image_utils import (
+    build_product_gallery_image_upload_path,
     build_product_image_upload_path,
     derive_image_label,
     image_extension_validator,
@@ -655,6 +656,68 @@ class Product(models.Model):
 
     def __str__(self) -> str:
         return self.name
+
+
+class ProductGalleryImage(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, verbose_name="شناسه")
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name="gallery_images",
+        verbose_name="محصول",
+    )
+    image = models.ImageField(
+        upload_to=build_product_gallery_image_upload_path,
+        storage=product_image_storage,
+        max_length=500,
+        validators=[image_extension_validator],
+        verbose_name="تصویر",
+        help_text="عکس دیگری از محصول با فرمت jpg، jpeg، png، webp یا avif.",
+    )
+    image_alt = models.CharField(
+        max_length=255,
+        blank=True,
+        default="",
+        verbose_name="متن جایگزین تصویر (Alt)",
+        help_text="اگر خالی باشد، از نام فایل ساخته می‌شود.",
+    )
+    display_order = models.PositiveIntegerField(
+        default=100,
+        validators=[MinValueValidator(1)],
+        verbose_name="ترتیب نمایش",
+        help_text="عدد کوچک‌تر زودتر نمایش داده می‌شود.",
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="زمان ایجاد")
+
+    def save(self, *args, **kwargs):
+        previous_image_name = ""
+        if self.pk:
+            previous = ProductGalleryImage.objects.filter(pk=self.pk).only("image").first()
+            if previous and previous.image:
+                previous_image_name = previous.image.name
+
+        if self.image and not self.image_alt:
+            self.image_alt = derive_image_label(self.image.name)
+
+        super().save(*args, **kwargs)
+
+        current_image_name = self.image.name if self.image else ""
+        if previous_image_name and previous_image_name != current_image_name:
+            from .media_cleanup import cleanup_product_gallery_image
+
+            transaction.on_commit(
+                lambda path=previous_image_name: cleanup_product_gallery_image(path),
+                using=self._state.db,
+                robust=True,
+            )
+
+    class Meta:
+        ordering = ["display_order", "created_at"]
+        verbose_name = "تصویر بیشتر محصول"
+        verbose_name_plural = "تصاویر بیشتر محصول"
+
+    def __str__(self) -> str:
+        return f"{self.product.name} - {self.display_order}"
 
 
 class CustomerReview(models.Model):

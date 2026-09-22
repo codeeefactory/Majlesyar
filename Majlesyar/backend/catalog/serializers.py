@@ -19,6 +19,7 @@ from .models import (
     CustomerReview,
     PageProductPlacement,
     Product,
+    ProductGalleryImage,
     Tag,
     PRODUCT_INPUT_MODE_NORMAL,
     PRODUCT_INPUT_MODE_PHOTO_PROCESSING,
@@ -144,6 +145,20 @@ class CustomerReviewWriteSerializer(serializers.ModelSerializer):
         return cleaned
 
 
+class ProductGalleryImageSerializer(serializers.ModelSerializer):
+    image = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ProductGalleryImage
+        fields = ("id", "image", "image_alt", "display_order")
+
+    def get_image(self, obj: ProductGalleryImage) -> str:
+        request = self.context.get("request")
+        if request:
+            return request.build_absolute_uri(obj.image.url)
+        return obj.image.url
+
+
 class ProductSerializer(serializers.ModelSerializer):
     category_ids = serializers.SerializerMethodField()
     tag_ids = serializers.SerializerMethodField()
@@ -156,6 +171,7 @@ class ProductSerializer(serializers.ModelSerializer):
     customer_reviews = serializers.SerializerMethodField()
     photo_analysis = serializers.JSONField(read_only=True)
     model_3d = serializers.SerializerMethodField()
+    gallery_images = ProductGalleryImageSerializer(many=True, read_only=True)
 
     class Meta:
         model = Product
@@ -176,6 +192,7 @@ class ProductSerializer(serializers.ModelSerializer):
             "image_responsive",
             "image_name",
             "image_alt",
+            "gallery_images",
             "photo_analysis",
             "model_3d",
             "model_3d_status",

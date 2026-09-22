@@ -105,7 +105,7 @@ class ProductListAPIView(generics.ListAPIView):
         return response
 
     def get_queryset(self):
-        queryset = Product.objects.prefetch_related("categories", "tags", "customer_reviews").all()
+        queryset = Product.objects.prefetch_related("categories", "tags", "customer_reviews", "gallery_images").all()
 
         category_id = self.request.query_params.get("category")
         if category_id:
@@ -149,7 +149,7 @@ class ProductListAPIView(generics.ListAPIView):
 
 
 class ProductDetailAPIView(generics.RetrieveAPIView):
-    queryset = Product.objects.prefetch_related("categories", "tags", "customer_reviews").all()
+    queryset = Product.objects.prefetch_related("categories", "tags", "customer_reviews", "gallery_images").all()
     serializer_class = ProductSerializer
     lookup_url_kwarg = "lookup"
 
@@ -194,7 +194,7 @@ class ProductByPathAPIView(APIView):
             raise Http404 from None
         if not public_path:
             raise Http404
-        product = Product.objects.prefetch_related("categories", "tags", "customer_reviews").filter(
+        product = Product.objects.prefetch_related("categories", "tags", "customer_reviews", "gallery_images").filter(
             public_path=public_path,
         ).first()
         if not product:

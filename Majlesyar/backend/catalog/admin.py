@@ -29,8 +29,30 @@ from .models import (
     InternalLink,
     PageProductPlacement,
     Product,
+    ProductGalleryImage,
     Tag,
 )
+
+
+class ProductGalleryImageInline(admin.TabularInline):
+    model = ProductGalleryImage
+    extra = 1
+    max_num = 20
+    fields = ("image", "image_preview", "image_alt", "display_order")
+    readonly_fields = ("image_preview",)
+    ordering = ("display_order", "created_at")
+    verbose_name = "تصویر بیشتر"
+    verbose_name_plural = "تصاویر بیشتر محصول (برای اسلاید در صفحه محصول)"
+
+    @admin.display(description="پیش‌نمایش")
+    def image_preview(self, obj: ProductGalleryImage | None) -> str:
+        if not obj or not obj.image:
+            return "پس از انتخاب تصویر نمایش داده می‌شود."
+        return format_html(
+            '<img src="{}" alt="{}" style="width:96px;height:96px;object-fit:cover;border-radius:12px" />',
+            obj.image.url,
+            obj.image_alt or obj.product.name,
+        )
 
 
 class ProductAdminForm(forms.ModelForm):
@@ -137,6 +159,7 @@ class TagAdmin(PersianAdminFormMixin, admin.ModelAdmin):
 @admin.register(Product)
 class ProductAdmin(PersianAdminFormMixin, admin.ModelAdmin):
     form = ProductAdminForm
+    inlines = (ProductGalleryImageInline,)
     change_form_template = "admin/catalog/product/change_form.html"
     change_list_template = "admin/catalog/product/change_list.html"
     EVENT_CATEGORY_SLUGS = AUTO_EVENT_CATEGORY_SLUGS

@@ -11,7 +11,7 @@ from django.views.static import serve
 from PIL import Image
 
 from .image_variants import _all_variant_paths
-from .models import Product
+from .models import Product, ProductGalleryImage
 
 
 def image_upload(name: str, *, size: int = 1400) -> SimpleUploadedFile:
@@ -67,6 +67,21 @@ class ProductImageDeletionTests(TestCase):
         self.assertIn(stale_path, purge_mock.call_args.args[0])
         with self.assertRaises(Http404):
             serve(request, sample_path, document_root=self.media_directory.name)
+
+    def test_deleting_gallery_image_removes_its_file(self):
+        product = Product.objects.create(name="محصول گالری", url_slug="gallery-cleanup")
+        gallery_image = ProductGalleryImage.objects.create(
+            product=product,
+            image=image_upload("gallery-photo.jpg", size=320),
+            display_order=1,
+        )
+        image_path = gallery_image.image.name
+        self.assertTrue(default_storage.exists(image_path))
+
+        with self.captureOnCommitCallbacks(execute=True):
+            gallery_image.delete()
+
+        self.assertFalse(default_storage.exists(image_path))
 
     def test_deleting_one_product_preserves_another_products_shared_directory(self):
         first = Product.objects.create(name="محصول مشترک", image=image_upload("first.jpg", size=320))

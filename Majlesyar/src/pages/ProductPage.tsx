@@ -6,7 +6,7 @@ import { QuantityStepper } from '@/components/QuantityStepper';
 import { CustomerFeedbackSection } from '@/components/CustomerFeedbackSection';
 import { InternalLinkCards } from '@/components/InternalLinkCards';
 import { RuleAlert } from '@/components/RuleAlert';
-import { ResponsiveProductImage } from '@/components/ResponsiveProductImage';
+import { ProductImageGallery } from '@/components/ProductImageGallery';
 import { SEO } from '@/components/SEO';
 import { getProductByPath } from '@/lib/api';
 import { PUBLIC_3D_MODELS_ENABLED } from '@/lib/featureFlags';
@@ -17,7 +17,7 @@ import { notifySuccess } from '@/lib/notify';
 import { useCart } from '@/contexts/CartContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import type { Product } from '@/types/domain';
-import { ShoppingCart, Check, Phone, Package, Image as ImageIcon, Rotate3D } from 'lucide-react';
+import { ShoppingCart, Check, Phone, Image as ImageIcon, Rotate3D } from 'lucide-react';
 import type { EventPage } from '@/types/domain';
 
 const ProductModelViewer = lazy(() =>
@@ -136,13 +136,11 @@ export default function ProductPage() {
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
-  const [imageFailed, setImageFailed] = useState(false);
   const [mediaView, setMediaView] = useState<'image' | '3d'>('image');
   const { addItem } = useCart();
 
   useEffect(() => {
     setMediaView('image');
-    setImageFailed(false);
     const loadProduct = async () => {
       const data = await getProductByPath(location.pathname);
       setProduct(data);
@@ -177,7 +175,6 @@ export default function ProductPage() {
   const getContentPrice = (item: Product['contents'][number]) =>
     typeof item === 'string' ? null : item.price;
 
-  const shouldShowImage = product?.image && product.image !== '/placeholder.svg' && !imageFailed;
   const hasModel3d = PUBLIC_3D_MODELS_ENABLED && Boolean(product?.model3dUrl);
 
   if (loading) {
@@ -276,26 +273,15 @@ export default function ProductPage() {
 
         <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
           <div className="space-y-4">
-            <div className="aspect-square bg-muted rounded-2xl border border-border relative overflow-hidden">
+            <div className="relative">
               {hasModel3d && mediaView === '3d' ? (
-                <Suspense fallback={<div className="h-full w-full animate-pulse bg-muted" />}>
-                  <ProductModelViewer modelUrl={product.model3dUrl!} productName={product.name} />
-                </Suspense>
-              ) : shouldShowImage ? (
-                <ResponsiveProductImage
-                  product={product}
-                  alt={product.imageAlt || product.name}
-                  loading="eager"
-                  fetchPriority="high"
-                  sizesKey="detail"
-                  sizes="(max-width: 640px) 100vw, 50vw"
-                  className="w-full h-full object-cover object-center"
-                  onError={() => setImageFailed(true)}
-                />
-              ) : (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <Package className="w-24 h-24 text-muted-foreground/40" aria-hidden="true" />
+                <div className="aspect-square overflow-hidden rounded-2xl border border-border bg-muted">
+                  <Suspense fallback={<div className="h-full w-full animate-pulse bg-muted" />}>
+                    <ProductModelViewer modelUrl={product.model3dUrl!} productName={product.name} />
+                  </Suspense>
                 </div>
+              ) : (
+                <ProductImageGallery product={product} />
               )}
               {product.featured && (
                 <div className="absolute top-4 right-4 bg-primary text-primary-foreground text-sm font-semibold px-3 py-1.5 rounded-full">

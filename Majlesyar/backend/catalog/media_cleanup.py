@@ -36,6 +36,28 @@ def _media_directory(path: str) -> str | None:
     return directory if directory not in {"optimized", "originals", ".", ".."} else None
 
 
+def cleanup_product_gallery_image(image_name: str) -> None:
+    """Delete one unreferenced gallery image and purge its public cache entry."""
+    safe_path = _safe_product_path(image_name)
+    if not safe_path:
+        return
+
+    from .models import Product, ProductGalleryImage
+
+    if Product.objects.filter(image=safe_path).exists() or ProductGalleryImage.objects.filter(image=safe_path).exists():
+        return
+
+    if not default_storage.exists(safe_path):
+        return
+
+    default_storage.delete(safe_path)
+    from .cloudflare import purge_cloudflare_files
+
+    result = purge_cloudflare_files({safe_path})
+    if result.attempted and not result.purged:
+        logger.warning("Product gallery image cache purge failed: %s", result.error)
+
+
 def cleanup_deleted_product_images(product, *, using: str) -> None:
     """Delete only files/directories no surviving product refers to."""
     from .models import Product
