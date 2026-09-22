@@ -396,6 +396,7 @@ VISION_ZERO_SHOT_PRETRAINED = os.getenv("VISION_ZERO_SHOT_PRETRAINED", "laion2b_
 VISION_ZERO_SHOT_THRESHOLD = float(os.getenv("VISION_ZERO_SHOT_THRESHOLD", "0.08"))
 
 # Private image-to-3D worker. GPU inference stays outside the web process.
+PUBLIC_3D_MODELS_ENABLED = env_bool("PUBLIC_3D_MODELS_ENABLED", False)
 PRODUCT_3D_GENERATOR_URL = os.getenv("PRODUCT_3D_GENERATOR_URL", "").strip()
 PRODUCT_3D_GENERATOR_TOKEN = os.getenv("PRODUCT_3D_GENERATOR_TOKEN", "").strip()
 PRODUCT_3D_GENERATOR_MODEL = os.getenv("PRODUCT_3D_GENERATOR_MODEL", "triposr").strip()

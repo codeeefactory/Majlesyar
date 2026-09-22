@@ -14,6 +14,7 @@ from django.test import TestCase, override_settings
 from PIL import Image
 
 from .models import Product
+from .serializers import ProductSerializer
 from .three_d import generate_asset_3d, validate_glb_bytes, validate_glb_file
 
 
@@ -116,6 +117,31 @@ class Product3DGenerationTests(TestCase):
         product.refresh_from_db()
         self.assertEqual(product.model_3d_status, "failed")
         self.assertTrue(product.model_3d_error)
+
+
+class Product3DPublicVisibilityTests(TestCase):
+    def setUp(self):
+        self.media_dir = tempfile.mkdtemp(prefix="majlesyar-3d-visibility-test-")
+        self.media_override = override_settings(MEDIA_ROOT=self.media_dir)
+        self.media_override.enable()
+        self.product = Product.objects.create(
+            name="Public visibility product",
+            url_slug="public-visibility-product",
+            model_3d=SimpleUploadedFile("product.glb", make_glb(), content_type="model/gltf-binary"),
+            model_3d_status="ready",
+        )
+
+    def tearDown(self):
+        self.media_override.disable()
+        shutil.rmtree(self.media_dir, ignore_errors=True)
+
+    @override_settings(PUBLIC_3D_MODELS_ENABLED=False)
+    def test_hides_ready_model_url_when_public_feature_is_disabled(self):
+        self.assertIsNone(ProductSerializer(self.product).data["model_3d"])
+
+    @override_settings(PUBLIC_3D_MODELS_ENABLED=True)
+    def test_exposes_ready_model_url_when_public_feature_is_enabled(self):
+        self.assertTrue(ProductSerializer(self.product).data["model_3d"].endswith(".glb"))
 
 
 class Product3DImportTests(TestCase):

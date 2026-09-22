@@ -1,6 +1,7 @@
 import json
 import os
 
+from django.conf import settings
 from rest_framework import serializers
 from PIL import Image, UnidentifiedImageError
 from django.utils.text import slugify
@@ -203,7 +204,7 @@ class ProductSerializer(serializers.ModelSerializer):
         return obj.image.url
 
     def get_model_3d(self, obj: Product) -> str | None:
-        if not obj.model_3d or obj.model_3d_status != "ready":
+        if not settings.PUBLIC_3D_MODELS_ENABLED or not obj.model_3d or obj.model_3d_status != "ready":
             return None
         request = self.context.get("request")
         if request:
@@ -475,7 +476,7 @@ class BuilderItemSerializer(serializers.ModelSerializer):
         return obj.image.url
 
     def get_model_3d(self, obj: BuilderItem) -> str | None:
-        if not obj.model_3d or obj.model_3d_status != "ready":
+        if not settings.PUBLIC_3D_MODELS_ENABLED or not obj.model_3d or obj.model_3d_status != "ready":
             return None
         request = self.context.get("request")
         if request:

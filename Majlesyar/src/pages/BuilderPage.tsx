@@ -7,6 +7,7 @@ import { SEO } from '@/components/SEO';
 import { Button } from '@/components/ui/button';
 import { RuleAlert } from '@/components/RuleAlert';
 import { getBuilderConfig } from '@/lib/api';
+import { PUBLIC_3D_MODELS_ENABLED } from '@/lib/featureFlags';
 import { notifySuccess } from '@/lib/notify';
 import { cn } from '@/lib/utils';
 import { useCart } from '@/contexts/CartContext';
@@ -97,7 +98,7 @@ const stepLabels: Record<BaseStep, string> = {
 };
 
 const stepOrder: BaseStep[] = ['packaging', 'fruit', 'drink', 'snack', 'addons', 'quantity'];
-const BUILDER_3D_PREVIEW_ENABLED = true;
+const BUILDER_3D_PREVIEW_ENABLED = PUBLIC_3D_MODELS_ENABLED;
 const choiceSteps: ChoiceStep[] = ['packaging', 'fruit', 'drink', 'snack', 'addons'];
 const stepStories: Record<BaseStep, string> = {
   packaging: 'اول جعبه را انتخاب کن؛ صحنه باز می‌شود و آماده چیدن می‌ماند.',
@@ -1721,7 +1722,7 @@ export default function BuilderPage() {
         <div className="mb-4 grid gap-2 rounded-xl border border-primary/15 bg-primary/5 p-3 sm:grid-cols-3 sm:p-4" aria-label="راهنمای سریع ساخت پک">
           {[
             ['۱', 'مرحله را انتخاب کن', 'از بسته‌بندی شروع کن و با «بعدی» جلو برو.'],
-            ['۲', 'هر تعداد خواستی بردار', 'با لمس کارت، آیتم فوراً به پک و نمای سه‌بعدی اضافه می‌شود.'],
+            ['۲', 'هر تعداد خواستی بردار', 'با لمس کارت، آیتم فوراً به پک اضافه و قیمت به‌روز می‌شود.'],
             ['۳', 'قیمت را همان لحظه ببین', 'در مرحله آخر تعداد را بزن و پک را به سبد خرید بفرست.'],
           ].map(([number, title, description]) => (
             <div key={number} className="flex items-start gap-2 rounded-lg bg-background/75 p-2.5">

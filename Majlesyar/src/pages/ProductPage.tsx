@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { lazy, Suspense, useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { AppShell } from '@/components/layout';
 import { Button } from '@/components/ui/button';
@@ -7,9 +7,9 @@ import { CustomerFeedbackSection } from '@/components/CustomerFeedbackSection';
 import { InternalLinkCards } from '@/components/InternalLinkCards';
 import { RuleAlert } from '@/components/RuleAlert';
 import { ResponsiveProductImage } from '@/components/ResponsiveProductImage';
-import { ProductModelViewer } from '@/components/ProductModelViewer';
 import { SEO } from '@/components/SEO';
 import { getProductByPath } from '@/lib/api';
+import { PUBLIC_3D_MODELS_ENABLED } from '@/lib/featureFlags';
 import NotFound from '@/pages/NotFound';
 import { buildProductPath, getBestProductEvent, getRouteDepth, normalizeRoutePath } from '@/lib/productRoutes';
 import { isHiddenEventRoutePath } from '@/data/siteConstants';
@@ -19,6 +19,10 @@ import { useSettings } from '@/contexts/SettingsContext';
 import type { Product } from '@/types/domain';
 import { ShoppingCart, Check, Phone, Package, Image as ImageIcon, Rotate3D } from 'lucide-react';
 import type { EventPage } from '@/types/domain';
+
+const ProductModelViewer = lazy(() =>
+  import('@/components/ProductModelViewer').then(({ ProductModelViewer: Viewer }) => ({ default: Viewer })),
+);
 
 const relatedProductLinks = [
   {
@@ -170,7 +174,7 @@ export default function ProductPage() {
     typeof item === 'string' ? null : item.price;
 
   const shouldShowImage = product?.image && product.image !== '/placeholder.svg' && !imageFailed;
-  const hasModel3d = Boolean(product?.model3dUrl);
+  const hasModel3d = PUBLIC_3D_MODELS_ENABLED && Boolean(product?.model3dUrl);
 
   if (loading) {
     return (
@@ -270,7 +274,9 @@ export default function ProductPage() {
           <div className="space-y-4">
             <div className="aspect-square bg-muted rounded-2xl border border-border relative overflow-hidden">
               {hasModel3d && mediaView === '3d' ? (
-                <ProductModelViewer modelUrl={product.model3dUrl!} productName={product.name} />
+                <Suspense fallback={<div className="h-full w-full animate-pulse bg-muted" />}>
+                  <ProductModelViewer modelUrl={product.model3dUrl!} productName={product.name} />
+                </Suspense>
               ) : shouldShowImage ? (
                 <ResponsiveProductImage
                   product={product}
