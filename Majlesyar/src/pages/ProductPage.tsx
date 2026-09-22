@@ -159,6 +159,10 @@ export default function ProductPage() {
       name: product.name,
       quantity,
       price: product.price,
+      isPack: (() => {
+        const path = normalizeRoutePath(product.publicPath || location.pathname);
+        return path === '/pack' || path.startsWith('/pack/');
+      })(),
     });
 
     notifySuccess(`${quantity} عدد ${product.name} به سبد خرید اضافه شد`);

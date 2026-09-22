@@ -19,7 +19,7 @@ import { ArrowRight, Check, Loader2 } from 'lucide-react';
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
-  const { items, totalPrice, totalQuantity, isMinQuantityMet, clearCart, minQuantityRequired } = useCart();
+  const { items, totalPrice, totalQuantity, packQuantity, isMinQuantityMet, clearCart, minQuantityRequired } = useCart();
   const { customer, isAuthenticated, updateProfile } = useCustomerAuth();
   const { settings } = useSettings();
   const [loading, setLoading] = useState(false);
@@ -58,7 +58,7 @@ export default function CheckoutPage() {
   const isProvinceAllowed = settings.allowedProvinces.includes(form.province);
   const isDateValid = Boolean(form.date) && form.date >= getMinDeliveryDate();
   const submitDisabledReason = !isMinQuantityMet
-    ? `حداقل تعداد سفارش ${minQuantityRequired.toLocaleString('fa-IR')} عدد است`
+    ? `حداقل سفارش پک ${minQuantityRequired.toLocaleString('fa-IR')} عدد است`
     : !isProvinceAllowed
       ? `در حال حاضر امکان ارسال فقط در ${settings.allowedProvinces.join(' و ')} فراهم است`
       : !isDateValid
@@ -87,7 +87,7 @@ export default function CheckoutPage() {
 
     if (!validate()) return;
     if (!isMinQuantityMet) {
-      notifyError('حداقل تعداد سفارش رعایت نشده است');
+      notifyError('حداقل تعداد سفارش پک رعایت نشده است');
       return;
     }
 
@@ -384,9 +384,15 @@ export default function CheckoutPage() {
 
               <div className="pt-4 border-t border-border space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">تعداد کل پک‌ها:</span>
+                  <span className="text-muted-foreground">تعداد کل محصولات:</span>
                   <span className="font-medium text-foreground">{totalQuantity} عدد</span>
                 </div>
+                {packQuantity > 0 && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">تعداد پک‌ها:</span>
+                    <span className="font-medium text-foreground">{packQuantity} عدد</span>
+                  </div>
+                )}
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">جمع کل:</span>
                   <span className="font-bold text-xl text-primary">
@@ -398,7 +404,7 @@ export default function CheckoutPage() {
               {!isMinQuantityMet && (
                 <RuleAlert
                   type="error"
-                  message={`\u062d\u062f\u0627\u0642\u0644 \u062a\u0639\u062f\u0627\u062f \u0633\u0641\u0627\u0631\u0634 ${minQuantityRequired.toLocaleString('fa-IR')} \u0639\u062f\u062f \u0627\u0633\u062a`}
+                  message={`حداقل سفارش پک ${minQuantityRequired.toLocaleString('fa-IR')} عدد است`}
                 />
               )}
               {isMinQuantityMet && submitDisabledReason && (

@@ -303,6 +303,7 @@ export interface OrderItem {
   name: string;
   quantity: number;
   price: number;
+  isPack?: boolean;
   isCustomPack?: boolean;
   customConfig?: {
     packaging: string[];

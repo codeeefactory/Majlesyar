@@ -19,6 +19,7 @@ export default function CartPage() {
     removeItem,
     updateQuantity,
     totalQuantity,
+    packQuantity,
     totalPrice,
     isMinQuantityMet,
     minQuantityRequired,
@@ -127,11 +128,19 @@ export default function CartPage() {
                   <span className="font-medium text-foreground">{items.length} مورد</span>
                 </div>
                 <div className="flex items-center justify-between py-2 border-b border-border">
-                  <span className="text-muted-foreground">تعداد کل پک‌ها:</span>
-                  <span className={`font-medium ${isMinQuantityMet ? 'text-success' : 'text-warning'}`}>
+                  <span className="text-muted-foreground">تعداد کل محصولات:</span>
+                  <span className="font-medium text-foreground">
                     {totalQuantity} عدد
                   </span>
                 </div>
+                {packQuantity > 0 && (
+                  <div className="flex items-center justify-between py-2 border-b border-border">
+                    <span className="text-muted-foreground">تعداد پک‌ها:</span>
+                    <span className={`font-medium ${isMinQuantityMet ? 'text-success' : 'text-warning'}`}>
+                      {packQuantity} عدد
+                    </span>
+                  </div>
+                )}
                 <div className="flex items-center justify-between py-2">
                   <span className="text-muted-foreground">جمع کل:</span>
                   <span className="font-bold text-xl text-primary">
@@ -143,7 +152,7 @@ export default function CartPage() {
               {!isMinQuantityMet && (
                 <RuleAlert
                   type="error"
-                  message={`حداقل تعداد سفارش ${minQuantityRequired} عدد است. ${minQuantityRequired - totalQuantity} عدد دیگر اضافه کنید.`}
+                  message={`حداقل سفارش پک ${minQuantityRequired} عدد است. ${minQuantityRequired - packQuantity} پک دیگر اضافه کنید.`}
                 />
               )}
 

@@ -1,4 +1,4 @@
-from datetime import datetime, timezone as dt_timezone
+from datetime import datetime, timedelta, timezone as dt_timezone
 
 from django.contrib.auth import get_user_model
 from django.urls import reverse
@@ -7,8 +7,113 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from catalog.models import Product
+from site_settings.models import SiteSetting
 
 from .models import Order, OrderItem
+
+
+class PublicOrderPackMinimumTests(APITestCase):
+    def setUp(self):
+        settings = SiteSetting.load()
+        settings.min_order_qty = 40
+        settings.lead_time_hours = 0
+        settings.allowed_provinces = ["تهران"]
+        settings.delivery_windows = ["10-12"]
+        settings.payment_methods = [{"id": "pay-later", "label": "پرداخت بعد از تایید", "enabled": True}]
+        settings.save()
+
+        self.pack = Product.objects.create(
+            name="پک تست",
+            url_slug="public-pack-limit-test",
+            public_path="/pack/public-pack-limit-test",
+            price=100000,
+            available=True,
+        )
+        self.flower = Product.objects.create(
+            name="گل تست",
+            url_slug="public-flower-limit-test",
+            public_path="/flower/public-flower-limit-test",
+            price=200000,
+            available=True,
+        )
+
+    def _payload(self, items):
+        return {
+            "items": items,
+            "customer": {
+                "name": "مشتری تست",
+                "phone": "09123456789",
+                "province": "تهران",
+                "address": "تهران، آدرس تست",
+                "notes": "",
+            },
+            "delivery": {
+                "date": (timezone.localdate() + timedelta(days=2)).isoformat(),
+                "window": "10-12",
+            },
+            "payment_method": "pay-later",
+        }
+
+    def _product_item(self, product, quantity):
+        return {
+            "product_id": str(product.pk),
+            "name": product.name,
+            "quantity": quantity,
+            "price": product.price,
+        }
+
+    def test_non_pack_product_has_no_minimum_quantity(self):
+        response = self.client.post(
+            reverse("order-create"),
+            self._payload([self._product_item(self.flower, 1)]),
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_pack_product_below_minimum_is_rejected(self):
+        response = self.client.post(
+            reverse("order-create"),
+            self._payload([self._product_item(self.pack, 39)]),
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("پک", str(response.data["items"][0]))
+
+    def test_non_pack_quantity_does_not_fill_pack_minimum(self):
+        response = self.client.post(
+            reverse("order-create"),
+            self._payload([
+                self._product_item(self.pack, 39),
+                self._product_item(self.flower, 100),
+            ]),
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_pack_at_minimum_is_accepted(self):
+        response = self.client.post(
+            reverse("order-create"),
+            self._payload([self._product_item(self.pack, 40)]),
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_custom_pack_below_minimum_is_rejected(self):
+        response = self.client.post(
+            reverse("order-create"),
+            self._payload([
+                {
+                    "product_id": None,
+                    "name": "پک اختصاصی",
+                    "quantity": 39,
+                    "price": 100000,
+                    "is_custom_pack": True,
+                    "custom_config": {},
+                }
+            ]),
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
 class AdminOrderApiTests(APITestCase):

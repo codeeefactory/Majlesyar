@@ -114,6 +114,21 @@ class OrderCreateSerializer(serializers.Serializer):
     delivery = DeliveryInputSerializer()
     payment_method = serializers.CharField(max_length=64)
 
+    @staticmethod
+    def _is_pack_product(product: Product) -> bool:
+        public_path = (product.public_path or "").strip().lower()
+        if public_path == "/pack" or public_path.startswith("/pack/"):
+            return True
+
+        event_types = product.event_types if isinstance(product.event_types, list) else []
+        if any(str(slug) == "pack" or str(slug).startswith("pack-") for slug in event_types):
+            return True
+
+        return any(
+            category.slug == "pack" or category.slug.startswith("pack-")
+            for category in product.categories.all()
+        )
+
     def validate(self, attrs):
         settings = SiteSetting.load()
         items = attrs.get("items", [])
@@ -121,10 +136,32 @@ class OrderCreateSerializer(serializers.Serializer):
         delivery = attrs["delivery"]
         payment_method = attrs["payment_method"]
 
-        total_qty = sum(item["quantity"] for item in items)
-        if total_qty < settings.min_order_qty:
+        product_ids = []
+        for item in items:
+            raw_product_id = item.get("product_id")
+            if not raw_product_id:
+                continue
+            try:
+                product_ids.append(uuid.UUID(str(raw_product_id)))
+            except (ValueError, TypeError):
+                continue
+
+        products_by_id = {
+            str(product.pk): product
+            for product in Product.objects.filter(pk__in=product_ids).prefetch_related("categories")
+        }
+        pack_qty = 0
+        for item in items:
+            if item.get("is_custom_pack", False):
+                pack_qty += item["quantity"]
+                continue
+            product = products_by_id.get(str(item.get("product_id") or ""))
+            if product and self._is_pack_product(product):
+                pack_qty += item["quantity"]
+
+        if 0 < pack_qty < settings.min_order_qty:
             raise serializers.ValidationError(
-                {"items": f"حداقل تعداد سفارش {settings.min_order_qty} عدد است."}
+                {"items": f"حداقل تعداد سفارش پک {settings.min_order_qty} عدد است."}
             )
 
         if settings.allowed_provinces and customer["province"] not in settings.allowed_provinces:

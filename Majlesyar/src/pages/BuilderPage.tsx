@@ -1,13 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { AppShell } from '@/components/layout';
 import { SEO } from '@/components/SEO';
 import { Button } from '@/components/ui/button';
 import { RuleAlert } from '@/components/RuleAlert';
 import { getBuilderConfig } from '@/lib/api';
-import { PUBLIC_3D_MODELS_ENABLED } from '@/lib/featureFlags';
 import { notifySuccess } from '@/lib/notify';
 import { cn } from '@/lib/utils';
 import { useCart } from '@/contexts/CartContext';
@@ -42,8 +40,6 @@ interface BuilderChoice {
   productId?: string;
   categoryIds: string[];
   description?: string;
-  model3dUrl?: string;
-  model3dStatus?: 'missing' | 'queued' | 'processing' | 'ready' | 'failed';
 }
 
 interface BuilderSceneControls {
@@ -56,8 +52,6 @@ interface BuilderSceneControls {
 
 interface BuilderSceneStats {
   webglReady: boolean;
-  loadedModels: number;
-  failedModels: number;
 }
 
 interface Selections {
@@ -98,7 +92,7 @@ const stepLabels: Record<BaseStep, string> = {
 };
 
 const stepOrder: BaseStep[] = ['packaging', 'fruit', 'drink', 'snack', 'addons', 'quantity'];
-const BUILDER_3D_PREVIEW_ENABLED = PUBLIC_3D_MODELS_ENABLED;
+const BUILDER_3D_PREVIEW_ENABLED = true;
 const choiceSteps: ChoiceStep[] = ['packaging', 'fruit', 'drink', 'snack', 'addons'];
 const stepStories: Record<BaseStep, string> = {
   packaging: 'اول جعبه را انتخاب کن؛ صحنه باز می‌شود و آماده چیدن می‌ماند.',
@@ -134,8 +128,6 @@ function toChoice(item: BuilderItem): BuilderChoice {
     image: item.image,
     source: 'builder',
     categoryIds: [],
-    model3dUrl: item.model3dUrl,
-    model3dStatus: item.model3dStatus,
   };
 }
 
@@ -656,9 +648,9 @@ function useBuilderScene3D({
     let renderer: THREE.WebGLRenderer;
     try {
       renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
-      onStats({ webglReady: true, loadedModels: 0, failedModels: 0 });
+      onStats({ webglReady: true });
     } catch {
-      onStats({ webglReady: false, loadedModels: 0, failedModels: 0 });
+      onStats({ webglReady: false });
       return;
     }
     renderer.setClearColor(theme.background, 0);
@@ -971,13 +963,6 @@ function useBuilderScene3D({
         }
       });
     };
-    const textureLoader = new THREE.TextureLoader();
-    textureLoader.setCrossOrigin('anonymous');
-    const gltfLoader = new GLTFLoader();
-    let disposed = false;
-    let loadedModels = 0;
-    let failedModels = 0;
-
     const makeItemObject = (choice: BuilderChoice, index: number) => {
       const wrapper = new THREE.Group();
       const sideMaterial = new THREE.MeshStandardMaterial({
@@ -987,22 +972,12 @@ function useBuilderScene3D({
         emissive: palette[choice.group],
         emissiveIntensity: 0.04,
       });
-      let proxy: THREE.Mesh;
-      if (choice.image) {
-        const texture = textureLoader.load(choice.image);
-        texture.colorSpace = THREE.SRGBColorSpace;
-        texture.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
-        const photoMaterial = new THREE.MeshStandardMaterial({ map: texture, color: 0xffffff, roughness: 0.58 });
-        const materials = [sideMaterial, sideMaterial, sideMaterial, sideMaterial, photoMaterial, photoMaterial];
-        proxy = new THREE.Mesh(new THREE.BoxGeometry(0.78, 0.6, 0.18), materials);
-      } else {
-        const geometry = choice.group === 'drink'
-          ? new THREE.CapsuleGeometry(0.16, 0.38, 5, 12)
-          : choice.group === 'fruit'
-          ? new THREE.SphereGeometry(0.22, 24, 16)
-          : new THREE.BoxGeometry(0.42, 0.3, 0.38);
-        proxy = new THREE.Mesh(geometry, sideMaterial);
-      }
+      const geometry = choice.group === 'drink'
+        ? new THREE.CapsuleGeometry(0.16, 0.38, 5, 12)
+        : choice.group === 'fruit'
+        ? new THREE.SphereGeometry(0.22, 24, 16)
+        : new THREE.BoxGeometry(0.42, 0.3, 0.38);
+      const proxy = new THREE.Mesh(geometry, sideMaterial);
       proxy.castShadow = true;
       proxy.receiveShadow = true;
       wrapper.add(proxy);
@@ -1013,41 +988,6 @@ function useBuilderScene3D({
       };
       wrapper.rotation.set(-0.35 + (index % 3) * 0.18, (index % 2 ? 1 : -1) * 0.55, 0);
 
-      if (choice.model3dUrl) {
-        gltfLoader.load(
-          choice.model3dUrl,
-          (gltf) => {
-            if (disposed) {
-              disposeObject(gltf.scene);
-              return;
-            }
-            const model = gltf.scene;
-            const bounds = new THREE.Box3().setFromObject(model);
-            const size = bounds.getSize(new THREE.Vector3());
-            const center = bounds.getCenter(new THREE.Vector3());
-            const largestSide = Math.max(size.x, size.y, size.z, 0.001);
-            model.position.sub(center);
-            model.scale.setScalar(0.72 / largestSide);
-            model.traverse((child) => {
-              if (child instanceof THREE.Mesh) {
-                child.castShadow = true;
-                child.receiveShadow = true;
-              }
-            });
-            wrapper.remove(proxy);
-            disposeObject(proxy);
-            wrapper.add(model);
-            loadedModels += 1;
-            onStats({ webglReady: true, loadedModels, failedModels });
-          },
-          undefined,
-          () => {
-            if (disposed) return;
-            failedModels += 1;
-            onStats({ webglReady: true, loadedModels, failedModels });
-          },
-        );
-      }
       return wrapper;
     };
 
@@ -1241,7 +1181,6 @@ function useBuilderScene3D({
     raf = requestAnimationFrame(draw);
 
     return () => {
-      disposed = true;
       controlsRef.current = null;
       cancelAnimationFrame(raf);
       observer.disconnect();
@@ -1273,8 +1212,6 @@ function BuilderAnimation({
   const controlsRef = useRef<BuilderSceneControls | null>(null);
   const [sceneStats, setSceneStats] = useState<BuilderSceneStats>({
     webglReady: true,
-    loadedModels: 0,
-    failedModels: 0,
   });
   useBuilderScene3D({
     canvasRef,
@@ -1287,7 +1224,6 @@ function BuilderAnimation({
   });
   const progress = Math.round(((stepOrder.indexOf(currentStep) + 1) / stepOrder.length) * 100);
   const previewChoices = selectedChoices.slice(-4);
-  const readyModelCount = selectedChoices.filter((choice) => choice.model3dUrl).length;
   const runControl = (command: keyof BuilderSceneControls) => {
     controlsRef.current?.[command]();
     canvasRef.current?.focus();
@@ -1304,9 +1240,7 @@ function BuilderAnimation({
           <div className="min-w-0">
             <h2 className="text-sm font-black text-foreground">پیش‌نمایش سه‌بعدی پک</h2>
             <p className="truncate text-[10px] font-bold text-muted-foreground">
-              {readyModelCount
-                ? `${sceneStats.loadedModels.toLocaleString('fa-IR')} مدل واقعی بارگذاری شد؛ بقیه پیش‌نمایش عکس‌محورند`
-                : 'پیش‌نمایش تقریبی چیدمان؛ ابعاد نهایی پس از بررسی سفارش'}
+              انیمیشن تقریبی چیدمان؛ بدون مدل‌های ساخته‌شده از عکس محصول
             </p>
           </div>
         </div>
@@ -1332,11 +1266,6 @@ function BuilderAnimation({
           <div className="absolute inset-0 flex items-center justify-center bg-background/90 p-6 text-center text-xs leading-6 text-muted-foreground">
             مرورگر شما WebGL را اجرا نکرد؛ انتخاب محصولات و ثبت سفارش همچنان فعال است.
           </div>
-        )}
-        {sceneStats.failedModels > 0 && (
-          <span className="absolute bottom-3 right-3 rounded-full bg-warning/15 px-2.5 py-1 text-[10px] font-bold text-warning">
-            {sceneStats.failedModels.toLocaleString('fa-IR')} مدل با نمای عکس جایگزین شد
-          </span>
         )}
       </div>
 
@@ -1373,7 +1302,7 @@ function BuilderAnimation({
             <li>۱. هر محصولی را انتخاب کنی همان لحظه به صحنه اضافه می‌شود.</li>
             <li>۲. روی تصویر بکش یا دکمه‌های جهت را بزن تا پک بچرخد.</li>
             <li>۳. با + و − زوم کن؛ دکمه بازنشانی، نمای اول را برمی‌گرداند.</li>
-            <li>۴. مدل‌های آماده با GLB واقعی دیده می‌شوند؛ بقیه تا زمان پردازش ML با عکس حجمی نمایش داده می‌شوند.</li>
+            <li>۴. شکل‌های داخل صحنه فقط نمایش تقریبی آیتم‌ها هستند و از عکس محصول مدل‌سازی نشده‌اند.</li>
             <li>۵. این تصویر راهنمای چیدمان است؛ تعداد و قیمت ثبت‌شده در خلاصه سفارش معیار نهایی‌اند.</li>
           </ol>
         </details>
@@ -1577,6 +1506,7 @@ export default function BuilderPage() {
       quantity,
       price: totalPrice,
       isCustomPack: true,
+      isPack: true,
       customConfig: {
         packaging: selections.packaging.map((id) => getChoiceName(id)),
         fruit: selections.fruit.map((id) => getChoiceName(id)),

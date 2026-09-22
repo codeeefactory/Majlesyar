@@ -11,6 +11,7 @@ interface CartContextType {
   clearCart: () => void;
   totalItems: number;
   totalQuantity: number;
+  packQuantity: number;
   totalPrice: number;
   isMinQuantityMet: boolean;
   minQuantityRequired: number;
@@ -74,8 +75,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const totalItems = items.length;
   const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
+  const packQuantity = items.reduce(
+    (sum, item) => sum + (item.isPack || item.isCustomPack ? item.quantity : 0),
+    0,
+  );
   const totalPrice = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const isMinQuantityMet = totalQuantity >= minQuantityRequired;
+  const isMinQuantityMet = packQuantity === 0 || packQuantity >= minQuantityRequired;
 
   return (
     <CartContext.Provider
@@ -87,6 +92,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         clearCart,
         totalItems,
         totalQuantity,
+        packQuantity,
         totalPrice,
         isMinQuantityMet,
         minQuantityRequired,
