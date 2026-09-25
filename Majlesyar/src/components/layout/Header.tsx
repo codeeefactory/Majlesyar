@@ -8,7 +8,7 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { Badge } from '@/components/ui/badge';
 import { useTheme } from '@/hooks/useTheme';
 import { isHiddenEventRoutePath } from '@/data/siteConstants';
-import majlesyarLogo from '@/assets/branding/majlesyar-logo.png';
+import majlesyarLogo from '@/assets/branding/majlesyar-logo.webp';
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -93,6 +93,8 @@ export function Header() {
                 <img
                   src={settings.siteLogoUrl}
                   alt={settings.siteBranding.logoAlt}
+                  width={72}
+                  height={72}
                   className="h-full w-full object-contain p-0.5"
                   loading="eager"
                   decoding="async"
@@ -101,6 +103,8 @@ export function Header() {
                 <img
                   src={majlesyarLogo}
                   alt={settings.siteBranding.logoAlt}
+                  width={72}
+                  height={72}
                   className="h-full w-full object-contain p-0.5"
                   loading="eager"
                   decoding="async"

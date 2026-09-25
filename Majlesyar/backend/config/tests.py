@@ -63,19 +63,90 @@ class RobotsTxtTests(TestCase):
         self.assertNotIn("/checkout", content)
         self.assertNotIn("/order", content)
 
+    def test_robots_txt_explicitly_allows_major_ai_crawlers(self):
+        with TemporaryDirectory() as tmp_dir:
+            with override_settings(FRONTEND_DIST_DIR=Path(tmp_dir), STATIC_ROOT=Path(tmp_dir)):
+                response = self.client.get("/robots.txt")
+        content = response.content.decode("utf-8")
+
+        for agent in (
+            "GPTBot",
+            "ClaudeBot",
+            "PerplexityBot",
+            "Googlebot",
+            "Applebot-Extended",
+            "Bytespider",
+            "Amazonbot",
+        ):
+            with self.subTest(agent=agent):
+                self.assertIn(f"User-agent: {agent}\nAllow: /", content)
+
 
 @override_settings(SECURE_SSL_REDIRECT=False)
 class LlmsTxtTests(TestCase):
     def test_llms_txt_is_markdown_with_h1_and_links(self):
-        response = self.client.get("/llms.txt")
+        response = self.client.get("/llms.txt", secure=True)
         content = response.content.decode("utf-8")
 
         self.assertEqual(response.status_code, 200)
         self.assertIn("text/markdown", response.headers["Content-Type"])
         self.assertEqual(response.headers["Cache-Control"], "no-store, max-age=0, must-revalidate")
+        self.assertIn("Last-Modified", response.headers)
         self.assertTrue(content.startswith("# "))
-        self.assertIn("- [Home]", content)
+        self.assertTrue(content.splitlines()[2].startswith("> "))
+        self.assertGreaterEqual(content.count("\n## "), 8)
+        for section in ("Permitted", "Restricted", "Pricing", "Contact", "Citation and attribution", "Optional"):
+            with self.subTest(section=section):
+                self.assertIn(f"## {section}", content)
+        self.assertIn("free to crawl", content)
+        self.assertIn("Source: Majlesyar", content)
+        self.assertIn("- [Home](https://", content)
+        self.assertRegex(content, r"(?m)^- \[[^]]+\]\(https://[^)]+\): .+$")
         self.assertIn("sitemap.xml", content)
+
+
+@override_settings(SECURE_SSL_REDIRECT=False)
+class SitemapTests(TestCase):
+    def test_sitemap_contains_current_public_content_only(self):
+        product = Product.objects.create(name="Indexed Product", url_slug="indexed-product", available=True)
+        temporary_product = Product.objects.create(
+            name="Temporary Product",
+            url_slug="temporary-sitemap-product",
+            available=True,
+            is_temporary=True,
+        )
+        Product.objects.create(
+            name="Forced Missing Product",
+            url_slug="forced-missing-product",
+            public_path="/food/juice",
+            available=True,
+        )
+        published_post = BlogPost.objects.create(
+            title="Published Sitemap Post",
+            slug="published-sitemap-post",
+            content="Published content",
+            status=BlogPost.Status.PUBLISHED,
+        )
+        draft_post = BlogPost.objects.create(
+            title="Draft Sitemap Post",
+            slug="draft-sitemap-post",
+            content="Draft content",
+            status=BlogPost.Status.DRAFT,
+        )
+
+        response = self.client.get("/sitemap.xml", secure=True)
+        content = response.content.decode("utf-8")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("application/xml", response.headers["Content-Type"])
+        self.assertIn("<loc>https://testserver/</loc>", content)
+        self.assertIn(f"<loc>https://testserver{product.public_path}</loc>", content)
+        self.assertIn(f"<loc>https://testserver/blog/{published_post.slug}</loc>", content)
+        self.assertIn("<lastmod>", content)
+        self.assertNotIn(temporary_product.public_path, content)
+        self.assertNotIn(draft_post.slug, content)
+        self.assertNotIn("/food/juice", content)
+        self.assertNotIn("/track", content)
 
 
 @override_settings(SECURE_SSL_REDIRECT=False)
@@ -85,6 +156,10 @@ class StructuredDataTests(TestCase):
         content = response.content.decode("utf-8")
 
         self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.headers["Link"],
+            '<http://testserver/llms.txt>; rel="describedby"; type="text/markdown"',
+        )
         self.assertIn('type="application/ld+json"', content)
         self.assertIn('"@context":"https://schema.org"', content)
         self.assertIn('"WebSite"', content)
@@ -289,7 +364,8 @@ class SecurityHardeningTests(TestCase):
         self.assertEqual(response.headers["X-Content-Type-Options"], "nosniff")
         csp = response.headers["Content-Security-Policy"]
         self.assertIn("default-src 'self'", csp)
-        self.assertIn("script-src 'self'", csp)
+        self.assertIn("script-src 'self' https://static.cloudflareinsights.com", csp)
+        self.assertIn("connect-src 'self' https://majlesyar.com https://www.majlesyar.com https://cloudflareinsights.com", csp)
         self.assertNotIn("script-src 'self' 'unsafe-inline'", csp)
         self.assertIn("frame-ancestors 'none'", csp)
         self.assertIn("require-trusted-types-for 'script'", csp)

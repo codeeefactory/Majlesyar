@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useSettings } from "@/contexts/SettingsContext";
 import { useTheme } from "@/hooks/useTheme";
 import type { ThemePalette } from "@/types/domain";
-import majlesyarLogo from "@/assets/branding/majlesyar-logo.png";
+import majlesyarLogo from "@/assets/branding/majlesyar-logo.webp";
 
 function hexToRgb(hex: string) {
   const normalized = hex.trim().replace("#", "");

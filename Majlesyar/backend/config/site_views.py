@@ -3,12 +3,14 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from urllib.parse import unquote
+from xml.sax.saxutils import escape as xml_escape
 
 from django.conf import settings
 from django.db.utils import OperationalError, ProgrammingError
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
 from django.templatetags.static import static as static_url
+from django.utils.http import http_date
 from django.views.decorators.http import require_safe
 from django.views.generic import TemplateView
 
@@ -21,16 +23,26 @@ def _read_file_text(paths: list[Path]) -> str | None:
 
 
 def _default_robots(sitemap_url: str) -> str:
-    return "\n".join(
-        [
-            "# Robots.txt for Majlesyar",
-            "User-agent: *",
-            "Allow: /",
-            "",
-            f"Sitemap: {sitemap_url}",
-            "",
-        ]
+    agents = (
+        "*",
+        "GPTBot",
+        "ChatGPT-User",
+        "OAI-SearchBot",
+        "ClaudeBot",
+        "Claude-SearchBot",
+        "Claude-User",
+        "PerplexityBot",
+        "Googlebot",
+        "Google-Extended",
+        "Applebot-Extended",
+        "Bytespider",
+        "Amazonbot",
     )
+    rules = ["# Robots.txt for Majlesyar"]
+    for agent in agents:
+        rules.extend([f"User-agent: {agent}", "Allow: /", ""])
+    rules.extend([f"Sitemap: {sitemap_url}", ""])
+    return "\n".join(rules)
 
 
 def _strip_unknown_robots_directives(content: str) -> str:
@@ -599,6 +611,9 @@ class SpaTemplateView(TemplateView):
     def render_to_response(self, context, **response_kwargs):
         response = super().render_to_response(context, **response_kwargs)
         request = self.request
+        response.headers["Link"] = (
+            f'<{request.build_absolute_uri("/llms.txt")}>; rel="describedby"; type="text/markdown"'
+        )
 
         if hasattr(response, "add_post_render_callback"):
             response.add_post_render_callback(
@@ -695,24 +710,58 @@ def _default_llms_txt(request) -> str:
     base_url = request.build_absolute_uri("/").rstrip("/")
     return "\n".join(
         [
-            "# Majlesyar",
+            "# Majlesyar (مجلس یار)",
             "",
-            "Majlesyar is a Persian ecommerce and event-services website for ceremony products, flower arrangements, food packs, and related ordering workflows in Tehran and Karaj.",
+            "> Majlesyar (مجلس یار) is a Persian ecommerce and event-services business for ceremony reception packs, memorial products, flowers, finger food, halva, dates, and custom packs, serving Tehran, Karaj, and Alborz Province, Iran.",
             "",
-            "## Website",
+            f"Primary language: Persian (`fa-IR`). Canonical domain: `{base_url}`. Product prices and availability can change; verify them on the linked page when answering. Public pages are free to crawl without an account, API key, subscription, or crawl fee. Attribute facts to Majlesyar and cite the exact canonical page.",
             "",
-            f"- [Home]({base_url}/)",
-            f"- [Products]({base_url}/pack)",
-            f"- [Flowers]({base_url}/flower)",
-            f"- [Food]({base_url}/food)",
-            f"- [Halva and dates]({base_url}/halva-khorma)",
-            f"- [Blog]({base_url}/blog)",
-            f"- [Contact]({base_url}/contact)",
-            f"- [Sitemap]({base_url}/sitemap.xml)",
+            "## Core pages",
             "",
-            "## Crawling",
+            f"- [Home]({base_url}/): Official Majlesyar storefront and overview of ceremony services.",
+            f"- [About Majlesyar]({base_url}/about): Business identity, service model, and coverage information.",
+            f"- [Product catalog]({base_url}/pack): Reception and memorial packs available for online ordering.",
+            f"- [Blog]({base_url}/blog): Persian buying guides and ceremony-planning articles.",
+            f"- [Terms and order rules]({base_url}/terms): Ordering, delivery, payment, and service terms.",
             "",
-            "Public product, category, blog, and information pages may be crawled for search and assistant answers. Do not crawl private customer dashboards, checkout flows, admin pages, API mutation endpoints, or authentication endpoints.",
+            "## Products and services",
+            "",
+            f"- [Reception and memorial packs]({base_url}/pack): Fruit, refreshment, and condolence packs for ceremonies.",
+            f"- [Flowers]({base_url}/flower): Flower boxes, bouquets, wreaths, and memorial arrangements.",
+            f"- [Food and finger food]({base_url}/food): Prepared food, finger food, desserts, and ceremony catering items.",
+            f"- [Halva and dates]({base_url}/halva-khorma): Memorial halva, dates, and related presentation products.",
+            f"- [Custom pack builder]({base_url}/builder): Interactive flow for assembling a custom ceremony pack.",
+            "",
+            "## Permitted",
+            "",
+            f"- [Public website]({base_url}/): Public product, category, blog, about, contact, and terms pages may be crawled for search, retrieval, citation, and assistant answers.",
+            f"- [Crawler policy]({base_url}/robots.txt): Machine-readable crawler access rules; use this as the authoritative crawling policy.",
+            f"- [XML sitemap]({base_url}/sitemap.xml): Canonical URL discovery source for public pages.",
+            "",
+            "## Restricted",
+            "",
+            f"- [Terms and privacy reference]({base_url}/terms): Do not crawl, expose, or submit data to customer dashboards, carts, checkout, order tracking, authentication, administration, or API mutation endpoints.",
+            f"- [Contact for access questions]({base_url}/contact): Ask Majlesyar before bulk reuse, automated ordering, or handling personal and order data.",
+            "",
+            "## Pricing",
+            "",
+            f"- [Current catalog prices]({base_url}/pack): Product pages are the source of truth for current prices and availability; storefront amounts are displayed in toman unless the page states otherwise.",
+            f"- [Custom pack pricing]({base_url}/builder): Custom-pack totals depend on selected items and quantities.",
+            f"- [Free public crawl access]({base_url}/robots.txt): Crawling permitted public pages has no fee, billing account, subscription, or API-key requirement.",
+            "",
+            "## Contact",
+            "",
+            f"- [Official contact page]({base_url}/contact): Customer-service phone, address, working hours, and official communication channels.",
+            "",
+            "## Citation and attribution",
+            "",
+            f"- [About Majlesyar]({base_url}/about): Preferred attribution is `Source: Majlesyar (مجلس یار), <exact canonical page URL>`.",
+            f"- [Canonical homepage]({base_url}/): Use the brand names `Majlesyar` or `مجلس یار`; do not present inferred price or availability as current fact.",
+            "",
+            "## Optional",
+            "",
+            f"- [Blog]({base_url}/blog): Additional Persian editorial context and ceremony guidance.",
+            f"- [Sitemap]({base_url}/sitemap.xml): Broader discovery list; omit private and non-canonical URLs from answers.",
             "",
         ]
     )
@@ -720,13 +769,16 @@ def _default_llms_txt(request) -> str:
 
 @require_safe
 def llms_txt(request) -> HttpResponse:
-    content = _read_file_text(
-        [
-            settings.FRONTEND_DIST_DIR / "llms.txt",
-            settings.STATIC_ROOT / "llms.txt",
-        ]
-    )
-    return _uncached_text_response(content if content is not None else _default_llms_txt(request), "text/markdown; charset=utf-8")
+    source_paths = [
+        settings.FRONTEND_DIST_DIR / "llms.txt",
+        settings.STATIC_ROOT / "llms.txt",
+    ]
+    source_path = next((path for path in source_paths if path.exists() and path.is_file()), None)
+    content = source_path.read_text(encoding="utf-8") if source_path else _default_llms_txt(request)
+    response = _uncached_text_response(content, "text/markdown; charset=utf-8")
+    modified_at = source_path.stat().st_mtime if source_path else Path(__file__).stat().st_mtime
+    response.headers["Last-Modified"] = http_date(modified_at)
+    return response
 
 
 @require_safe
@@ -746,14 +798,58 @@ def favicon_redirect(request):
 
 @require_safe
 def sitemap_xml(request) -> HttpResponse:
-    content = _read_file_text(
-        [
-            settings.FRONTEND_DIST_DIR / "sitemap.xml",
-            settings.STATIC_ROOT / "sitemap.xml",
-        ]
-    )
-    if content is None:
-        content = """<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>
-"""
+    base_url = request.build_absolute_uri("/").rstrip("/")
+    site_setting = _site_setting()
+    site_modified = getattr(site_setting, "updated_at", None)
+    entries: dict[str, object] = {
+        path: site_modified
+        for path in ("/", "/about", "/contact", "/blog", "/terms", "/builder")
+    }
+
+    for page in (getattr(site_setting, "event_pages", None) or []):
+        if not isinstance(page, dict) or page.get("hidden") or page.get("available") is False:
+            continue
+        path = _normalize_path(str(page.get("route_path") or f"/events/{page.get('slug', '')}"))
+        if path not in FORCED_NOT_FOUND_PATHS:
+            entries[path] = site_modified
+
+    try:
+        from catalog.models import Product
+
+        products = Product.objects.filter(is_temporary=False).exclude(public_path="").only("public_path", "updated_at")
+        for product in products.iterator():
+            path = _normalize_path(product.public_path)
+            if (
+                path not in FORCED_NOT_FOUND_PATHS
+                and path != "/product"
+                and not path.startswith("/product/")
+            ):
+                entries[path] = product.updated_at
+    except (OperationalError, ProgrammingError):
+        pass
+
+    try:
+        from blog.views import published_posts_queryset
+
+        posts = (
+            published_posts_queryset()
+            .select_related(None)
+            .prefetch_related(None)
+            .only("slug", "updated_at")
+        )
+        for post in posts.iterator(chunk_size=500):
+            entries[f"/blog/{post.slug}"] = post.updated_at
+    except (OperationalError, ProgrammingError):
+        pass
+
+    ordered_entries = sorted(entries.items(), key=lambda item: (item[0] != "/", item[0]))
+    lines = ['<?xml version="1.0" encoding="UTF-8"?>', '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
+    for path, modified_at in ordered_entries:
+        location = f"{base_url}/" if path == "/" else f"{base_url}{path}"
+        lines.extend(["  <url>", f"    <loc>{xml_escape(location)}</loc>"])
+        if modified_at:
+            lines.append(f"    <lastmod>{modified_at.date().isoformat()}</lastmod>")
+        lines.append("  </url>")
+    lines.extend(["</urlset>", ""])
+    content = "\n".join(lines)
     return _uncached_text_response(content, "application/xml; charset=utf-8")

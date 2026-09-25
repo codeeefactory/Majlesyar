@@ -276,11 +276,11 @@ CONTENT_SECURITY_POLICY = os.getenv(
     "CONTENT_SECURITY_POLICY",
     (
         "default-src 'self'; "
-        "script-src 'self'; "
+        "script-src 'self' https://static.cloudflareinsights.com; "
         "style-src 'self' 'unsafe-inline'; "
         "img-src 'self' data: blob: https:; "
         "font-src 'self' data:; "
-        "connect-src 'self' https://majlesyar.com https://www.majlesyar.com; "
+        "connect-src 'self' https://majlesyar.com https://www.majlesyar.com https://cloudflareinsights.com; "
         "frame-src https://www.google.com https://maps.google.com; "
         "object-src 'none'; "
         "base-uri 'self'; "

@@ -1,5 +1,5 @@
 import { defaultSettings } from "@/data/siteConstants";
-import majlesyarLogo from "@/assets/branding/majlesyar-logo.png";
+import majlesyarLogo from "@/assets/branding/majlesyar-logo.webp";
 
 interface PageLoaderProps {
   fullscreen?: boolean;

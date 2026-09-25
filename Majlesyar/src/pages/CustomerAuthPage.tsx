@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useCustomerAuth } from '@/contexts/CustomerAuthContext';
 import { notifyError, notifySuccess } from '@/lib/notify';
 import { LockKeyhole, LogIn, Mail, UserPlus } from 'lucide-react';
@@ -44,12 +43,6 @@ export default function CustomerAuthPage() {
       navigate('/dashboard', { replace: true });
     }
   }, [isAuthenticated, navigate]);
-
-  const handleModeChange = (value: string) => {
-    const nextMode = value === 'signup' ? 'signup' : 'login';
-    setMode(nextMode);
-    navigate(nextMode === 'signup' ? '/signup' : '/login', { replace: true });
-  };
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -106,12 +99,22 @@ export default function CustomerAuthPage() {
 
           <Card className="rounded-2xl shadow-medium">
             <CardContent className="p-6">
-              <Tabs value={mode} onValueChange={handleModeChange} dir="rtl">
-                <TabsList className="mb-6 grid h-11 w-full grid-cols-2">
-                  <TabsTrigger value="login">ورود</TabsTrigger>
-                  <TabsTrigger value="signup">ثبت نام</TabsTrigger>
-                </TabsList>
-              </Tabs>
+              <nav className="mb-6 grid h-11 w-full grid-cols-2 rounded-md bg-muted p-1" aria-label="ورود یا ثبت نام">
+                <Link
+                  to="/login"
+                  aria-current={mode === 'login' ? 'page' : undefined}
+                  className={`inline-flex items-center justify-center rounded-sm px-3 py-1.5 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${mode === 'login' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                >
+                  ورود
+                </Link>
+                <Link
+                  to="/signup"
+                  aria-current={mode === 'signup' ? 'page' : undefined}
+                  className={`inline-flex items-center justify-center rounded-sm px-3 py-1.5 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${mode === 'signup' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                >
+                  ثبت نام
+                </Link>
+              </nav>
 
               <form
                 onSubmit={handleSubmit}

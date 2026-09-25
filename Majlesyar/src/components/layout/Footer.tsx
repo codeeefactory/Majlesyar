@@ -4,7 +4,7 @@ import { Phone, MapPin, Instagram, Send, ShoppingBag, Scale, BookOpen } from 'lu
 import baleLogo from '@/assets/social/bale.webp';
 import eitaaLogo from '@/assets/social/eitaa.webp';
 import soroushLogo from '@/assets/social/soroush.webp';
-import majlesyarLogo from '@/assets/branding/majlesyar-logo.png';
+import majlesyarLogo from '@/assets/branding/majlesyar-logo.webp';
 import { useSettings } from '@/contexts/SettingsContext';
 import { getInstagramHandle } from '@/lib/contact';
 import {
@@ -76,6 +76,8 @@ const enamadImageProps = {
   alt: 'eNamad trust seal',
   loading: 'lazy',
   decoding: 'async',
+  width: 96,
+  height: 96,
   draggable: false,
   className: 'h-24 w-auto object-contain',
   code: ENAMAD_CODE,
@@ -103,6 +105,7 @@ export function Footer() {
       url: settings.whatsappUrl,
       bgColor: 'bg-[#25D366]',
       hoverColor: 'hover:bg-[#128C7E]',
+      textColor: 'text-[#0b1720]',
     },
     {
       name: 'تلگرام',
@@ -111,6 +114,7 @@ export function Footer() {
       url: settings.telegramUrl,
       bgColor: 'bg-[#0088cc]',
       hoverColor: 'hover:bg-[#006699]',
+      textColor: 'text-[#0b1720]',
     },
     {
       name: 'بله',
@@ -119,6 +123,7 @@ export function Footer() {
       url: settings.baleUrl,
       bgColor: 'bg-[#00A884]',
       hoverColor: 'hover:bg-[#008866]',
+      textColor: 'text-[#0b1720]',
       logoClassName: 'w-12 h-12 md:w-10 md:h-10',
     },
     {
@@ -164,6 +169,8 @@ export function Footer() {
                   <img
                     src={settings.siteLogoUrl}
                     alt={settings.siteBranding.logoAlt}
+                    width={72}
+                    height={72}
                     className="h-full w-full object-contain p-0.5"
                     loading="lazy"
                     decoding="async"
@@ -172,6 +179,8 @@ export function Footer() {
                   <img
                     src={majlesyarLogo}
                     alt={settings.siteBranding.logoAlt}
+                    width={72}
+                    height={72}
                     className="h-full w-full object-contain p-0.5"
                     loading="lazy"
                     decoding="async"

@@ -10,8 +10,19 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+backend/frontend_dist/
 *.local
 .env.production
+
+# Generated test, audit, and browser artifacts
+.playwright-cli/
+output/
+test-results/
+tmp/
+
+# Local runtime state
+.deploy/
+.tmp_*/
 
 # Editor directories and files
 .vscode/*
