@@ -1,7 +1,30 @@
 import { defineConfig } from "vite";
+import type { Plugin } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
+
+function inlineBuildCss(): Plugin {
+  return {
+    name: "inline-build-css",
+    apply: "build",
+    enforce: "post",
+    generateBundle(_options, bundle) {
+      const html = bundle["index.html"];
+      if (!html || html.type !== "asset" || typeof html.source !== "string") return;
+
+      for (const [fileName, asset] of Object.entries(bundle)) {
+        if (asset.type !== "asset" || !fileName.endsWith(".css")) continue;
+        const href = `/static/${fileName}`;
+        const stylesheet = `<link rel="stylesheet" crossorigin href="${href}">`;
+        if (!html.source.includes(stylesheet)) continue;
+
+        html.source = html.source.replace(stylesheet, `<style>${asset.source}</style>`);
+        delete bundle[fileName];
+      }
+    },
+  };
+}
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -19,7 +42,7 @@ export default defineConfig(({ mode }) => ({
       },
     },
   },
-  plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
+  plugins: [react(), mode === "development" && componentTagger(), inlineBuildCss()].filter(Boolean),
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
