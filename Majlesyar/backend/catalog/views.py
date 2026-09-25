@@ -198,6 +198,18 @@ class ProductByPathAPIView(APIView):
             public_path=public_path,
         ).first()
         if not product:
+            candidates = Product.objects.prefetch_related(
+                "categories", "tags", "customer_reviews", "gallery_images"
+            ).filter(public_path__icontains="majlesyar.com")
+            product = next(
+                (
+                    candidate
+                    for candidate in candidates.iterator(chunk_size=100)
+                    if normalize_product_public_path(candidate.public_path) == public_path
+                ),
+                None,
+            )
+        if not product:
             raise Http404
         response = Response(ProductSerializer(product, context={"request": request}).data)
         if product.is_temporary:

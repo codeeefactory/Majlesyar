@@ -180,40 +180,7 @@ export default function ProductPage() {
   if (loading) {
     return (
       <AppShell>
-        <div className="container py-8">
-          <div className="animate-pulse space-y-8">
-            <div className="h-5 w-56 bg-muted rounded" />
-            <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
-              <div className="space-y-4">
-                <div className="aspect-square bg-muted rounded-2xl border border-border" />
-              </div>
-              <div className="space-y-6 min-h-[32rem]">
-                <div className="space-y-3">
-                  <div className="h-9 bg-muted rounded w-3/4" />
-                  <div className="h-4 bg-muted rounded w-full" />
-                  <div className="h-4 bg-muted rounded w-5/6" />
-                </div>
-                <div className="bg-card rounded-xl border border-border p-4 space-y-3">
-                  <div className="h-5 bg-muted rounded w-40" />
-                  <div className="h-4 bg-muted rounded w-11/12" />
-                  <div className="h-4 bg-muted rounded w-10/12" />
-                  <div className="h-4 bg-muted rounded w-9/12" />
-                  <div className="h-4 bg-muted rounded w-10/12" />
-                </div>
-                <div className="py-4 border-t border-b border-border space-y-3">
-                  <div className="h-4 bg-muted rounded w-24" />
-                  <div className="h-9 bg-muted rounded w-48" />
-                </div>
-                <div className="space-y-4">
-                  <div className="h-10 bg-muted rounded w-44" />
-                  <div className="h-4 bg-muted rounded w-32" />
-                  <div className="h-12 bg-muted rounded-xl w-full" />
-                </div>
-              </div>
-            </div>
-            <div className="rounded-2xl border border-border bg-muted/30 min-h-[20rem]" />
-          </div>
-        </div>
+        <div className="min-h-[80rem] md:min-h-[48rem]" aria-busy="true" aria-label="در حال دریافت محصول" />
       </AppShell>
     );
   }

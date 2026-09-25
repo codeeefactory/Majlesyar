@@ -189,11 +189,22 @@ def _product_for_path(path: str):
         return None
 
     try:
-        from catalog.models import Product
+        from catalog.models import Product, normalize_product_public_path
     except (OperationalError, ProgrammingError):
         return None
 
-    return Product.objects.filter(public_path=normalized_path).prefetch_related("categories").first()
+    queryset = Product.objects.prefetch_related("categories")
+    product = queryset.filter(public_path=normalized_path).first()
+    if product:
+        return product
+    return next(
+        (
+            candidate
+            for candidate in queryset.filter(public_path__icontains="majlesyar.com").iterator(chunk_size=100)
+            if normalize_product_public_path(candidate.public_path) == normalized_path
+        ),
+        None,
+    )
 
 
 def _temporary_product_for_path(path: str):
@@ -814,11 +825,11 @@ def sitemap_xml(request) -> HttpResponse:
             entries[path] = site_modified
 
     try:
-        from catalog.models import Product
+        from catalog.models import Product, normalize_product_public_path
 
         products = Product.objects.filter(is_temporary=False).exclude(public_path="").only("public_path", "updated_at")
         for product in products.iterator():
-            path = _normalize_path(product.public_path)
+            path = normalize_product_public_path(product.public_path)
             if (
                 path not in FORCED_NOT_FOUND_PATHS
                 and path != "/product"

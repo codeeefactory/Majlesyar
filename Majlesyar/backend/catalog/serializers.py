@@ -160,6 +160,7 @@ class ProductGalleryImageSerializer(serializers.ModelSerializer):
 
 
 class ProductSerializer(serializers.ModelSerializer):
+    public_path = serializers.SerializerMethodField()
     category_ids = serializers.SerializerMethodField()
     tag_ids = serializers.SerializerMethodField()
     image = serializers.SerializerMethodField()
@@ -246,7 +247,10 @@ class ProductSerializer(serializers.ModelSerializer):
         return ""
 
     def get_uri(self, obj: Product) -> str:
-        return obj.public_path
+        return self.get_public_path(obj)
+
+    def get_public_path(self, obj: Product) -> str:
+        return normalize_product_public_path(obj.public_path)
 
     def get_contents(self, obj: Product) -> list[dict]:
         return normalize_product_contents(obj.contents)

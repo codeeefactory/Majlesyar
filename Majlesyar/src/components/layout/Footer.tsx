@@ -158,7 +158,6 @@ export function Footer() {
     <footer
       className="bg-card border-t border-border mt-auto"
       role="contentinfo"
-      style={{ contentVisibility: 'auto', containIntrinsicSize: '1px 1200px' }}
     >
       <div className="container py-12">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">

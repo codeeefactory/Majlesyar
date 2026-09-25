@@ -58,15 +58,25 @@ PRODUCT_INPUT_MODE_PHOTO_PROCESSING = "photo_processing"
 
 
 def normalize_product_public_path(value: str | None) -> str:
-    raw_value = str(value or "").strip()
+    raw_value = unquote(str(value or "").strip())
     if not raw_value:
         return ""
+
+    # Repair legacy values saved as `/https:/majlesyar.com/...` without
+    # mutating production data. New writes are normalized by Product.save().
+    malformed_url = raw_value.lstrip("/")
+    lowered_url = malformed_url.lower()
+    if lowered_url.startswith(
+        ("https:/majlesyar.com/", "https:/www.majlesyar.com/", "http:/majlesyar.com/", "http:/www.majlesyar.com/")
+    ) and not lowered_url.startswith(("https://", "http://")):
+        scheme_end = malformed_url.find(":/") + 2
+        raw_value = f"{malformed_url[:scheme_end]}/{malformed_url[scheme_end:]}"
 
     parsed = urlsplit(raw_value if "://" in raw_value else f"https://majlesyar.com/{raw_value.lstrip('/')}")
     if parsed.hostname and parsed.hostname.lower() not in {"majlesyar.com", "www.majlesyar.com"}:
         raise ValidationError("آدرس کامل محصول باید متعلق به دامنه majlesyar.com باشد.")
 
-    path = unquote(parsed.path or "")
+    path = parsed.path or ""
     path = "/" + "/".join(part for part in path.split("/") if part)
     path = path.rstrip("/") or "/"
     first_part = path.strip("/").split("/", 1)[0].lower()

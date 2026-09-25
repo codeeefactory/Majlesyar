@@ -25,6 +25,20 @@ class ProductPublicPathTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["uri"], "/pack/custom-pack")
 
+    def test_legacy_malformed_majlesyar_url_is_repaired_without_data_write(self):
+        product = Product.objects.create(
+            name="پک همایش قدیمی",
+            url_slug="legacy-conference-pack",
+            public_path="/pack/conference",
+        )
+        Product.objects.filter(pk=product.pk).update(public_path="/https:/majlesyar.com/pack/conference")
+
+        response = self.client.get(reverse("product-by-path"), {"path": "/pack/conference"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["public_path"], "/pack/conference")
+        self.assertEqual(response.data["uri"], "/pack/conference")
+
     def test_external_and_legacy_product_paths_are_rejected(self):
         with self.assertRaises(ValidationError):
             Product.objects.create(name="خارجی", public_path="https://example.com/item")
