@@ -1605,10 +1605,34 @@ export default function BuilderPage() {
     return renderChoiceGrid(currentStep);
   };
 
+  const builderIntro = (
+    <div className="mb-5 flex min-w-0 flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+      <div className="min-w-0">
+        <div className="mb-3 inline-flex max-w-full items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-[11px] font-bold text-primary sm:text-xs">
+          <Sparkles className="h-3.5 w-3.5" />
+          سازنده پویا با داده‌های بک‌اند
+        </div>
+        <h1 className="text-xl font-black leading-9 text-foreground sm:text-2xl md:text-3xl">ساخت پک اختصاصی</h1>
+        <p className="mt-2 max-w-2xl text-xs leading-7 text-muted-foreground sm:text-sm">
+          بسته‌بندی، میوه، نوشیدنی، خوراکی و افزودنی‌های دلخواه را به پک اضافه کنید.
+        </p>
+      </div>
+      <Button variant="outline" onClick={resetBuilder} className="w-full gap-2 sm:w-auto">
+        <RotateCcw className="h-4 w-4" />
+        شروع دوباره
+      </Button>
+    </div>
+  );
+
   if (loading) {
     return (
       <AppShell>
-        <div className="min-h-[220rem] md:min-h-[80rem]" aria-busy="true" aria-label="در حال دریافت سازنده پک" />
+        <div
+          className="mx-auto min-h-[220rem] w-full max-w-[1400px] overflow-x-clip px-3 pt-5 sm:px-4 sm:pt-8 md:min-h-[80rem]"
+          aria-busy="true"
+        >
+          {builderIntro}
+        </div>
       </AppShell>
     );
   }
@@ -1624,22 +1648,7 @@ export default function BuilderPage() {
         ]}
       />
       <div className="mx-auto w-full max-w-[1400px] overflow-x-clip px-3 pt-5 pb-36 sm:px-4 sm:pt-8 lg:pb-8">
-        <div className="mb-5 flex min-w-0 flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div className="min-w-0">
-            <div className="mb-3 inline-flex max-w-full items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-[11px] font-bold text-primary sm:text-xs">
-              <Sparkles className="h-3.5 w-3.5" />
-              سازنده پویا با داده‌های بک‌اند
-            </div>
-            <h1 className="text-xl font-black leading-9 text-foreground sm:text-2xl md:text-3xl">ساخت پک اختصاصی</h1>
-            <p className="mt-2 max-w-2xl text-xs leading-7 text-muted-foreground sm:text-sm">
-              بسته‌بندی، میوه، نوشیدنی، خوراکی و افزودنی‌های دلخواه را به پک اضافه کنید.
-            </p>
-          </div>
-          <Button variant="outline" onClick={resetBuilder} className="w-full gap-2 sm:w-auto">
-            <RotateCcw className="h-4 w-4" />
-            شروع دوباره
-          </Button>
-        </div>
+        {builderIntro}
 
         <div className="mb-4 grid gap-2 rounded-xl border border-primary/15 bg-primary/5 p-3 sm:grid-cols-3 sm:p-4" aria-label="راهنمای سریع ساخت پک">
           {[
