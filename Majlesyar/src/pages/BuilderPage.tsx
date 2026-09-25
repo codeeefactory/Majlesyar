@@ -16,7 +16,6 @@ import {
   Box,
   Check,
   HelpCircle,
-  Loader2,
   Minus,
   Package,
   Plus,
@@ -1609,14 +1608,7 @@ export default function BuilderPage() {
   if (loading) {
     return (
       <AppShell>
-        <div className="container py-10">
-          <div className="flex min-h-[340px] items-center justify-center rounded-xl border border-border bg-card">
-            <div className="flex items-center gap-3 text-muted-foreground">
-              <Loader2 className="h-5 w-5 animate-spin" />
-              <span>در حال آماده‌سازی سازنده پک...</span>
-            </div>
-          </div>
-        </div>
+        <div className="min-h-[220rem] md:min-h-[80rem]" aria-busy="true" aria-label="در حال دریافت سازنده پک" />
       </AppShell>
     );
   }
